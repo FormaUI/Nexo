@@ -408,3 +408,18 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Decision:** the npm package is `@formaui-net/nexo`, under the npm organization `formaui-net`, and publishes as public.
 - **Why:** an npm organization named `formaui` already exists, so the scope `@formaui` isn't available. On NuGet, the prefix reserved for the packages is `formaui-net`, as `formaui-net.Nexo` shows, so both registries now name the packages alike. A scoped package publishes as private unless it says otherwise, which a free organization refuses.
 - **Declined:** asking npm to transfer the unused `formaui` organization, whose outcome and timing aren't ours to decide.
+
+<a id="d29"></a>
+
+## D29 — A host builds module errors, and an operator has a declaration type of its own
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, decided while migrating DOMQL.
+- **Decision:** `NexoError.module(code, message, location)` is one of the factories a host builds its errors with, beside `structure`, `validation` and `evaluation`, and the language advances to `1.0.0-beta.2` for it. In `nexo.d.ts`, an operator is a `NexoOperatorDeclaration`, its `impl` taking `{ value, reject }`, apart from a `NexoMemberDeclaration`, whose kind is `property`, `function` or `indexer` and whose `impl` takes the member's input.
+- **Why:**
+  - A host that reads keys of its own on a declaration refuses a declaration that breaks its rules, as DOMQL's dispatch table refuses a host call without its request kind. That is a declaration breaking a contract, a module error; built as a structure error, one mistake in a module would fail as two kinds, by who checks it.
+  - A union of two function types gives an `impl` written inline no parameter type, so a TypeScript host's `({ receiver }) => …` failed to compile under `strict`. A declaration type for each kind types each `impl` by the declaration it carries out.
+- **Declined:**
+  - Building DOMQL's refusals as structure errors, which keeps the contract and splits one kind of mistake in two.
+  - Declaring `syntax` and `locate` for hosts as well: a host reads no text of its own, so they stay the gap the status records.

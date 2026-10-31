@@ -9,6 +9,8 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.1` · definition format 38*
+*Unpublished · language `1.0.0-beta.2` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
+- `NexoError.module` is declared for a host, which builds a module error of its own with it.
+- An operator is declared as a `NexoOperatorDeclaration`, its `impl` taking `{ value, reject }`, so each `impl` a TypeScript host writes is typed by the declaration it carries out. A member declaration's kind is `property`, `function` or `indexer`.

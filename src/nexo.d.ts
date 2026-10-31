@@ -126,8 +126,8 @@ export interface NexoReferenceTypeDeclaration {
     supertype?: string;
     abstract?: boolean;
     import?: string[];
-    /** The members it declares within it, each taking it as its receiver. */
-    members?: NexoMemberDeclaration[];
+    /** The members it declares within it, each taking it as its receiver, and its operators. */
+    members?: (NexoMemberDeclaration | NexoOperatorDeclaration)[];
     /** Whether it is available within its declaring module alone, `false` where left out: no other module's declaration names it, and no script reaches it; its members are internal with it. */
     internal?: boolean;
 }
@@ -139,9 +139,9 @@ export interface NexoStructuredTypeDeclaration {
     import?: string[];
     /**
      * The members it declares within it, each taking it as its receiver: its data shape is the properties it declares without `updates`, each naming its value's type as its `result`, which
-     * Nexo reads from the data and never invokes, so each takes no `impl`.
+     * Nexo reads from the data and never invokes, so each takes no `impl`; and its operators.
      */
-    members?: NexoMemberDeclaration[];
+    members?: (NexoMemberDeclaration | NexoOperatorDeclaration)[];
     /** Whether it is available within its declaring module alone, `false` where left out: no other module's declaration names it, and no script reaches it; its members are internal with it. */
     internal?: boolean;
 }
@@ -156,8 +156,8 @@ export interface NexoExtensionDeclaration {
     kind: 'extension';
     /** The type its members extend, never `Any` or nullable: a foreign type qualified, one of Nexo's own, or a parameter it declares. */
     target: string;
-    /** The members it adds, each taking its target as its receiver. */
-    members?: NexoMemberDeclaration[];
+    /** The members it adds, each taking its target as its receiver, and its operators. */
+    members?: (NexoMemberDeclaration | NexoOperatorDeclaration)[];
     /** Whether it is available within its declaring module alone, `false` where left out; its members are internal with it. */
     internal?: boolean;
 }
@@ -201,6 +201,8 @@ export declare class NexoError extends Error {
     static structure(code: string, message: string, location: NexoLocation): NexoError;
     /** A script resolution finds does not fit its vocabulary or its types, before anything is evaluated. */
     static validation(code: string, message: string, location: NexoLocation): NexoError;
+    /** A declaration breaking its contract, as a host refuses a declaration whose keys of the host's own break the host's rules. */
+    static module(code: string, message: string, location: NexoLocation): NexoError;
     /** A failure while evaluating, with what caused it. */
     static evaluation(code: string, message: string, location: NexoLocation, options?: { cause?: unknown }): NexoError;
 }
@@ -340,28 +342,40 @@ export interface NexoMemberImplementationInput {
 }
 
 /**
- * A property, a function, an indexer or an operator a module declares, each taking the fields it needs alone: within a type, whose receiver the type is, within an extension, whose receiver its target is, or among the module's
- * `members`, a module member, which takes no receiver and is read through its module's namespace.
+ * A property, a function or an indexer a module declares, each taking the fields it needs alone: within a type, whose receiver the type is, within an extension, whose receiver its target is, or among the module's
+ * `members`, a module member, which takes no receiver and is read through its module's namespace. An operator is declared as a `NexoOperatorDeclaration`.
  * A property answers a value, and a function the evaluator invokes its result; a script ending in a call of a function the host invokes ends in a host call, and the function has no implementation Nexo calls.
  */
 export interface NexoMemberDeclaration {
     /** The Nexo name, and the type parameters it declares in angle brackets after it, `identity<T>`, where it is declared within a type, an extension or the module; left out for an unnamed indexer, which brackets after its receiver invoke. */
     name?: string;
-    /** A property, read by its name; a function, called; an indexer, given its one key in brackets, after its name, `it.setting["mode"]`, or, unnamed, after its receiver, `rooms[0]`; or an operator, named `cast` or `convert`, which `as` or `to` invokes. */
-    kind: 'property' | 'function' | 'indexer' | 'operator';
+    /** A property, read by its name; a function, called; or an indexer, given its one key in brackets, after its name, `it.setting["mode"]`, or, unnamed, after its receiver, `rooms[0]`. */
+    kind: 'property' | 'function' | 'indexer';
     /** Who invokes a function: the evaluator, the default, or the host, which a script ending in a call of it is prepared for; a function the host invokes takes value parameters alone, and neither updates nor an implementation. */
     invokedBy?: 'evaluator' | 'host';
     /** The form its arguments take where it has parameters, an optional one included: one for each parameter, in order, the required ones before the optional ones, or one options object whose fields supply them; a function alone takes it, since an indexer's one key is positional. */
     arguments?: 'positional' | 'options';
     /** Its parameters; a property takes none. */
     parameters?: NexoParameterDeclaration[];
-    /** The type of its result, in Nexo's notation, an operator's its destination; a function the host invokes declares the type of each value its host supplies, left out where it supplies none. */
+    /** The type of its result, in Nexo's notation; a function the host invokes declares the type of each value its host supplies, left out where it supplies none. */
     result?: string;
     /** How it changes and reads; a property and a function the evaluator invokes take it, and a function the host invokes refuses it. */
     updates?: NexoUpdates;
-    /** What carries it out, given one object it reads by name, an operator's its value and `reject`; a member without one is resolved against and never invoked, and a cast operator without one answers its value. */
-    impl?: ((input: NexoMemberImplementationInput) => unknown) | ((input: NexoOperatorImplementationInput) => unknown);
+    /** What carries it out, given one object it reads by name; a member without one is resolved against and never invoked. */
+    impl?: (input: NexoMemberImplementationInput) => unknown;
     /** Whether it is available within its declaring module alone, `false` where left out: no other module's declaration names it, and no script reaches it; a member within an internal type is internal whatever it says. */
+    internal?: boolean;
+}
+
+/** An operator a type or an extension declares among its members: a cast, which `as` invokes, or a conversion, which `to` invokes, from a value of its receiver's type to its result. */
+export interface NexoOperatorDeclaration {
+    kind: 'operator';
+    name: 'cast' | 'convert';
+    /** Its destination, in Nexo's notation. */
+    result: string;
+    /** Casts or converts the value, or rejects it; a cast operator without one answers its value. */
+    impl?: (input: NexoOperatorImplementationInput) => unknown;
+    /** Whether it is available within its declaring module alone, `false` where left out; an operator within an internal type is internal whatever it says. */
     internal?: boolean;
 }
 

@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.1` and definition version 38, the first beta.** What remains is DOMQL's migration to them, the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release).
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.2` and definition version 38, the second beta.** What remains is DOMQL's migration to them, the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release).
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.1` | `1.0.0-beta.1` |
+| Language | `1.0.0-beta.2` | `1.0.0-beta.2` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -80,7 +80,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Observation types and targets | [Observations](../spec/runtime/observations.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Type selectors' keys as mappings | [Type selectors](../spec/runtime/type-selectors.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | The definition, its structural validation and canonical text | [Definition](../spec/runtime/definition.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
-| The error object, its factories and locations | [Errors](../spec/runtime/errors.md) | Implemented, with a [gap](#open-decisions): `NexoError`'s undeclared methods | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
+| The error object, its factories and locations | [Errors](../spec/runtime/errors.md) | Implemented, with a [gap](#open-decisions): `NexoError`'s undeclared `syntax` and `locate` | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | The host API named for Nexo | [Hosting Nexo](../spec/runtime/hosting.md) | Implemented | [`alpha.39`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-39) |
 | A tolerant reading that collects diagnostics without throwing | [Tooling](#tooling) | Planned | — |
 | Formatting that keeps a text's source form | [Tooling](#tooling) | Planned | — |
@@ -254,7 +254,7 @@ These gaps between the specification and the code, found by audits and by the re
 - **A dictionary's metadata.** [Provenance](../spec/runtime/evaluation.md#runtime-results-provenance) gives a list's lineage through filtering and reordering alone, while the collections proposal's decision 9 keeps a retained entry's metadata too; a dictionary's `where` and `select` record none.
 - **Codes.** NEXO5012 is raised for an ambiguous deferred selection and for each argument a selected member can't take, and for a value of `Any` an extension access is given outside the extension's target, conditions its catalogue row doesn't name, against the rule that distinct conditions never share a code; NEXO3045, NEXO3065, NEXO4021 and NEXO4067 are catalogued and never raised.
 - **Declarations.** `createPredicateParameterDeclaration` takes no options, which `nexo.d.ts` declares; a member helper drops `internal` and passes `invokedBy` to a property, which `createModule` then refuses; a value parameter's `context` is never checked; and a type's copy keeps a key holding `undefined`, which [valid declarations](../spec/runtime/modules.md#modules-declarations) count as left out.
-- **Errors.** `NexoError` exposes `syntax`, `module` and `locate`, beside the three factories `nexo.d.ts` declares, and result paths are validated by `nexo.paths.validate` alone, never by `typeAt` and `valueAt`.
+- **Errors.** `NexoError` exposes `syntax` and `locate`, beside the four factories `nexo.d.ts` declares, and result paths are validated by `nexo.paths.validate` alone, never by `typeAt` and `valueAt`.
 
 Deferred items below require their stated trigger before design or implementation resumes.
 

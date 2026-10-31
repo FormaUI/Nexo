@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-2"></a>
+
+## `1.0.0-beta.2`
+
+*November 1, 2026 · definition format 38*
+
+**Runtime**
+
+- [Errors](spec/runtime/errors.md): a host builds a module error of its own with `NexoError.module(code, message, location)`, beside the structure, validation and evaluation errors it builds, as a host refuses a declaration whose keys of the host's own break the host's rules. DOMQL's dispatch table refuses its host calls' request kinds so.
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-1"></a>
 
 ## `1.0.0-beta.1`
