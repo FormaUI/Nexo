@@ -2,7 +2,24 @@
 
 Each version of the Nexo language, newest first, with what it changed. A language version names the [specification](spec/README.md)'s whole contract, the [language](spec/README.md#the-language) a script is written in and the [runtime](spec/README.md#the-runtime) a host builds on, so an entry lists the changes to both; the definition format, the JSON a host and its tools exchange, has a version of its own, which each entry names. Each version is dated by the day the specification first described it, and each change stands in the first version whose implementation follows it, named by the section of the specification that states it now.
 
-Until the beta, a version may break what the one before it allowed, and each entry says what it breaks.
+Each entry says what its version breaks:
+
+- **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
+- **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
+
+<a id="v1-0-0-beta-1"></a>
+
+## `1.0.0-beta.1`
+
+*October 31, 2026 · definition format 38*
+
+The first beta. Both contracts are those of `1.0.0-alpha.42`, unchanged. What changes is the promise a version makes about the next one:
+
+- **Stability:** no breaking redesign is planned.
+- **Migration:** a later version that breaks what this one allows says how to migrate.
+- **Limitations:** the status overview documents what remains [open](docs/features-status.md#open-decisions) and what is [deferred](docs/features-status.md#deferred).
+
+**Breaking:** nothing.
 
 <a id="v1-0-0-alpha-42"></a>
 

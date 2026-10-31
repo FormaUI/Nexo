@@ -6,7 +6,7 @@ An implementation says which it is, and what it follows, in `nexo.info.versions`
 
 | Property | What it is |
 | --- | --- |
-| `implementation` | The implementation's release version, which its packages carry, as `1.0.0-alpha.37`; its sources and every build of them report the same |
+| `implementation` | The implementation's release version, which its packages carry, as `1.0.0-beta.1`; its sources and every build of them report the same |
 | `language` | The language specification version the implementation follows |
 | `definition` | The definition format version the implementation supports |
 

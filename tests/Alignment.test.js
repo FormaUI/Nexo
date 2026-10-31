@@ -58,6 +58,13 @@ describe('Alignment', () => {
         expect(Number(format)).toBe(Number(definition));
     });
 
+    it('has a changelog whose newest entry is the implementation version the sources declare, with the language and definition versions it implements', () => {
+        const changelog = read('CHANGELOG.md');
+        const [, newest, language, format] = changelog.match(/^## `([^`]+)`\r?\n\r?\n\*[^·*]+· language `([^`]+)` · definition format (\d+)\*/m);
+
+        expect([newest, language, Number(format)]).toEqual([nexo.info.versions.implementation, nexo.info.versions.language, nexo.info.versions.definition]);
+    });
+
     it('has a README that names the implementation\'s version and the language version it implements, the one the specification describes', () => {
         const readme = read('README.md');
         const [, described] = specification.match(/^# Nexo Specification v(\S+)$/m);

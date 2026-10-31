@@ -125,7 +125,7 @@ const summary = resolution.createEvaluator(bindings, { today: Date.parse('2026-1
 
 ## Availability
 
-> **Alpha.** Neither package is published yet: build them locally, as [Build](#build) shows, to try Nexo. The implementation, `1.0.0-alpha.37`, implements language version `1.0.0-alpha.42`. [The status overview](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) says what is implemented and what remains.
+> **Beta.** No breaking redesign is planned, and a version that breaks what the one before it allowed says how to migrate. Neither package is published yet: build them locally, as [Build](#build) shows, to try Nexo. The implementation, `1.0.0-beta.1`, implements language version `1.0.0-beta.1`. [The status overview](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) says what is implemented and what remains.
 
 ## Documents
 
@@ -134,6 +134,7 @@ const summary = resolution.createEvaluator(bindings, { today: Date.parse('2026-1
 | [Guide](https://github.com/FormaUI/Nexo/blob/main/docs/embedding-guide.md) | Embedding Nexo in an application, by example |
 | [Specification](https://github.com/FormaUI/Nexo/blob/main/spec/README.md) | The contract, in two parts: the language, what a script means, and the runtime, what an application provides to run it |
 | [Language history](https://github.com/FormaUI/Nexo/blob/main/LANGUAGE-HISTORY.md) | Each language version and what it changed |
+| [Changelog](https://github.com/FormaUI/Nexo/blob/main/CHANGELOG.md) | Each release of the packages and what it changed |
 | [Status](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) | What is implemented, and what remains |
 | [Design](https://github.com/FormaUI/Nexo/blob/main/docs/nexo-design.md) | How Nexo is built: its stages, modules, evaluation and tooling |
 | [Contributing](https://github.com/FormaUI/Nexo/blob/main/CONTRIBUTING.md) | Report a bug, develop a change and run the checks |

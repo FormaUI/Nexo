@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-alpha.42` and definition version 38.** What remains is DOMQL's migration to them, the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release).
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.1` and definition version 38, the first beta.** What remains is DOMQL's migration to them, the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release).
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-alpha.42` | `1.0.0-alpha.42` |
+| Language | `1.0.0-beta.1` | `1.0.0-beta.1` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -21,10 +21,11 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 | --- | --- |
 | [DOMQL's migration](#domqls-migration) | Its four checkpoints await DOMQL |
 | [Tooling](#tooling) | Next |
-| [Release](#release) | Planned |
+| [Release](#release) | The beta is declared; publishing remains |
 
 - **A change is a commit,** each passing the gate, and moving each aspect once: a declaration, a test or a document takes its final form the first time the aspect changes.
-- **Breaking changes are made directly,** without compatibility layers, migration notes or deprecations, until the beta. The one exception is the checklist each of DOMQL's checkpoints keeps, of the changes it has still to adopt, which is removed once that migration is verified.
+- **A breaking change says how to migrate.** Since the beta, a version's entry in the [language history](../LANGUAGE-HISTORY.md) says how to migrate beside each thing it breaks. Each of DOMQL's checkpoints also keeps a checklist of the changes DOMQL has still to adopt, removed once that migration is verified.
+- **A change a host can notice is in the [changelog](../CHANGELOG.md),** listed by its rules.
 - **Documents move with their change.** The specification, the README, the [embedding guide](embedding-guide.md), the type declarations and this file change in the commit that changes what they describe.
 - **Every diagnostic has its code,** given when its condition is introduced, and the tests of each condition assert its code, never only its message.
 
@@ -84,7 +85,8 @@ Each feature, the contract that states it, its state in the implementation, and 
 | A tolerant reading that collects diagnostics without throwing | [Tooling](#tooling) | Planned | — |
 | Formatting that keeps a text's source form | [Tooling](#tooling) | Planned | — |
 | Editor diagnostics and completion | [Tooling](#tooling) | Planned | — |
-| Published packages, and the beta | [Release](#release) | Planned | — |
+| The beta, its promise and the changelog | [Language history](../LANGUAGE-HISTORY.md#v1-0-0-beta-1), [changelog](../CHANGELOG.md) | Implemented | [`beta.1`](../LANGUAGE-HISTORY.md#v1-0-0-beta-1) |
+| Published packages | [Release](#release) | Planned | — |
 
 The bundle and type declarations are built, as [the build](../README.md#build) sets out.
 
@@ -205,19 +207,17 @@ References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design
 
 | Package | Contents or delivery |
 | --- | --- |
-| npm: `@formaui/nexo` | JavaScript bundle and type declarations |
+| npm: `@formaui/nexo` | The ES module sources and their type declarations, `src/nexo.d.ts` |
 | NuGet: `formaui-net.Nexo` | `nexo.js` and `nexo.d.ts` served at `_content/nexo/` |
 
 Publish both, and test them as consumers install them: NuGet in a published application, and npm installed, bundled, and loaded in Chromium.
 
-Before publishing, advance the package version from `1.0.0-alpha.37`, which waits for publication as [decisions](decisions.md#d23) records, and check that the README names the package's version and the language version it implements, and that `nexo.info.versions` names the language and definition versions.
+The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare. Publishing a version dates its entry in the [changelog](../CHANGELOG.md).
 
-**Beta.** The documents and module API have been audited, and the behavior of a cast inside an optional enclosed access is settled. What remains:
+**Beta.** Nexo entered the beta at `1.0.0-beta.1`, as [decisions](decisions.md#d27) records:
 
-- Add `CHANGELOG.md`, empty until the first change after the beta.
-- Set the beta version to `1.0.0-beta` wherever the beta version is written or checked; number packages `1.0.0-beta.N`.
-
-Beta means no breaking redesign is planned and remaining limitations are documented. Breaking changes after beta require migration guidance.
+- The documents and the module API were audited, and the behavior of a cast inside an optional enclosed access was settled.
+- No breaking redesign is planned. The [open decisions](#open-decisions) and the [deferred work](#deferred) document the remaining limitations.
 
 <a id="open-decisions"></a>
 

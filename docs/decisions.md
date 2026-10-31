@@ -316,7 +316,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 ## D23 — The package version waits for publication
 
-*October 30, 2026*
+*October 30, 2026, superseded by [D27](#d27) on October 31*
 
 - **Kind:** Process.
 - **Decision:** the package keeps `1.0.0-alpha.37` while nothing is published. The next published package takes the version due then. Its README names it and the language version it implements, and `nexo.info.versions` names the language and definition versions.
@@ -381,3 +381,19 @@ Forty decisions were taken while implementing the declarations, member selection
   - Forbidding changes to what an implementation is given alone. An answer the host keeps would stay open to change.
   - Copying or freezing each answer. It costs what the checks cost, and freezing changes objects the host keeps.
   - Detecting a change made against the rule. It needs the work the rule saves.
+
+<a id="d27"></a>
+
+## D27 — Nexo enters the beta at `1.0.0-beta.1`
+
+*October 31, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:** the owner moved Nexo to the beta. The language and the packages both take `1.0.0-beta.1`. Later betas number on from it, `1.0.0-beta.N`, each version advancing for its own reason as before. The definition format stays 38.
+- **The contract:** both contracts are those of `1.0.0-alpha.42`, unchanged. The version advances because its promise does: no breaking redesign is planned, and a later version that breaks this one says how to migrate.
+- **The packages:** the sources declare `1.0.0-beta.1` before it is published, since it is the version due at publication. This supersedes [D23](#d23), which kept `1.0.0-alpha.37` until then. The [changelog](../CHANGELOG.md) records each release, and the gate holds its newest entry to the versions the sources declare.
+- **Why:** a host reads `nexo.info.versions.language` to learn what it can rely on. A beta package implementing an alpha language would promise a stability that its contract's version denies.
+- **Declined:**
+  - A bare `1.0.0-beta` for the language, as the release plan named it. The language's second beta would then be `1.0.0-beta.1`, the name the first package already carries, for another contract.
+  - Moving the packages to the beta and keeping the language at `1.0.0-alpha.42`. The promise is the contract's, and the language version names the contract.
+  - An empty changelog until the first change after the beta, as the plan named it. The first release is itself an entry, and the gate can check only an entry that exists.
