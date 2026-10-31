@@ -68,7 +68,7 @@ What the example shows:
 The application declares its vocabulary as a module, binds its data and evaluates the script. `script` holds the script's text above:
 
 ```js
-import { nexo } from '@formaui/nexo';
+import { nexo } from '@formaui-net/nexo';
 
 const { createPropertyDeclaration: property } = nexo.declarations;
 const DAY = 24 * 60 * 60 * 1000;
@@ -145,7 +145,7 @@ const summary = resolution.createEvaluator(bindings, { today: Date.parse('2026-1
 ./build.ps1
 ```
 
-The gate runs the tests, bundles Nexo, builds the NuGet package project with no warnings and checks its formatting. `./publish.ps1` runs it, then packs the npm package `@formaui/nexo` and the NuGet package `formaui-net.Nexo` into `artifacts/`.
+The gate runs the tests, bundles Nexo, builds the NuGet package project with no warnings and checks its formatting. `./publish.ps1` runs it, then packs the npm package `@formaui-net/nexo` and the NuGet package `formaui-net.Nexo` into `artifacts/`.
 
 ## License
 

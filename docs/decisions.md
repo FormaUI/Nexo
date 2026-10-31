@@ -397,3 +397,14 @@ Forty decisions were taken while implementing the declarations, member selection
   - A bare `1.0.0-beta` for the language, as the release plan named it. The language's second beta would then be `1.0.0-beta.1`, the name the first package already carries, for another contract.
   - Moving the packages to the beta and keeping the language at `1.0.0-alpha.42`. The promise is the contract's, and the language version names the contract.
   - An empty changelog until the first change after the beta, as the plan named it. The first release is itself an entry, and the gate can check only an entry that exists.
+
+<a id="d28"></a>
+
+## D28 — The npm package is `@formaui-net/nexo`
+
+*October 31, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:** the npm package is `@formaui-net/nexo`, under the npm organization `formaui-net`, and publishes as public.
+- **Why:** an npm organization named `formaui` already exists, so the scope `@formaui` isn't available. On NuGet, the prefix reserved for the packages is `formaui-net`, as `formaui-net.Nexo` shows, so both registries now name the packages alike. A scoped package publishes as private unless it says otherwise, which a free organization refuses.
+- **Declined:** asking npm to transfer the unused `formaui` organization, whose outcome and timing aren't ours to decide.
