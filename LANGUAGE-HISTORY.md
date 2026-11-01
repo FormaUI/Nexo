@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-6"></a>
+
+## `1.0.0-beta.6`
+
+*November 1, 2026 · definition format 38*
+
+**Runtime**
+
+- [Structure errors](spec/runtime/errors.md#runtime-structure-errors): a namespace standing where a value does, as `@Home` reads where no local of its name is in scope, is refused giving `~Home` for the script parameter of its name, as a module's name standing alone is (NEXO1506).
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-5"></a>
 
 ## `1.0.0-beta.5`

@@ -106,7 +106,7 @@ An evaluation error fails the entire result and is delivered to the host in its 
 | `NEXO2024` | Resolving or evaluating with a binding set another registry made | A structure error saying to bind with that registry |
 | `NEXO2025` | Creating an evaluator with bindings of another resolution key | A structure error saying to resolve again |
 | `NEXO2040` | Creating or entering an evaluator, or projecting a prepared call, once its resolution is no longer current | A structure error saying to resolve again |
-| `NEXO2520` | A `namespace` node anywhere but as the target of a member read or a call, an indexer's among them | A structure error at the node |
+| `NEXO2520` | A `namespace` node anywhere but as the target of a member read or a call, an indexer's among them | A structure error at the node; one standing where a value does gives `~` for the script parameter of its name |
 | `NEXO2521` | A namespace's member named by a computed property access | A structure error at the node |
 | `NEXO2522` | An optional access through a namespace | A structure error saying a namespace is never null |
 | `NEXO2525` | An `and` or an `or` of fewer than two operands | A structure error at the node |

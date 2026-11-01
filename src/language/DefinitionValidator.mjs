@@ -318,7 +318,7 @@ export class DefinitionValidator {
 
                 return Object.freeze({ kind: 'it' });
             case 'namespace':
-                this.#fail('NEXO2520', "A namespace is the receiver of a member read or called through it, as Home.rooms is, and stands nowhere else", pointer);
+                this.#fail('NEXO2520', DefinitionValidator.#namespaceAloneMessageOf(node.name), pointer);
                 break;
             case 'local':
                 this.#requireName(node.name, `${pointer}/name`);
@@ -987,6 +987,16 @@ export class DefinitionValidator {
         if (!this.#namespaceNames.has(name)) {
             this.#fail('NEXO2028', `'${name}' names a module no import of the definition gives that local name`, pointer);
         }
+    }
+
+    /**
+     * The message refusing a namespace that stands alone, where a value stands: a module's namespace is read through, never a value, and the forms that read the script parameter and the local of its name are given, since
+     * `@Home` reads the import binding only where no local of its name is in scope.
+     */
+    static #namespaceAloneMessageOf(name) {
+        const shown = typeof name === 'string' && Names.isIdentifier(name) ? name : 'Home';
+
+        return `'${shown}' is the namespace of the module the script imports under that name, the receiver of a member read or called through it, as ${shown}.member, and stands nowhere else; write '~${shown}' for the script parameter of that name, or declare a local of that name for '@${shown}' to read`;
     }
 
     /**

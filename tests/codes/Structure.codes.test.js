@@ -208,6 +208,7 @@ describe('the structure codes of a definition', () => {
         const home = [{ module: 'Home' }];
 
         expectNexoError(refusalOf(namespace('Home'), home), 'NEXO2520', 'structure');
+        expect(refusalOf(namespace('Home'), home).message).toContain("write '~Home' for the script parameter of that name");
         expectNexoError(refusalOf({ kind: 'indexerAccess', receiver: namespace('Home'), argument: literal(0) }, home), 'NEXO2520', 'structure');
     });
 

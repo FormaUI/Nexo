@@ -471,3 +471,14 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Refusing a module's type spelled as one of Nexo's own: a name is not invalid because something elsewhere has the same name, and a qualified name reaches any module's type.
   - Reading a generic type's name alone as Nexo's type with no arguments: its members are declared over its type parameters, which nothing would bind.
+
+<a id="d33"></a>
+
+## D33 — A namespace standing alone gives the script parameter's form
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, decided after DOMQL's migration.
+- **Decision:** NEXO2520, refusing a namespace that stands where a value does, names the module's namespace and gives `~Home` for the script parameter of its name, and a local of its name for `@Home` to read. The language advances to `1.0.0-beta.6`.
+- **Why:** `@Home` reads the import binding where no local of its name is in scope, so a script reaching for a script parameter named `Domql` with `@Domql` got a rule about namespaces and no way out, where `Domql` alone gets both forms (NEXO1506).
+- **Declined:** Reading `@Home` as the script parameter where no local is in scope: `@` reads locals and import bindings, and `~` script parameters, so each form keeps one meaning.
