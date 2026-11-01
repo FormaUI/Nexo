@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.3` and definition version 38, the third beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.4` and definition version 38, the fourth beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.3` | `1.0.0-beta.3` |
+| Language | `1.0.0-beta.4` | `1.0.0-beta.4` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -19,7 +19,7 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 
 | Work | State |
 | --- | --- |
-| [DOMQL's migration](#domqls-migration) | Done: DOMQL runs on `1.0.0-beta.3` |
+| [DOMQL's migration](#domqls-migration) | Done: DOMQL migrated at `1.0.0-beta.3` |
 | [Tooling](#tooling) | Next |
 | [Release](#release) | The beta is declared; publishing remains |
 

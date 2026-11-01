@@ -36,6 +36,7 @@ const createShop = () => nexo.createModule('shop', withHome({
             property('size', 'Number'),
             property('partner', 'String?'),
             property('device', 'Device'),
+            property('stored', 'Any'),
             indexer('letter', 'String?', { parameters: [createValueParameterDeclaration('index', 'Number')] }),
             call('pad', 'String', { parameters: [createValueParameterDeclaration('width', 'Number')] }),
             call('wipe', 'String'),
@@ -134,6 +135,9 @@ describe('the codes of resolution', () => {
         });
         it('NEXO3062, an extension access naming a member the extension does not declare', () => expect(refusalWithoutImportsOf('import shop\ns:Words.missing')).toMatchObject({ code: 'NEXO3062', location: { pointer: '/expression' } }));
         it('NEXO3063, an extension access written with : whose receiver can be null', () => expect(refusalWithoutImportsOf('import shop\ns:partner:Words.size')).toMatchObject({ code: 'NEXO3063', message: expect.stringContaining("write 's:partner?:Words.size'") }));
+        it('NEXO3092, an access on a value of Any whose every candidate is a host call', () => {
+            expect(refusalOf('s:stored:order(1)')).toMatchObject({ code: 'NEXO3092', location: { pointer: '/expression' }, message: expect.stringContaining("'order' is a host call wherever it applies") });
+        });
         it('NEXO3090, an extension member read with .', () => expect(refusalOf('s.size')).toMatchObject({ code: 'NEXO3090', message: expect.stringContaining("write 's:size'") }));
         it('NEXO3091, an extension access whose names read more than one way', () => {
             const sizes = nexo.createModule('sizes', { types: [extensionDeclaration('size', 'String', [property('round', 'Number')])] });

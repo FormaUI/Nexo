@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-4"></a>
+
+## `1.0.0-beta.4`
+
+*November 1, 2026 · definition format 38*
+
+**Language**
+
+- [Deferred member selection](spec/language/types.md#types-any-deferred-selection): an access on a value of `Any` whose every candidate is a host call is refused as it resolves (NEXO3092), since no evaluation could select a member. It was refused as it was evaluated (NEXO5013), which still refuses one whose selection is a host call among other candidates.
+
+**Breaking:** a script ending in such an access, as `shelf.item("lamp").book()` where `item` answers `Any` and every `book` is a host call, is refused as it resolves. It never invoked anything. Make the receiver known, as `(shelf.item("lamp") as Light).book()` does, or name the extension the call is declared in.
+
 <a id="v1-0-0-beta-3"></a>
 
 ## `1.0.0-beta.3`

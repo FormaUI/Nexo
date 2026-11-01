@@ -2490,7 +2490,7 @@ export class LanguageResolver {
      * Resolves an access on a value of Any, whose member is selected when that value is evaluated, by its actual type, through the selector, as an access its receiver's type selects during resolution is: a property read
      * whatever its name, since a plain object's fields are named by its data, and a call or an indexer of a member some accessible declaration of its name, or an unnamed indexer, takes in that form. Its arguments are read
      * without the declaration, each a value, never an implicit body or a function, whose reading would depend on the declaration (NEXO3029). It answers a value of Any, and records no use, since it chooses no declaration
-     * before it is evaluated; its resolution names the access, null for an unnamed indexer, and keeps its candidates, which the resolution reports.
+     * before it is evaluated; its resolution names the access, null for an unnamed indexer, and keeps its candidates, which the resolution reports. One whose every candidate is a host call is refused (NEXO3092).
      */
     #resolveDeferredAccess(node, pointer, scope) {
         const access = LanguageResolver.#accessOf(node);
@@ -2514,6 +2514,11 @@ export class LanguageResolver {
             }
 
             this.#requireDeclaredForm(accessible[0], node, pointer);
+        }
+
+        // A host call is selected during resolution alone, so an access whose every candidate is one could never select a member as it is evaluated.
+        if (candidates.length > 0 && candidates.every(candidate => NexoModule.isInvokedByHost(candidate))) {
+            this.#fail('NEXO3092', `'${written}' is a host call wherever it applies, which its host invokes and resolution alone selects, and its receiver is a value of Any: make its receiver known, as a cast does, or select its extension explicitly`, pointer);
         }
 
         const argumentNodes = node.kind === 'call' ? node.arguments : node.kind === 'indexerAccess' ? [node.argument] : [];

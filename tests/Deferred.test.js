@@ -30,7 +30,15 @@ const held = {
  */
 const createShelf = () => nexo.createModule('shelf', withHome({
     types: [
-        { name: 'Cup', kind: 'structured', members: [...dataPropertyDeclarations({ size: 'Number' }), createFunctionDeclaration('describe', 'String', { updates: derivedUpdates, impl: ({ receiver }) => `a cup of ${receiver.size}` })] },
+        {
+            name: 'Cup',
+            kind: 'structured',
+            members: [
+                ...dataPropertyDeclarations({ size: 'Number' }),
+                createFunctionDeclaration('describe', 'String', { updates: derivedUpdates, impl: ({ receiver }) => `a cup of ${receiver.size}` }),
+                createFunctionDeclaration('order', 'Number', { updates: derivedUpdates, parameters: [createValueParameterDeclaration('count', 'Number')], impl: ({ receiver, args }) => receiver.size * args.count }),
+            ],
+        },
         extensionDeclaration('Words', 'String', [createPropertyDeclaration('shout', 'String', { updates: derivedUpdates, impl: ({ receiver }) => receiver.toUpperCase() })]),
     ],
     members: [
@@ -50,6 +58,7 @@ const createShelf = () => nexo.createModule('shelf', withHome({
         createFunctionDeclaration('echo<U>', 'U', { updates: derivedUpdates, parameters: [accepting('value', 'U')], impl: ({ args }) => args.value }),
         createFunctionDeclaration('test', 'Boolean', { updates: derivedUpdates, parameters: [createFunctionParameterDeclaration('check', 'Boolean', ['String'])], impl: ({ receiver, args }) => args.check(receiver.name) }),
         createFunctionDeclaration('order', 'Number', { invokedBy: 'host', parameters: [createValueParameterDeclaration('count', 'Number')] }),
+        createFunctionDeclaration('book', 'Number', { invokedBy: 'host' }),
         createIndexerDeclaration(null, 'String', { updates: constantUpdates, parameters: [createValueParameterDeclaration('key', 'String')], impl: ({ receiver, args }) => `${receiver.name}[${args.key}]` }),
     ],
     Light: [createPropertyDeclaration('glow', 'String', { updates: constantUpdates, impl: ({ receiver }) => `${receiver.name} glows` })],
@@ -169,6 +178,12 @@ describe('values of Any', () => {
             expect(failure('shelf.item("word").glow')).toMatchObject({ code: 'NEXO5012', location: { pointer: '/expression' }, message: expect.stringContaining("'glow' is not available on String") });
             expect(failure('shelf.item("func").power')).toMatchObject({ code: 'NEXO5012' });
             expect(failure('{ count = shelf.item("light").order(1) }')).toMatchObject({ code: 'NEXO5013', message: expect.stringContaining("'order' on Light is a host call") });
+        });
+
+        it('refuses as it resolves an access whose every candidate is a host call, which no evaluation could select, and selects one with a value its other candidates apply to', () => {
+            expect(refusal('{ count = shelf.item("light").book() }')).toMatchObject({ code: 'NEXO3092', location: { pointer: '/expression/objectFields/0/value' }, message: expect.stringContaining("'book' is a host call wherever it applies") });
+            expect(refusal('shelf.item("light")?.book()')).toMatchObject({ code: 'NEXO3092', location: { pointer: '/expression/chain' } });
+            expect(evaluate('shelf.wrap(shelf.cup()).order(3)')).toBe(6);
         });
 
         it('fails a direct access on null, and answers null for an optional one and for every access after an optional one that met null', () => {

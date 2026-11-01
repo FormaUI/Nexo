@@ -217,6 +217,7 @@ In this document:
 | `NEXO3089` | An object expression given as an indexer's key that constructs the keys of two or more of its signatures alike | A validation error at the key, naming the structures |
 | `NEXO3090` | An extension member read with `.`, as `device.usage` | A validation error giving `device:usage` |
 | `NEXO3091` | An extension access whose names read more than one way, as `name:size.width` where `size` is an extension member and an extension declaring `width` | A validation error giving the text that writes each way: a group, `(name:size).width`, and the extension named through its module |
+| `NEXO3092` | An access on a value of `Any` whose every candidate is a host call, which no evaluation could select | A validation error saying to make the receiver known, as a cast does, or to select its extension explicitly |
 | `NEXO3082` | A function resolution finds as a collection expression's item or value, or as an indexer's key: a script's function, a reference or a local holding one | A validation error at the item, the value or the key, saying it is data |
 | `NEXO3043` | A result that would contain a reference value | A validation error |
 | `NEXO3044` | An object field read through `root` whose initializer has not completed where `root` is written | A validation error naming the object fields completed there |

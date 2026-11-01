@@ -439,3 +439,19 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Adding them to `getCandidateDeclarations()`, whose declarations are those evaluation may select: a call on a null receiver is skipped, so evaluation selects none of them.
   - Leaving each host to filter the declarations by imports and access form, which repeats the language's rules and drifts from them.
+
+<a id="d31"></a>
+
+## D31 — A host call through a value of Any is refused as it resolves
+
+*November 1, 2026*
+
+- **Kind:** Language contract, decided after DOMQL's migration.
+- **Decision:** An access on a value of `Any` whose every candidate is a host call is refused as it resolves (NEXO3092). One with other candidates still resolves, and is refused as it is evaluated where its selection is a host call (NEXO5013). The language advances to `1.0.0-beta.4`.
+- **Why:**
+  - Resolution alone selects a host call, so such an access can never select a member. It resolved as a value of `Any` and failed only when evaluated.
+  - A host reads what a script requests from its resolution. DOMQL refused `panel:bag:later()` as a value to evaluate, and evaluating it then failed: both messages pointed away from the fix.
+  - A failure known when resolving is reported then, as every other one is.
+- **Declined:**
+  - Resolving it as a host call with its candidates, as a call on a null receiver is: a value of `Any` holds a value, and a host could not prepare the call without the declaration evaluation alone would select.
+  - Leaving host calls out of a deferred access's candidates: a receiver whose actual type declares one would then read as lacking the member (NEXO5012), hiding why.

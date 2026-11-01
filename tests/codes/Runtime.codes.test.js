@@ -40,6 +40,8 @@ const createPantry = () => nexo.createModule('pantry', withHome({
             createFunctionDeclaration('drop', undefined, { invokedBy: 'host' }),
             operatorDeclaration('convert', 'Cup', input => behaviors.convert(input)),
         ]),
+        // A number's order is the script's to call, so an order on a value of Any selects a member as it is evaluated.
+        extensionDeclaration('NumberExtensions', 'Number', [createFunctionDeclaration('order', 'Number', { updates: derivedUpdates, parameters: [createValueParameterDeclaration('count', 'Number')], impl: ({ args }) => args.count })]),
     ],
     observationTypes: [{ name: 'quote', contract: 'maintained', impl: () => ({ stop: () => {}, sample: () => ({ pending: false, value: 1 }) }) }],
 }));
