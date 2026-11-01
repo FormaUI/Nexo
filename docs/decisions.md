@@ -482,3 +482,18 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Decision:** NEXO2520, refusing a namespace that stands where a value does, names the module's namespace and gives `~Home` for the script parameter of its name, and a local of its name for `@Home` to read. The language advances to `1.0.0-beta.6`.
 - **Why:** `@Home` reads the import binding where no local of its name is in scope, so a script reaching for a script parameter named `Domql` with `@Domql` got a rule about namespaces and no way out, where `Domql` alone gets both forms (NEXO1506).
 - **Declined:** Reading `@Home` as the script parameter where no local is in scope: `@` reads locals and import bindings, and `~` script parameters, so each form keeps one meaning.
+
+<a id="d34"></a>
+
+## D34 — Origins outlive a resolution made again
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, decided after DOMQL's migration.
+- **Decision:** An origin token is kept by the definition, the pointer of its expression, the declaration its resolution selects there and the candidate selected, so every resolution of one definition gives a value the same origin where it selects the same declaration. The language advances to `1.0.0-beta.7`.
+- **Why:**
+  - A registration that may change how values are recognized makes a resolution stale, and the host resolves the definition again. With origins of its own, the new resolution's first result compared exactly against the last one, so a watch reported a change within its tolerance once after every such registration.
+  - The declaration and the expression decide what a value means, and both survive the new resolution; the resolution object was only where the token was kept.
+- **Declined:**
+  - Comparing within a tolerance whatever the origins: a value of another branch or operand would then hide a change, which origins exist to prevent.
+  - Leaving each host to compare its first result after a renewal leniently, which repeats a rule the language owns.

@@ -109,8 +109,19 @@ describe('result metadata', () => {
         expect(rows.items[0].objectFields.chosen.origin).not.toBe(later.metadata.objectFields.rows.items[0].objectFields.chosen.origin);
     });
 
-    it('never compares origins across resolutions', () => {
-        expect(metadataOf('{ size = name:size }').objectFields.size.origin).not.toBe(metadataOf('{ size = name:size }').objectFields.size.origin);
+    it("gives every resolution of one definition the same origins where it selects the same declarations, and another definition its own", () => {
+        const registry = new NexoRegistry([Vocabulary.module, shapes]);
+        const definition = parseImporting(registry, '{ size = name:size, length = name.length }');
+        const resolveAgain = () => new LanguageResolver(registry, new ParameterBindings(registry, { name: 'tea' }), ParsedTexts.locationsOf(definition)).resolveDefinition(definition);
+        const evaluate = resolved => new Evaluator(registry, resolved, new ParameterBindings(registry, { name: 'tea' }), {}, ParsedTexts.locationsOf(definition)).evaluate().metadata.objectFields;
+        const first = evaluate(resolveAgain());
+        const again = evaluate(resolveAgain());
+
+        expect(again.size.origin).toBe(first.size.origin);
+        expect(again.length.origin).toBe(first.length.origin);
+        expect(again.size.origin).not.toBe(again.length.origin);
+        expect(metadataOf('{ size = name:size }').objectFields.size.origin).toBe(metadataOf('{ size = name:size }').objectFields.size.origin);
+        expect(metadataOf('{ size = name:size }').objectFields.size.origin).not.toBe(metadataOf('{ size = name:size, again = 1 }').objectFields.size.origin);
     });
 
     it('describes each item of a projection and the reference it came from, which the value never holds', () => {

@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-7"></a>
+
+## `1.0.0-beta.7`
+
+*November 1, 2026 · definition format 38*
+
+**Runtime**
+
+- [Result metadata](spec/runtime/evaluation.md#runtime-results): an origin is comparable across every resolution of one definition, where it selects the same declaration. A resolution made again after a registration made the first stale gives its values the origins the first gave, so a host comparing within a tolerance goes on doing so. An origin was comparable within one resolution alone.
+
+**Breaking:** nothing. A host that relied on two resolutions never sharing an origin compares results of one definition, which share them now.
+
 <a id="v1-0-0-beta-6"></a>
 
 ## `1.0.0-beta.6`

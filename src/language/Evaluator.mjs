@@ -31,7 +31,7 @@ import { Vocabulary } from './vocabulary/Vocabulary.mjs';
  */
 
 /**
- * What an evaluation tells of a value it answers, beside the value and never part of it: the origin, a token for the expression that produced it, the same token exactly where one expression of one resolution, with one candidate selected, produced two values;
+ * What an evaluation tells of a value it answers, beside the value and never part of it: the origin, a token for the expression that produced it, the same token exactly where one expression of one definition, through one declaration and with one candidate selected, produced two values;
  * the tolerance the producing member declares, applying to every number within the value but a part with a record of its own; the record of each field of an object an object expression built and of each item of a list a projection built;
  * the input each item of a list a projection built came from, a list no projection built having no sources; and, beside them, each item's provenance, the source the earliest projection it descends from recorded for it.
  * A part with no record inherits its parent's origin and tolerance.
@@ -139,6 +139,13 @@ export class Evaluator {
      * lives exactly as long as its resolution, and every evaluation of the resolution shares it. @type {WeakMap<object, Map<object, Map<string | null, object>>>}
      */
     static #expressionRecordCache = new WeakMap();
+
+    /**
+     * The origin token of each expression of a definition, indexed definition → pointer → declaration its resolution selects there → selected candidate, or null → token, so every resolution of one definition, one made again
+     * after a registration made the first stale among them, gives the values one expression produces through one declaration the same origin. Keyed weakly by the definition and by the declaration, a token lives as long
+     * as both. @type {WeakMap<object, Map<string, { byDeclaration: WeakMap<object, Map<string | null, object>>, undeclared: Map<string | null, object> }>>}
+     */
+    static #originCache = new WeakMap();
 
     /** The record a part with none of its own takes, indexed whole record → inherited record, made once for each whole and released with it. @type {WeakMap<object, object>} */
     static #inheritedRecordCache = new WeakMap();
@@ -2968,7 +2975,7 @@ export class Evaluator {
 
     /**
      * Gets the shared record of a value an expression produced itself, with the candidate it selected and the tolerance that expression applies, from `#expressionRecordCache`, creating it at the first lookup: one for this
-     * resolution, its origin a token every evaluation of it shares.
+     * resolution, its origin a token every evaluation of every resolution of its definition shares where it selects the same declaration.
      */
     #getExpressionRecord(node, candidate, tolerance) {
         let records = Evaluator.#expressionRecordCache.get(this.#resolvedDefinition);
@@ -2988,11 +2995,46 @@ export class Evaluator {
         let record = byCandidate.get(candidate);
 
         if (record === undefined) {
-            record = Object.freeze({ origin: Object.freeze(Object.create(null)), tolerance });
+            record = Object.freeze({ origin: this.#getOrigin(node, candidate), tolerance });
             byCandidate.set(candidate, record);
         }
 
         return record;
+    }
+
+    /** Gets the origin token of the value the expression produces through the declaration its resolution selects and the candidate, from `#originCache`, creating it at the first lookup of any resolution of the definition. */
+    #getOrigin(node, candidate) {
+        let byPointer = Evaluator.#originCache.get(this.#resolvedDefinition.definition);
+
+        if (byPointer === undefined) {
+            byPointer = new Map();
+            Evaluator.#originCache.set(this.#resolvedDefinition.definition, byPointer);
+        }
+
+        const pointer = this.#resolvedDefinition.pointerOf(node);
+        let tokens = byPointer.get(pointer);
+
+        if (tokens === undefined) {
+            tokens = { byDeclaration: new WeakMap(), undeclared: new Map() };
+            byPointer.set(pointer, tokens);
+        }
+
+        const declaration = this.#resolvedDefinition.resolutionOf(node)?.declaration ?? null;
+        let byCandidate = declaration === null ? tokens.undeclared : tokens.byDeclaration.get(declaration);
+
+        if (byCandidate === undefined) {
+            byCandidate = new Map();
+            tokens.byDeclaration.set(declaration, byCandidate);
+        }
+
+        let origin = byCandidate.get(candidate);
+
+        if (origin === undefined) {
+            origin = Object.freeze(Object.create(null));
+            byCandidate.set(candidate, origin);
+        }
+
+        return origin;
     }
 
     /** Gets the shared record a part with none of its own inherits from its whole, its whole's origin and tolerance without the whole's object fields or items, from `#inheritedRecordCache`, creating it at the first lookup. */
