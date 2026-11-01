@@ -135,15 +135,15 @@ export class Evaluator {
     static #compilationCache = new WeakMap();
 
     /**
-     * The record of each expression that produces a value itself, holding its origin token, indexed resolved definition → expression node → selected candidate, or null → record. Keyed weakly by the resolved definition, a record
-     * lives exactly as long as its resolution, and every evaluation of the resolution shares it. @type {WeakMap<object, Map<object, Map<string | null, object>>>}
+     * The record of each expression that produces a value itself, holding its origin token, indexed resolved definition → expression node → selected candidate, the name a computed property access selected or the declaration a deferred access selected, or null → record. Keyed weakly by the resolved definition, a record
+     * lives exactly as long as its resolution, and every evaluation of the resolution shares it. @type {WeakMap<object, Map<object, Map<string | object | null, object>>>}
      */
     static #expressionRecordCache = new WeakMap();
 
     /**
      * The origin token of each expression of a definition, indexed definition → pointer → declaration its resolution selects there → selected candidate, or null → token, so every resolution of one definition, one made again
      * after a registration made the first stale among them, gives the values one expression produces through one declaration the same origin. Keyed weakly by the definition and by the declaration, a token lives as long
-     * as both. @type {WeakMap<object, Map<string, { byDeclaration: WeakMap<object, Map<string | null, object>>, undeclared: Map<string | null, object> }>>}
+     * as both. @type {WeakMap<object, Map<string, { byDeclaration: WeakMap<object, Map<string | object | null, object>>, undeclared: Map<string | object | null, object> }>>}
      */
     static #originCache = new WeakMap();
 
@@ -195,7 +195,7 @@ export class Evaluator {
     #objectFieldSelections = new WeakMap();
 
     /**
-     * The selections made for the value being evaluated at its place in the result, by the node that made each: the branch a conditional or a coalescing selected, as its node, and the name a bracket property access selected; null where none has been made.
+     * The selections made for the value being evaluated at its place in the result, by the node that made each: the branch a conditional or a coalescing selected, as its node, the name a bracket property access selected, and the declaration a deferred access selected; null where none has been made.
      * A result's identities hold them as their `selections`.
      * Each node stands beside its selection in one list, as `#select` records them.
      * @type {unknown[] | null}
@@ -1247,6 +1247,9 @@ export class Evaluator {
         if (args === null) {
             return null;
         }
+
+        // The declaration it selects describes the value it answers, as a member resolution selects does, so the value's record is read from its selection.
+        this.#selections = Evaluator.#select(this.#selections, node, chosen.declaration);
 
         return this.#invokeImplementation(args.invocation, receiver, args.values, node, true);
     }
@@ -2870,6 +2873,13 @@ export class Evaluator {
      * field of what it reads it from; and any other the member's own, with its declaration's tolerance. A field read through the object root is its caller's to follow.
      */
     #resolveMemberRecord(node, resolution, identities, contextRecord, selections, value) {
+        // A deferred access's value was produced by the declaration it selected as it was evaluated, with that declaration's tolerance, and one read from data or never selected by none.
+        if (resolution?.kind === 'deferred') {
+            const declaration = Evaluator.#selectionOf(selections, node) ?? null;
+
+            return this.#getExpressionRecord(node, declaration, declaration?.updates?.tolerance ?? null);
+        }
+
         let selected = resolution;
         let candidate = null;
 

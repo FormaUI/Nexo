@@ -497,3 +497,14 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Comparing within a tolerance whatever the origins: a value of another branch or operand would then hide a change, which origins exist to prevent.
   - Leaving each host to compare its first result after a renewal leniently, which repeats a rule the language owns.
+
+<a id="d35"></a>
+
+## D35 — A member selected as it is evaluated declares its value's tolerance
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, decided after DOMQL's migration.
+- **Decision:** An evaluation records the declaration each deferred access selects, as it records a bracket's selected name, and the value's record takes that declaration's tolerance and an origin of its own for it. The language advances to `1.0.0-beta.8`.
+- **Why:** A value's tolerance is the one its producing member declares. A deferred access knew its member only as it was evaluated, so its value's record had no tolerance, and DOMQL reported a change within it as a change.
+- **Declined:** Taking a tolerance the candidates share: candidates may declare different ones, and the value is produced by one of them alone.

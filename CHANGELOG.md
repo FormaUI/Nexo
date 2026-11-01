@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.7` · definition format 38*
+*Unpublished · language `1.0.0-beta.8` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -20,3 +20,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - NEXO4512 names the notation that does not parse.
 - A namespace standing where a value does is refused giving `~` for the script parameter of its name, NEXO2520.
 - An origin in a result's metadata is comparable across every resolution of one definition that selects the same declaration, so a result after a renewal keeps comparing within its tolerance.
+- A member a value of `Any` selects as it is evaluated gives its value the tolerance it declares in the result's metadata.

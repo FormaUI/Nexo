@@ -31,6 +31,7 @@ const shapes = new NexoModule('shapes', withHome({
             createPropertyDeclaration('crowd', 'List<Light>', { updates: constantUpdates, impl: () => [parts[0], parts[1], parts[0]] }),
             createPropertyDeclaration('twins', 'List<Light>', { updates: constantUpdates, impl: () => twins }),
             createPropertyDeclaration('sizes', 'List<Size?>', { updates: constantUpdates, impl: () => [{ width: 1, height: 2 }, null] }),
+            createPropertyDeclaration('held', 'Any', { updates: constantUpdates, impl: ({ receiver }) => receiver }),
         ]),
     ],
 }, {
@@ -107,6 +108,15 @@ describe('result metadata', () => {
         expect(rows.items.map(item => item.objectFields.chosen.tolerance)).toEqual([0.5, 0.5]);
         expect(later.metadata.objectFields.rows.items.map(item => item.objectFields.chosen.tolerance)).toEqual([null, null]);
         expect(rows.items[0].objectFields.chosen.origin).not.toBe(later.metadata.objectFields.rows.items[0].objectFields.chosen.origin);
+    });
+
+    it('describes a member a value of Any selects as it is evaluated as that member describes it, its tolerance among it', () => {
+        const { objectFields } = metadataOf('{ deferred = name:held:size, direct = name:size, length = name:held:length }');
+
+        expect(objectFields.deferred.tolerance).toBe(0.5);
+        expect(objectFields.length.tolerance).toBeNull();
+        expect(objectFields.deferred.origin).not.toBe(objectFields.direct.origin);
+        expect(objectFields.deferred.origin).not.toBe(objectFields.length.origin);
     });
 
     it("gives every resolution of one definition the same origins where it selects the same declarations, and another definition its own", () => {
