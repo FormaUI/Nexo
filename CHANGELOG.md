@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.13` · definition format 38*
+*Unpublished · language `1.0.0-beta.14` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -28,3 +28,5 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - The declaration helpers write every option they are given, `internal` among them, so `createModule` refuses one its declaration doesn't take, where a helper dropped it. `createPredicateParameterDeclaration` takes options, `nulls` among them.
 - A value parameter declaring `context` is refused, NEXO4030, and a type's copy leaves out a key holding `undefined`.
 - `contains`, `indexOf` and `distinct` refuse a list whose items are of no key type, and `distinctBy` a key of none, NEXO3083 as they resolve and NEXO5042 as a call on a value of `Any` is evaluated, where they compared objects, lists and structured values by identity.
+- Each condition NEXO5012 shared has its own code: NEXO5043 for a value an extension's target doesn't take, NEXO5044 for an ambiguous selection, NEXO5045 for a value of no actual type, and NEXO5046 to NEXO5050 for a deferred call's values its member doesn't take. NEXO5012 keeps a member the actual type lacks.
+- NEXO3045, NEXO3065, NEXO4021 and NEXO4067, catalogued and never raised, are retired.

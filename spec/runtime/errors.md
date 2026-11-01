@@ -162,7 +162,6 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4019` | Positional parameters with a required one after an optional one | A module error naming the parameter |
 | `NEXO4020` | An indexer whose parameters are other than one required value parameter, its key | A module error naming the indexer |
 | `NEXO4053` | An indexer the host invokes | A module error naming the indexer |
-| `NEXO4021` | A function parameter on anything but a function the evaluator invokes | A module error naming the parameter |
 | `NEXO4054` | A function parameter that is optional or has a null policy | A module error naming the parameter |
 | `NEXO4055` | A function parameter an observation is given | A module error naming the parameter |
 | `NEXO4056` | A function the host invokes taking a parameter other than a value parameter | A module error naming the parameter |
@@ -183,7 +182,6 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4028` | A conversion operator neither of whose types is its module's | A module error naming the operator |
 | `NEXO4065` | A conversion operator on a type that is not data, or to a destination that is not data | A module error naming the operator |
 | `NEXO4066` | A conversion operator from a type to itself | A module error naming the operator |
-| `NEXO4067` | A conversion operator on a foreign source outside an extension | A module error naming the operator |
 | `NEXO4029` | Two members of one name on one receiver type of one module, two indexers among them only where their key types overlap, as signatures of one indexer never do | A module error naming both |
 | `NEXO4068` | Two unnamed indexers for one receiver type of one module whose key types overlap, as signatures of one indexer never do | A module error naming both |
 | `NEXO4069` | Two operators of one name and destination on one receiver type of one module | A module error naming both |
@@ -313,3 +311,5 @@ A code of the runtime's conditions leaves its table only by being retired here, 
 | `NEXO2642` | A namespace naming no module the registry held, a code of language `1.0.0-alpha.33` alone: a namespace names a local name its imports give, `NEXO2028`, and an import of a module the registry doesn't hold is `NEXO3002` | `1.0.0-alpha.34` |
 | `NEXO4557` | A module named by a reserved word, which text reached only through an import binding, a code of language `1.0.0-alpha.33` alone: the script imports it and reads its namespace with `@` | `1.0.0-alpha.34` |
 | `NEXO3501` | An access a definition wrote selecting an extension explicitly, refused before text wrote extension access, a code of language `1.0.0-alpha.33` alone: an extension access is resolved through its extension | `1.0.0-alpha.34` |
+| `NEXO4021` | A function parameter on anything but a function the evaluator invokes, never raised: a property and an operator take no parameters (`NEXO4030`), an indexer one value parameter, its key (`NEXO4020`), and a function the host invokes value parameters alone (`NEXO4056`) | `1.0.0-beta.14` |
+| `NEXO4067` | A conversion operator on a foreign source outside an extension, never raised: an operator outside an extension stands in the members of its source type, which its own module declares, so its source is never foreign | `1.0.0-beta.14` |

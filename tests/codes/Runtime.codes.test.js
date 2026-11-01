@@ -456,6 +456,46 @@ describe('the runtime codes', () => {
             expectNexoError(holding(1, '(word:held):device'), 'NEXO5012', 'evaluation');
         });
 
+        it('NEXO5043: a value of Any an extension access gives an extension whose target does not take it', () => {
+            expectNexoError(holding(1, '(word:held):StringExtensions.size'), 'NEXO5043', 'evaluation');
+        });
+
+        it('NEXO5044: a deferred access several declarations apply to, none more specific than the others', () => {
+            behaviors = { held: 'oat' };
+            const sizes = nexo.createModule('sizes', { types: [extensionDeclaration('Sizes', 'String', [createPropertyDeclaration('size', 'Number', { updates: constantUpdates, impl: () => 0 })])] });
+            const error = errorThrownBy(() => createImportingRegistry([createPantry(), sizes]).resolve('(word:held):size', { word: 'oat' }).createEvaluator({ word: 'oat' }).evaluate());
+
+            expectNexoError(error, 'NEXO5044', 'evaluation');
+            expect(error.message).toContain("is declared by 'pantry' and 'sizes'");
+        });
+
+        it('NEXO5045: a value a deferred access is selected by that has no actual type', () => {
+            expectNexoError(holding(() => 1, '(word:held).size'), 'NEXO5045', 'evaluation');
+        });
+
+        it('NEXO5046: a deferred call given more values than its selected member takes', () => {
+            expectNexoError(holding(2, '(word:held):order(1, 2)'), 'NEXO5046', 'evaluation');
+        });
+
+        it('NEXO5047: a deferred call leaving out a value its selected member requires', () => {
+            expectNexoError(holding(2, '(word:held):order()'), 'NEXO5047', 'evaluation');
+        });
+
+        it('NEXO5048 and NEXO5049: a deferred call to a member taking options given no object, and an object field it has no parameter for', () => {
+            const tuning = nexo.createModule('tuning', {
+                types: [extensionDeclaration('Tunings', 'Number', [createFunctionDeclaration('tune', 'Number', { updates: derivedUpdates, arguments: 'options', parameters: [createValueParameterDeclaration('level', 'Number')], impl: ({ args }) => args.level })])],
+            });
+            const failing = text => errorThrownBy(() => createImportingRegistry([createPantry(), tuning]).resolve(text, { word: 'oat' }).createEvaluator({ word: 'oat' }).evaluate());
+
+            behaviors = { held: 2 };
+            expectNexoError(failing('(word:held):tune(1)'), 'NEXO5048', 'evaluation');
+            expectNexoError(failing('(word:held):tune({ speed = 1 })'), 'NEXO5049', 'evaluation');
+        });
+
+        it('NEXO5050: a deferred call whose selected member takes a function, which a call selected as it is evaluated never gives', () => {
+            expectNexoError(holding('oat', '(word:held):check(1)'), 'NEXO5050', 'evaluation');
+        });
+
         it('NEXO5013: a deferred access whose selection would be a host call', () => {
             expectNexoError(holding('oat', '{ count = (word:held):order(1) }'), 'NEXO5013', 'evaluation');
         });

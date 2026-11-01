@@ -48,6 +48,10 @@ describe('the diagnostic codes', () => {
         expect([...temporary].filter(code => !used.has(code))).toEqual([]);
     });
 
+    it('each code the catalog holds is one the sources raise, so none is catalogued and never raised', () => {
+        expect([...catalog].filter(code => !used.has(code))).toEqual([]);
+    });
+
     it('no retired code is raised or catalogued again', () => {
         expect([...retired].filter(code => used.has(code) || temporary.has(code))).toEqual([]);
     });

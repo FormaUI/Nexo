@@ -605,3 +605,17 @@ Forty decisions were taken while implementing the declarations, member selection
   - A list's `select` describes its items by its own record, so a dictionary's `select` describing its values by its own record is the rule the list follows.
   - A result exports a dictionary as its entries' data, and a host matches by what a list's lineage gives, which a script reaching a dictionary's entries can project, `prices.entries { name = it.key }`.
 - **Declined:** Records of a dictionary's entries, kept through `toDictionary`, `groupBy` and `where`: it would design a lineage for keys and values the language deferred with dictionary sources, for no host that needs one.
+
+<a id="d42"></a>
+
+## D42 — Each condition has its code, and a code that is never raised retires
+
+*November 1, 2026*
+
+- **Kind:** Language and runtime contracts, closing gaps between the specification and the code.
+- **Decision:** NEXO5012 keeps a deferred access whose receiver's actual type has no member of its name, and each condition it shared takes a code of its own, NEXO5043 to NEXO5050, each the evaluation's counterpart of a condition resolution codes apart. NEXO3045, NEXO3065, NEXO4021 and NEXO4067, catalogued and never raised, retire, each row of the code that identifies their condition saying so. A test holds every catalogued code to one the sources raise. The language advances to `1.0.0-beta.14`.
+- **Why:**
+  - A code identifies its condition, and distinct conditions never share one. NEXO5012 also identified an ambiguous selection, a value an extension's target doesn't take and five ways a call's values don't fit its member, which resolution reports where it knows the receiver's type as NEXO3024, NEXO3027, NEXO3058, NEXO3080, NEXO3057, NEXO3018 and NEXO3079, and a value of no actual type, which only an evaluation meets.
+  - A retired code is the catalog's record of a condition that no longer has one. The four were never raised because their conditions are others': two object-root references of different fields are branches of different types, an argument checked against its receiver's binding is an argument of the wrong type, a function parameter is refused by the codes of the declarations that take none, and an operator outside an extension always stands in its own module's type.
+  - Raising NEXO3045 and NEXO3065 instead would give one condition two codes by where its types came from.
+- **Declined:** One code for every way a deferred call's values don't fit its member: resolution tells those conditions apart, and an evaluation finding the same facts later tells them apart too.

@@ -7,6 +7,23 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-14"></a>
+
+## `1.0.0-beta.14`
+
+*November 1, 2026 · definition format 38*
+
+**Language**
+
+- [Evaluation errors](spec/language/errors.md#evaluation-errors): each condition NEXO5012 shared has a code of its own, as distinct conditions never share one. NEXO5012 keeps a deferred access whose receiver's actual type has no member of its name. A value of `Any` an extension's target doesn't take is NEXO5043; several applicable declarations none of which is more specific, NEXO5044; a value of no actual type, NEXO5045; and a deferred call given more values than its selected member takes, NEXO5046, leaving out one it requires, NEXO5047, giving a value that is no object where it takes options, NEXO5048, an object field it has no parameter for, NEXO5049, or meeting a parameter a call selected as it is evaluated never gives a value, NEXO5050.
+- [Retired codes](spec/language/errors.md#diagnostics-retired-codes): NEXO3045 and NEXO3065, catalogued and never raised, are retired. Two references to the object root with different fields available are branches of different types (NEXO3041), and an argument that does not satisfy a binding its receiver established is an argument of the wrong type (NEXO3042), which each row now says.
+
+**Runtime**
+
+- [Retired codes](spec/runtime/errors.md#runtime-retired-codes): NEXO4021 and NEXO4067, catalogued and never raised, are retired: what a function parameter stands on is refused by the codes of the declarations that take none, and an operator outside an extension never has a foreign source.
+
+**Breaking:** a host that matches NEXO5012 for one of the conditions it shared matches that condition's code now: NEXO5043 to NEXO5050, as listed above.
+
 <a id="v1-0-0-beta-13"></a>
 
 ## `1.0.0-beta.13`

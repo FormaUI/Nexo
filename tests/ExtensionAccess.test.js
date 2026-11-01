@@ -251,7 +251,7 @@ describe('extension access', () => {
             expect(evaluate('{ unnamed = Home.item("lamp"):reset(1), named = Home.item("lamp"):Device.reset(1) }')).toEqual({ unnamed: 'lamp reset 1', named: 'lamp reset 1' });
             expect(resolve('Home.item("lamp"):Device.usage').deferredAccesses).toEqual([]);
             expect(resolve('Home.item("lamp"):usage').deferredAccesses).toEqual([{ pointer: '/expression', name: 'usage' }]);
-            expect(failure('Home.item("word"):Device.usage')).toMatchObject({ code: 'NEXO5012', location: { pointer: '/expression' }, message: expect.stringContaining('read through an extension of Device, and its receiver is String') });
+            expect(failure('Home.item("word"):Device.usage')).toMatchObject({ code: 'NEXO5043', location: { pointer: '/expression' }, message: expect.stringContaining('read through an extension of Device, and its receiver is String') });
             expect(failure('Home.item("word"):usage')).toMatchObject({ code: 'NEXO5012', message: expect.stringContaining("'usage' is not available on String") });
             expect(failure('Home.item("lamp").usage')).toMatchObject({ code: 'NEXO5012', message: expect.stringContaining("'usage' is not available on Light") });
         });

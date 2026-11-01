@@ -178,7 +178,6 @@ In this document:
 | `NEXO3063` | An extension access written with `:` whose receiver can be null | A validation error giving `?:` |
 | `NEXO3028` | A call's type parameter its arguments bind ambiguously or not at all | A validation error naming the parameter |
 | `NEXO3064` | A call's type parameter given candidates of different types | A validation error naming the parameter and each candidate |
-| `NEXO3065` | An argument that does not satisfy a binding its receiver established | A validation error naming the argument and the binding |
 | `NEXO3029` | A deferred call given an argument whose reading depends on the declaration it selects, an implicit body or a predicate | A validation error giving the arrow function to write, or saying to make the receiver known or to select its extension explicitly |
 | `NEXO3030` | An equality of two values whose types fit neither way | A validation error naming the types, and the test to write where a value is compared with the name of one of its Boolean members |
 | `NEXO3066` | An equality of a value that is not a string, number, Boolean or reference value with one that is not null | A validation error naming the types |
@@ -203,8 +202,8 @@ In this document:
 | `NEXO3039` | A comparison operand that can be null | A validation error naming the operand, and the fallback to give it |
 | `NEXO3078` | A comparison operand that is not a number | A validation error naming the operand |
 | `NEXO3040` | An `and` or an `or` whose operands give values no one type holds | A validation error naming them, and the conditional to write where null is an acceptable alternative |
-| `NEXO3041` | Branches of different types | A validation error naming the types |
-| `NEXO3042` | A receiver, an argument, an expression or a binding of the wrong type | A validation error naming where, the expected type and the type found |
+| `NEXO3041` | Branches of different types, a conditional's or a coalescing operator's, two references to the object root with different object fields available among them, as [object root references](values.md#locals-object-root-references) set out | A validation error naming the types |
+| `NEXO3042` | A receiver, an argument, an expression or a binding of the wrong type, an argument that does not satisfy a binding its receiver established among them, checked against the type the binding gives its parameter | A validation error naming where, the expected type and the type found |
 | `NEXO3079` | An argument of the wrong kind, and a call of a local whose possible functions read its arguments differently | A validation error naming the argument and the kind it takes, or the functions and where their contracts part |
 | `NEXO3080` | A missing required argument | A validation error naming the argument |
 | `NEXO3081` | A collection expression whose items, or whose dictionary's values, share no type | A validation error naming the types |
@@ -221,7 +220,6 @@ In this document:
 | `NEXO3082` | A function resolution finds as a collection expression's item or value, or as an indexer's key: a script's function, a reference or a local holding one | A validation error at the item, the value or the key, saying it is data |
 | `NEXO3043` | A result that would contain a reference value | A validation error |
 | `NEXO3044` | An object field read through `root` whose initializer has not completed where `root` is written | A validation error naming the object fields completed there |
-| `NEXO3045` | A conditional or a coalescing operator choosing between `root` references of different object roots or object field sets | A validation error naming them |
 | `NEXO3046` | A read, by its name or through `root`, of an option its member declares as an expression or a predicate, or of one given an implicit body | A validation error: `Option 'by' is an expression evaluated by the member against the implicit parameter it supplies; it has no single value to read here` |
 | `NEXO3047` | An object field or a result that would hold `root` | A validation error: `The field 'copy' would hold root, the object being built, which no result holds; read its fields, as root.name` |
 | `NEXO3048` | A host call anywhere but the script's terminal operation: in an object field, an argument, a condition, a conditional binding, an operand, a function's body or another call's result projection | A validation error |
@@ -239,7 +237,15 @@ In this document:
 | `NEXO5016` | A value a conversion rejects | An evaluation error naming the conversion, the reason it gave and where it stands; null under `try` |
 | `NEXO5005` | A division or a remainder by zero | An evaluation error at the operation |
 | `NEXO5020` | An arithmetic result no finite number holds | An evaluation error at the operation |
-| `NEXO5012` | A deferred access whose receiver's actual type lacks the member, or doesn't satisfy it | An evaluation error naming the access and the actual type |
+| `NEXO5012` | A deferred access whose receiver's actual type has no member of its name in the form it is written | An evaluation error naming the access and the actual type |
+| `NEXO5043` | A value of `Any` an extension access is given that its extension's target does not take | An evaluation error naming the access, the target and the actual type |
+| `NEXO5044` | A deferred access whose receiver's actual type several declarations apply to, none of them its owner's and none more specific than every other's | An evaluation error naming the access, the actual type and the modules |
+| `NEXO5045` | A value a deferred access is selected by, its receiver or a value its call gives, that has no actual type: a function, an object no module recognizes that is no data, data that reaches itself, or a reference modules recognize as types none of which is beneath the others | An evaluation error naming the access and why |
+| `NEXO5046` | A deferred call given more values than its selected member takes, more than one where it takes options | An evaluation error naming the access and how many it takes |
+| `NEXO5047` | A deferred call leaving out a value its selected member requires | An evaluation error naming the access and the argument |
+| `NEXO5048` | A deferred call given a value that is no object where its selected member takes its arguments as the object fields of one object | An evaluation error naming the access and the value |
+| `NEXO5049` | A deferred call given an object field its selected member has no parameter for | An evaluation error naming the field and the parameters the member takes |
+| `NEXO5050` | A deferred call whose selected member takes an expression, a predicate, a function or a fixed argument, which a call selected as it is evaluated never gives | An evaluation error naming the argument and what it takes |
 | `NEXO5500` | An interpolation given what is neither a string nor a number when it is evaluated, as an operand of `Any` can be | An evaluation error naming the interpolation and the value |
 | `NEXO5501` | An ordering given what is not a number when it is evaluated, as an operand of `Any` can be | An evaluation error naming the operator and the value |
 | `NEXO5505` | An arithmetic operand or a negated value that is not a number when it is evaluated, as an operand of `Any` can be | An evaluation error naming the operator and the value |
@@ -280,3 +286,5 @@ A code of the language's conditions leaves its table only by being retired here,
 | `NEXO1065` | An import whose local name is a reserved word, `Nexo` or the name of one of Nexo's own types or extensions, each a name `@` or the import's own declaration distinguishes | `1.0.0-alpha.34` |
 | `NEXO1500` | A colon or `?:` in a chain followed by a name, which language `1.0.0-alpha.33` refused, a code of that language alone: it begins an extension access, and one brackets follow directly is `NEXO1014` | `1.0.0-alpha.34` |
 | `NEXO1071` | An extension access whose names fitted none of its forms, more than three or three whose first named no module, which language `1.0.0-alpha.40` refused as it read them, a code of that language alone: the declarations its names name decide how they read | `1.0.0-alpha.41` |
+| `NEXO3045` | A conditional or a coalescing operator choosing between `root` references of different object roots or object field sets, never raised: two such references are of different types, which branches are refused for (`NEXO3041`), and the operands of an `and` or an `or` (`NEXO3040`) | `1.0.0-beta.14` |
+| `NEXO3065` | An argument that does not satisfy a binding its receiver established, never raised: it is an argument of the wrong type, checked against the type the binding gives its parameter (`NEXO3042`) | `1.0.0-beta.14` |

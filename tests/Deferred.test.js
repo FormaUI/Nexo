@@ -169,9 +169,11 @@ describe('values of Any', () => {
 
         it('fails a call its selected member doesn\'t take: a value its parameter doesn\'t admit, too many values, one left out that is required, and a field it has no parameter of', () => {
             expect(failure('shelf.item("light").dim("high")')).toMatchObject({ code: 'NEXO5021', message: expect.stringContaining("The argument 'level' of 'dim' on Light is declared Number, and is given \"high\"") });
-            expect(failure('shelf.item("light").dim(1, 2)')).toMatchObject({ code: 'NEXO5012', message: expect.stringContaining("'dim' on Light takes one argument, and is given 2") });
-            expect(failure('shelf.item("light").dim()')).toMatchObject({ code: 'NEXO5012', message: expect.stringContaining("'dim' on Light requires the argument 'level'") });
-            expect(failure('shelf.item("light").tune({ speed = 2 })')).toMatchObject({ code: 'NEXO5012', message: expect.stringContaining("has no parameter 'speed'") });
+            expect(failure('shelf.item("light").dim(1, 2)')).toMatchObject({ code: 'NEXO5046', location: { pointer: '/expression' }, message: expect.stringContaining("'dim' on Light takes one argument, and is given 2") });
+            expect(failure('shelf.item("light").tune({ level = 1 }, 2)')).toMatchObject({ code: 'NEXO5046', message: expect.stringContaining('takes its arguments as the object fields of one object, and is given 2 values') });
+            expect(failure('shelf.item("light").dim()')).toMatchObject({ code: 'NEXO5047', location: { pointer: '/expression' }, message: expect.stringContaining("'dim' on Light requires the argument 'level'") });
+            expect(failure('shelf.item("light").tune(2)')).toMatchObject({ code: 'NEXO5048', location: { pointer: '/expression' }, message: expect.stringContaining('takes its arguments as the object fields of one object, and is given 2') });
+            expect(failure('shelf.item("light").tune({ speed = 2 })')).toMatchObject({ code: 'NEXO5049', location: { pointer: '/expression' }, message: expect.stringContaining("has no parameter 'speed'") });
         });
 
         it('compares by key equality the items of a list whose actual item type is a key type alone, failing one of objects or of values of Any', () => {
@@ -187,7 +189,7 @@ describe('values of Any', () => {
 
         it('fails a member its receiver\'s actual type lacks, a value of no type the vocabulary knows, and a host call, which resolution alone selects, before invoking anything', () => {
             expect(failure('shelf.item("word").glow')).toMatchObject({ code: 'NEXO5012', location: { pointer: '/expression' }, message: expect.stringContaining("'glow' is not available on String") });
-            expect(failure('shelf.item("func").power')).toMatchObject({ code: 'NEXO5012' });
+            expect(failure('shelf.item("func").power')).toMatchObject({ code: 'NEXO5045', location: { pointer: '/expression' }, message: expect.stringContaining("'power' is selected by the types of the values it is given") });
             expect(failure('{ count = shelf.item("light").order(1) }')).toMatchObject({ code: 'NEXO5013', message: expect.stringContaining("'order' on Light is a host call") });
         });
 

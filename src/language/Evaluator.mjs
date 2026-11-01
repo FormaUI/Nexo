@@ -1149,13 +1149,13 @@ export class Evaluator {
         this.#fail('NEXO5022', `'${Evaluator.#writtenNameOf(node)}' is read through an extension on a value of Any, and its receiver is null: write '?:' before the extension to read it where its receiver is not null`, this.#pointerOf(node));
     }
 
-    /** Checks a value of Any an extension access is given against the extension's target, before anything is invoked, a value outside it, or of no type the vocabulary knows, failing the access (NEXO5012). */
+    /** Checks a value of Any an extension access is given against the extension's target, before anything is invoked, a value outside it failing the access (NEXO5043), and one of no type the vocabulary knows (NEXO5045). */
     #requireReceiverOf(node, declaration, receiver) {
         const written = Evaluator.#writtenNameOf(node);
         const actualType = this.#getActualType(receiver, `the access '${written}'`, this.#failSelectionOf(node));
 
         if (!this.#registry.typeChecker.matchesReceiver(declaration, actualType)) {
-            this.#fail('NEXO5012', `'${written}' is read through an extension of ${this.#registry.getReceiverTypes(declaration).join(', ')}, and its receiver is ${actualType}, which does not satisfy it`, this.#pointerOf(node));
+            this.#fail('NEXO5043', `'${written}' is read through an extension of ${this.#registry.getReceiverTypes(declaration).join(', ')}, and its receiver is ${actualType}, which does not satisfy it`, this.#pointerOf(node));
         }
     }
 
@@ -1257,8 +1257,8 @@ export class Evaluator {
     /**
      * The selection a deferred access makes on a receiver of the type, through the selector, as an access its receiver's type selects during resolution: a property of a structured type's data, by its name; a member to
      * invoke, with the type arguments its receiver binds, each parameter's declared type, the check of each a type parameter of its own leaves unwritten, and its invocation where it declares none; or the failure of a type
-     * that has no applicable candidate, or several none is more specific than, NEXO5012, of a host call, NEXO5013, which resolution alone selects, and of a member comparing items of no key type by key equality,
-     * NEXO5042.
+     * that has no applicable candidate, NEXO5012, or several none is more specific than, NEXO5044, of a host call, NEXO5013, which resolution alone selects, and of a member comparing items of no key type by key
+     * equality, NEXO5042.
      */
     #selectDeferred(node, candidates, receiverType) {
         const written = Evaluator.#writtenNameOf(node);
@@ -1267,7 +1267,7 @@ export class Evaluator {
         if (outcome.kind === 'ambiguous') {
             const modules = outcome.declarations.map(declaration => `'${this.#registry.getDeclaringModuleName(declaration)}'`);
 
-            return { kind: 'failure', code: 'NEXO5012', message: `'${written}' on ${receiverType}, the type its receiver's value is of, is declared by ${modules.join(' and ')}, none of them its owner and none more specific than the others` };
+            return { kind: 'failure', code: 'NEXO5044', message: `'${written}' on ${receiverType}, the type its receiver's value is of, is declared by ${modules.join(' and ')}, none of them its owner and none more specific than the others` };
         }
 
         if (outcome.kind !== 'selected') {
@@ -1323,8 +1323,9 @@ export class Evaluator {
 
     /**
      * The arguments a deferred call gives the member its selection invokes, by parameter name, with the invocation of the result type they bind: the values written in order, or the object fields of the one plain object a
-     * member taking options is given, each parameter left out taking its default. It answers null where a null value's parameter propagates null. A value whose parameter it doesn't satisfy fails the call (NEXO5021), and
-     * so do too many values, a parameter none supplies that requires one, and a parameter a value never satisfies, a function's, an expression's or a fixed one's (NEXO5012).
+     * member taking options is given, each parameter left out taking its default. It answers null where a null value's parameter propagates null. A value whose parameter it doesn't satisfy fails the call (NEXO5021),
+     * and so do too many values (NEXO5046), a parameter none supplies that requires one (NEXO5047), a value that is no object where the member takes options (NEXO5048), an object field it has no parameter of
+     * (NEXO5049), and a parameter a value never satisfies, a function's, an expression's, a predicate's or a fixed one's (NEXO5050).
      */
     /**
      * A position's offset as an index or a range takes it: a nonnegative safe integer, never rounded, `-0` as `0`, or, for a range's boundary, an index; any other value fails where the index or the range stands
@@ -1353,20 +1354,24 @@ export class Evaluator {
         if (declaration.arguments === 'options' && values.length > 0) {
             const [options] = values;
 
-            if (values.length > 1 || !ObjectUtils.isPlainObject(options)) {
-                this.#fail('NEXO5012', `${on} takes its arguments as the object fields of one object`, pointer);
+            if (values.length > 1) {
+                this.#fail('NEXO5046', `${on} takes its arguments as the object fields of one object, and is given ${values.length} values`, pointer);
+            }
+
+            if (!ObjectUtils.isPlainObject(options)) {
+                this.#fail('NEXO5048', `${on} takes its arguments as the object fields of one object, and is given ${Evaluator.#describe(options)}`, pointer);
             }
 
             for (const [name, value] of Object.entries(options)) {
                 if (!parameters.some(({ parameter }) => parameter.name === name)) {
-                    this.#fail('NEXO5012', `${on} has no parameter '${name}'; it takes ${parameters.map(({ parameter }) => parameter.name).join(', ')}`, pointer);
+                    this.#fail('NEXO5049', `${on} has no parameter '${name}'; it takes ${parameters.map(({ parameter }) => parameter.name).join(', ')}`, pointer);
                 }
 
                 supplied.set(name, value);
             }
         } else {
             if (values.length > parameters.length) {
-                this.#fail('NEXO5012', `${on} takes ${parameters.some(({ parameter }) => !parameter.required) ? 'at most ' : ''}${parameters.length === 1 ? 'one argument' : `${parameters.length} arguments`}, and is given ${values.length}`, pointer);
+                this.#fail('NEXO5046', `${on} takes ${parameters.some(({ parameter }) => !parameter.required) ? 'at most ' : ''}${parameters.length === 1 ? 'one argument' : `${parameters.length} arguments`}, and is given ${values.length}`, pointer);
             }
 
             values.forEach((value, index) => supplied.set(parameters[index].parameter.name, value));
@@ -1378,7 +1383,7 @@ export class Evaluator {
         for (const { parameter, declaredType } of parameters) {
             if (!supplied.has(parameter.name)) {
                 if (parameter.required) {
-                    this.#fail('NEXO5012', `${on} requires the argument '${parameter.name}'`, pointer);
+                    this.#fail('NEXO5047', `${on} requires the argument '${parameter.name}'`, pointer);
                 }
 
                 args[parameter.name] = parameter.default;
@@ -1388,7 +1393,7 @@ export class Evaluator {
             if (parameter.kind === 'expression' || parameter.kind === 'predicate' || parameter.kind === 'function' || parameter.fixed === true) {
                 const taken = parameter.fixed === true ? 'a fixed value, which selects its result type' : parameter.kind === 'function' ? 'a function' : `an ${parameter.kind}`;
 
-                this.#fail('NEXO5012', `${on} takes ${taken} as '${parameter.name}', and a call selected as it is evaluated gives values alone`, pointer);
+                this.#fail('NEXO5050', `${on} takes ${taken} as '${parameter.name}', and a call selected as it is evaluated gives values alone`, pointer);
             }
 
             const value = supplied.get(parameter.name);
@@ -1511,9 +1516,9 @@ export class Evaluator {
         return fail(`${Evaluator.#describe(value)} has none the vocabulary knows`);
     }
 
-    /** How a deferred access fails where its receiver's value, or an argument's, has no actual type, which it is selected by (NEXO5012). */
+    /** How a deferred access fails where its receiver's value, or an argument's, has no actual type, which it is selected by (NEXO5045). */
     #failSelectionOf(node) {
-        return reason => this.#fail('NEXO5012', `'${Evaluator.#writtenNameOf(node)}' is selected by the types of the values it is given, and ${reason}`, this.#pointerOf(node));
+        return reason => this.#fail('NEXO5045', `'${Evaluator.#writtenNameOf(node)}' is selected by the types of the values it is given, and ${reason}`, this.#pointerOf(node));
     }
 
     /** The name a message gives an access, its member's name, a call's its callee's, or `[…]` for an unnamed indexer. */
