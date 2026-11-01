@@ -525,3 +525,19 @@ Forty decisions were taken while implementing the declarations, member selection
   - A permanent namespace for Nexo in scripts, which an alias may spell, `import Nexo = Home`, and which the language declined before.
   - Reading `Nexo.Number` in a script where no import gives `Nexo`: a script's qualifiers are the local names its imports give, and the name would mean two things by whether an import gives it.
   - `Nexo.List<T>`: a qualified name never takes type arguments, and a generic type written with them is always Nexo's.
+
+<a id="d37"></a>
+
+## D37 — A parameter of a type parameter takes a default every type admits
+
+*November 1, 2026*
+
+- **Kind:** Language contract, closing an open decision.
+- **Decision:** A parameter whose type writes a type parameter takes a default every type it may bind to admits: null where its type is nullable, `T?`, and a list of none of its values, `[]` for `List<T>` or `[null]` for `List<T?>`. Any other default is refused when the module is registered (NEXO4548). The language advances to `1.0.0-beta.10`.
+- **Why:**
+  - A default is part of a member's contract, and every call reads it. A type parameter binds to any type at the call, so a default holds for every call only where every type admits it. `0` for a `T` reached an implementation whose `T` a call bound to `String`.
+  - Registration checks every declaration, a default among them, before anything resolves against it, so a member is valid or not whatever calls it, as registration already decides that a type parameter has a source.
+  - A dictionary's, a pair's and a position's parameter already take no default but null, for the same reason: no other default holds for every value of the type.
+- **Declined:**
+  - Refusing the call that leaves the argument out where the default doesn't fit its binding. A member would be valid for some calls and not for others, a deferred call would find out only as it is evaluated, and a default no call can take would still register.
+  - A parameter of a type parameter taking no default at all. Null for `T?` and `[]` for `List<T>` fit every binding, and a module needs them.

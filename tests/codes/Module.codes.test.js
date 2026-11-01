@@ -332,6 +332,7 @@ describe('the module error codes', () => {
             expectModuleCode(registering(module('charts', { members: [functionDeclaration({ parameters: [parameterDeclaration({ required: false, default: 'many' })] })] })), 'NEXO4548');
             expectModuleCode(registering(module('charts', { members: [functionDeclaration({ parameters: [parameterDeclaration({ required: false, default: Infinity })] })] })), 'NEXO4548');
             expectModuleCode(registering(module('charts', { members: [functionDeclaration({ parameters: [parameterDeclaration({ type: 'List<Number>', required: false, default: [1, , 3] })] })] })), 'NEXO4548');
+            expectModuleCode(registering(module('charts', { types: [extensionDeclaration('Lists<T>', 'List<T>', [functionDeclaration({ parameters: [parameterDeclaration({ type: 'T', required: false, default: 0 })] })])] })), 'NEXO4548');
         });
 
         it('NEXO4563: a declared dictionary whose key type is no key type', () => {

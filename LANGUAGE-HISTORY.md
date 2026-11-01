@@ -7,6 +7,22 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-10"></a>
+
+## `1.0.0-beta.10`
+
+*November 1, 2026 · definition format 38*
+
+**Language**
+
+- [Binding a call's parameters](spec/language/types.md#types-type-parameters-binding): a default fits every binding. A parameter whose type writes a type parameter takes a default every type it may bind to admits, null for `T?` and `[]` for `List<T>`, so an argument left out never gives an implementation a value its binding refuses. A default of any data was taken, and `0` reached an implementation whose `T` a call bound to `String`.
+
+**Runtime**
+
+- [Parameter declaration keys](spec/runtime/members.md#members-parameter-declaration-keys): registering a module refuses a default of a parameter of a type parameter that not every type admits (NEXO4548).
+
+**Breaking:** a module declaring such a default, as `0` for a parameter of type `T`, is refused at registration. Make the parameter's type nullable and its default null, `T?` and `null`, and give the value the implementation used where its argument is null; or make the parameter's type concrete where the value is of one type.
+
 <a id="v1-0-0-beta-9"></a>
 
 ## `1.0.0-beta.9`

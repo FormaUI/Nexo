@@ -77,7 +77,7 @@ A parameter is a value, an expression, a predicate or a function. An expression 
 | `kind` | `value`, `expression`, `predicate` or `function` |
 | `type` | A value's type, the type an expression produces, `Boolean` for a predicate, the truthiness its implementation receives (NEXO4540), and a function's result's |
 | `required` | Whether its argument must be given, a Boolean |
-| `default` | The value a missing optional argument takes; a required parameter declares none (NEXO4538). A parameter of a dictionary, a pair or a position type takes no default but null (NEXO4548), since no default holds one |
+| `default` | The value a missing optional argument takes; a required parameter declares none (NEXO4538). A parameter of a dictionary, a pair or a position type takes no default but null (NEXO4548), since no default holds one, and one whose type writes a [type parameter](../language/types.md#types-type-parameters) takes a default every type it may bind to admits, null where it is nullable or a list of none of its values, as `[]` (NEXO4548), since a call may bind it to any type |
 | `nulls` | Its [null policy](../language/members.md#nullability-a-null-argument-follows-the-parameter), `propagate` or `accept`; a function parameter leaves it out (NEXO4054) |
 | `fixed` | Whether its argument is [fixed](../language/members.md#arguments-fixed), a Boolean (NEXO4541), which a function parameter leaves out; a fixed parameter is a value parameter of type `String` (NEXO4545) |
 | `selects`, `selector` | What a fixed parameter selects, `type`, and the type selector it selects through, which a parameter that is not fixed declares neither of (NEXO4542) |

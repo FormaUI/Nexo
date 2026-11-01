@@ -104,18 +104,23 @@ describe('NexoRegistry', () => {
         expect(registering('ranges.Range', { start: -0, points: [Number.MAX_VALUE] })).not.toThrow();
     });
 
-    it('refuses a type parameter\'s default that is no data, at the top level and within another type, and takes any data, whatever the parameter binds to', () => {
+    it('refuses a type parameter\'s default that not every type admits, at the top level and within another type, and takes one every type admits, whatever the parameter binds to', () => {
         const registering = (type, value) => () => new NexoRegistry([Vocabulary.module, new NexoModule('lists', {
             types: [extensionDeclaration('Lists<T>', 'List<T>', [functionDeclaration({ name: 'pick', result: 'T?', parameters: [parameterDeclaration({ name: 'fallback', type, required: false, default: value })] })])],
         })]);
-        const refused = [['T', Infinity], ['T', NaN], ['T', () => 1], ['T', [1, , 3]], ['T', [1, Infinity]], ['T', { f: () => 1 }], ['T', new Date(0)], ['List<T>', [Infinity]]];
+        const refused = [['T', 0], ['T', 'x'], ['T', false], ['T', null], ['T', { a: 1 }], ['T?', 0], ['T', Infinity], ['T', () => 1], ['List<T>', [1]], ['List<T>', [null]], ['List<T?>', ['x', null]]];
 
         for (const [type, value] of refused) {
-            expect(expectModuleError(registering(type, value)).message, `${type} ${String(value)}`).toContain(`The default of 'fallback' is no ${type}`);
+            expect(errorThrownBy(registering(type, value)), `${type} ${JSON.stringify(value)}`).toMatchObject({
+                code: 'NEXO4548',
+                kind: 'module',
+                message: expect.stringContaining(`The default of 'fallback' is no ${type}, whatever T binds to: null where it is nullable, or a list of none of its values`),
+                location: { module: 'lists', type: 'Lists', declaration: 'pick' },
+            });
         }
 
-        for (const value of [0, 'x', false, [1, [2]], { a: [{ b: null }] }]) {
-            expect(registering('T', value), JSON.stringify(value)).not.toThrow();
+        for (const [type, value] of [['T?', null], ['List<T>', []], ['List<T>?', null], ['List<T?>', [null, null]], ['List<List<T>>', [[], []]]]) {
+            expect(registering(type, value), `${type} ${JSON.stringify(value)}`).not.toThrow();
         }
     });
 

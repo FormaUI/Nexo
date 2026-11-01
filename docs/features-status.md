@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.9` and definition version 38, the ninth beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.10` and definition version 38, the tenth beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.9` | `1.0.0-beta.9` |
+| Language | `1.0.0-beta.10` | `1.0.0-beta.10` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -51,7 +51,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Types identified by their module | [Type identity](../spec/language/types.md#types-type-identity) | Implemented | [`alpha.33`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-33) |
 | Imports, aliases and type imports, a host's among them, namespaces, module members and qualified access | [Imports](../spec/language/modules.md#scripts-imports), [namespaces](../spec/language/modules.md#namespaces) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | Extensions: the owner's members read with `.`, extension members with `:`, the most specific extension selected, an access's names read by the declarations they name | [Extensions](../spec/language/extensions.md) | Implemented | [`alpha.40`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-40) |
-| Type parameters, inferred at each call | [Type parameters](../spec/language/types.md#types-type-parameters) | Implemented; a type parameter's default is an [open decision](#open-decisions) | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
+| Type parameters, inferred at each call | [Type parameters](../spec/language/types.md#types-type-parameters) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | `Any`, its members selected as it is evaluated | [Values of `Any`](../spec/language/types.md#types-any) | Implemented in part: a function given to a deferred call is [deferred](#deferred) | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | Reference types in hierarchies, and the casts among them | [Reference types](../spec/language/types.md#reference-types) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | Structured values an object expression constructs where they are declared | [Constructing a structure](../spec/language/types.md#types-constructing-a-structure) | Implemented | [`alpha.36`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-36) |
@@ -140,9 +140,7 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 
 The decisions taken while implementing were reviewed together, and the outcome of each is in [decisions](decisions.md#implementation-decisions-reviewed): the rules they settled are stated in the specification, and the questions they left open are below.
 
-One open decision is recorded. [Decisions](decisions.md#d26) settles who may change data Nexo and its host share, and [D36](decisions.md#d36) how a module that declares a type spelled as one of Nexo's own names Nexo's.
-
-A type parameter's default is checked at registration to be data, and against what the parameter binds to nowhere, since resolution checks the arguments a call gives and passes a default left out as it is, so `0` reaches an implementation whose `T` is `String`. Whether resolution refuses such a call, or a parameter of a type parameter takes no default, is open.
+No open decision remains. [Decisions](decisions.md#d26) settles who may change data Nexo and its host share, [D36](decisions.md#d36) how a module that declares a type spelled as one of Nexo's own names Nexo's, and [D37](decisions.md#d37) which default a parameter of a type parameter takes.
 
 These gaps between the specification and the code, found by audits and by the review above, are each open until decided:
 

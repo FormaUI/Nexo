@@ -995,7 +995,11 @@ export class NexoRegistry {
                 const type = this.getDeclaredType(declaration, parameter.type);
 
                 if (Object.hasOwn(parameter, 'default') && !this.#admits(parameter.default, type)) {
-                    failAt(declaration)('NEXO4548', `The default of '${parameter.name}' is no ${parameter.type}`, declaration.name);
+                    // A type parameter binds to any type, so a default it writes holds for every call only where every type admits it.
+                    const typeParameters = NexoRegistry.#typeParametersOf(type);
+                    const whatever = typeParameters.length === 0 ? '' : `, whatever ${typeParameters.join(' and ')} binds to: null where it is nullable, or a list of none of its values`;
+
+                    failAt(declaration)('NEXO4548', `The default of '${parameter.name}' is no ${parameter.type}${whatever}`, declaration.name);
                 }
             }
         }
@@ -1355,7 +1359,8 @@ export class NexoRegistry {
 
     /**
      * Whether the type admits a default: a value of data, its nullability, its items and a structure's fields as declared, and never a node. A number is finite and a list holds a value at every index, at any depth,
-     * as every value an evaluation produces does. A type parameter admits any value of data, whatever it binds to, since what it binds to is known only where the member is called.
+     * as every value an evaluation produces does. A type parameter binds to any type at the call, so it admits a default every type admits alone: null where it is nullable, and no other value, so a list of it admits one
+     * of no items, or of nulls where its items are nullable, whatever the parameter binds to.
      */
     #admits(value, type) {
         if (value === null) {
@@ -1363,8 +1368,9 @@ export class NexoRegistry {
         }
 
         switch (type.kind) {
-            // A type parameter's default is data, whatever the parameter binds to; whether it fits that binding is checked nowhere yet. A default of Any is any data.
             case 'typeParameter':
+                return false;
+            // A default of Any is any data.
             case 'any':
                 return NexoRegistry.#isDataValue(value);
             case 'named': {
@@ -1386,6 +1392,13 @@ export class NexoRegistry {
             default:
                 return false;
         }
+    }
+
+    /** The type parameters the type writes, at any depth of its type arguments, each once, in the order written. */
+    static #typeParametersOf(type) {
+        const names = type.kind === 'typeParameter' ? [type.name] : type.typeArguments.flatMap(argument => NexoRegistry.#typeParametersOf(argument));
+
+        return [...new Set(names)];
     }
 
     /** Whether the value is data as a default holds it: null, a string, a Boolean, a finite number, a list holding a value at every index, or a plain object, each item and each field data in turn, at any depth. */
