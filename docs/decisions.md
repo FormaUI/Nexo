@@ -619,3 +619,18 @@ Forty decisions were taken while implementing the declarations, member selection
   - A retired code is the catalog's record of a condition that no longer has one. The four were never raised because their conditions are others': two object-root references of different fields are branches of different types, an argument checked against its receiver's binding is an argument of the wrong type, a function parameter is refused by the codes of the declarations that take none, and an operator outside an extension always stands in its own module's type.
   - Raising NEXO3045 and NEXO3065 instead would give one condition two codes by where its types came from.
 - **Declined:** One code for every way a deferred call's values don't fit its member: resolution tells those conditions apart, and an evaluation finding the same facts later tells them apart too.
+
+<a id="d43"></a>
+
+## D43 — The error class declares the factories a host builds with alone
+
+*November 1, 2026*
+
+- **Kind:** Implementation limitation, closed.
+- **Decision:** `NexoError` exposes the four factories [the runtime contract](../spec/runtime/errors.md#diagnostics-and-errors) and `nexo.d.ts` declare, `structure`, `validation`, `module` and `evaluation`, and nothing else. A syntax error, which stands in text, is made by Nexo's own code alone, and where an offset stands in a text is `TextPositions`', internal to Nexo. The language version stays `1.0.0-beta.14`: the contract already said so.
+- **Why:**
+  - The class is the package's one export a host builds errors with, so what it exposes is a contract. `syntax` and `locate` were reachable on it, undeclared, a surface a host could come to rely on that no version promised.
+  - A host reads no text of its own, as [D29](#d29) found when it declined declaring them, so it has no offset in a text to raise a syntax error at.
+  - Locating an offset is a text's concern, which `TextLocations` already relies on, never an error's.
+- **Declined:** Declaring them for hosts, as D29 declined: a host raises its own failures as structure, validation, module or evaluation errors.
+

@@ -18,7 +18,7 @@ A script passes through five stages. Each stage's output is the next one's input
 | Stage | What it produces | Source |
 | --- | --- | --- |
 | Reading | A lossless syntax tree of the text, every token and its trivia kept | `Tokenizer`, `Parser`, `SyntaxTree` |
-| Lowering | The definition, the script's JSON form, with the text location of each node | `Lowering`, `TextLocations` |
+| Lowering | The definition, the script's JSON form, with the text location of each node, each a line and a column of the text | `Lowering`, `TextLocations`, `TextPositions` |
 | Validation | The definition checked and frozen, whether text or a host produced it | `DefinitionValidator` |
 | Resolution | Every member resolved against a registry, or deferred to evaluation on a value of `Any`, the result typed, the used declarations and the deferred accesses recorded | `LanguageResolver`, `ScopeLocals`, `ResolvedDefinition` |
 | Evaluation | The value and its metadata, each read reported to the host | `Evaluator` |

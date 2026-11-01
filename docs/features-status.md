@@ -80,7 +80,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Observation types and targets | [Observations](../spec/runtime/observations.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Type selectors' keys as mappings | [Type selectors](../spec/runtime/type-selectors.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | The definition, its structural validation and canonical text | [Definition](../spec/runtime/definition.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
-| The error object, its factories and locations | [Errors](../spec/runtime/errors.md) | Implemented, with a [gap](#open-decisions): `NexoError`'s undeclared `syntax` and `locate` | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
+| The error object, its factories and locations | [Errors](../spec/runtime/errors.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | The host API named for Nexo | [Hosting Nexo](../spec/runtime/hosting.md) | Implemented | [`alpha.39`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-39) |
 | A tolerant reading that collects diagnostics without throwing | [Tooling](#tooling) | Planned | — |
 | Formatting that keeps a text's source form | [Tooling](#tooling) | Planned | — |
@@ -144,7 +144,7 @@ No open decision remains. [Decisions](decisions.md#d26) settles who may change d
 
 These gaps between the specification and the code, found by audits and by the review above, are each open until decided:
 
-- **Errors.** `NexoError` exposes `syntax` and `locate`, beside the four factories `nexo.d.ts` declares, and result paths are validated by `nexo.paths.validate` alone, never by `typeAt` and `valueAt`.
+- **Result paths.** Result paths are validated by `nexo.paths.validate` alone, never by `typeAt` and `valueAt`.
 
 Deferred items below require their stated trigger before design or implementation resumes.
 

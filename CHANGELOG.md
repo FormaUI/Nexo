@@ -30,3 +30,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - `contains`, `indexOf` and `distinct` refuse a list whose items are of no key type, and `distinctBy` a key of none, NEXO3083 as they resolve and NEXO5042 as a call on a value of `Any` is evaluated, where they compared objects, lists and structured values by identity.
 - Each condition NEXO5012 shared has its own code: NEXO5043 for a value an extension's target doesn't take, NEXO5044 for an ambiguous selection, NEXO5045 for a value of no actual type, and NEXO5046 to NEXO5050 for a deferred call's values its member doesn't take. NEXO5012 keeps a member the actual type lacks.
 - NEXO3045, NEXO3065, NEXO4021 and NEXO4067, catalogued and never raised, are retired.
+- `NexoError` exposes the four factories it declares alone; `NexoError.syntax` and `NexoError.locate`, never declared, are gone.

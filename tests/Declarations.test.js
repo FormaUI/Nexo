@@ -32,5 +32,6 @@ describe('the declarations', () => {
         ]);
         expect(errors[2].location).toEqual(location);
         expect(() => NexoError.module('NEXO2001', 'Out of range', {})).toThrow(TypeError);
+        expect(Object.getOwnPropertyNames(NexoError).filter(name => typeof NexoError[name] === 'function')).toEqual(['structure', 'validation', 'evaluation', 'module']);
     });
 });

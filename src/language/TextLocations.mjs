@@ -3,8 +3,8 @@
  */
 
 import { Lowering } from './Lowering.mjs';
-import { NexoError } from './NexoError.mjs';
 import { Parser } from './Parser.mjs';
+import { TextPositions } from './TextPositions.mjs';
 
 /** @typedef {import('./Parser.mjs').Span} Span */
 
@@ -63,7 +63,7 @@ export class TextLocations {
             const span = spans.get(current);
 
             if (span) {
-                return { pointer, ...NexoError.locate(this.#text, span.start) };
+                return { pointer, ...TextPositions.locate(this.#text, span.start) };
             }
 
             if (current === '') {

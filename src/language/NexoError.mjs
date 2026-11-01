@@ -2,6 +2,8 @@
  * NexoError — a Nexo failure, the code of its condition and its location
  */
 
+import { TextPositions } from './TextPositions.mjs';
+
 /** The first code of each kind's range of Nexo's own codes, which runs a thousand codes. */
 const CODE_RANGE_STARTS = { syntax: 1000, structure: 2000, validation: 3000, module: 4000, evaluation: 5000 };
 
@@ -43,11 +45,6 @@ export class NexoError extends Error {
         this.location = location;
     }
 
-    /** A text that does not follow the syntax, failing at the offset. */
-    static syntax(code, message, text, offset) {
-        return new NexoError('syntax', code, message, NexoError.locate(text, offset));
-    }
-
     /** A definition, or a binding, that does not follow the structure, failing at the location. */
     static structure(code, message, location) {
         return new NexoError('structure', code, message, location);
@@ -78,24 +75,6 @@ export class NexoError extends Error {
         if (code.startsWith('NEXO') && (own === null || Math.floor(Number(own[1]) / 1000) * 1000 !== CODE_RANGE_STARTS[kind])) {
             throw new TypeError(`The code ${code} is outside the range of Nexo's ${kind} codes, ${CODE_RANGE_STARTS[kind]} to ${CODE_RANGE_STARTS[kind] + 999}`);
         }
-    }
-
-    /** The offset's line and column in the text, each line break, LF, CRLF or a lone CR, beginning a line, so CRLF advances it once and its two characters count toward the offset. */
-    static locate(text, offset) {
-        let line = 1;
-        let lineStart = 0;
-
-        for (let index = 0; index < offset; index++) {
-            const character = text[index];
-
-            // A carriage return before a line feed is one line break with it, which the line feed ends.
-            if (character === '\n' || (character === '\r' && text[index + 1] !== '\n')) {
-                line++;
-                lineStart = index + 1;
-            }
-        }
-
-        return { offset, line, column: offset - lineStart + 1 };
     }
 
     static #describe(location) {
@@ -145,11 +124,12 @@ const raise = error => {
 
 /**
  * The factories Nexo's own code raises its errors with, each marking the error as one Nexo raised, and `isRaisedByNexo`, whether that marker is on an error, which a failure passing through a host's code keeps as it
- * is: a NexoError a host builds with the exported class carries none, so it stays apart from Nexo's own.
+ * is: a NexoError a host builds with the exported class carries none, so it stays apart from Nexo's own. A syntax error stands in text, which Nexo alone reads, so it is made here, at the text's offset, and
+ * the class declares no factory of it.
  * The package exports the class alone, whose factories a host builds its own errors with, so a host's error is never taken for Nexo's.
  */
 export const NexoErrors = Object.freeze({
-    syntax: (code, message, text, offset) => raise(NexoError.syntax(code, message, text, offset)),
+    syntax: (code, message, text, offset) => raise(new NexoError('syntax', code, message, TextPositions.locate(text, offset))),
     structure: (code, message, location) => raise(NexoError.structure(code, message, location)),
     validation: (code, message, location) => raise(NexoError.validation(code, message, location)),
     evaluation: (code, message, location, options) => raise(NexoError.evaluation(code, message, location, options)),
