@@ -1,6 +1,6 @@
-# Nexo Design v1.0.0-beta.15
+# Nexo Design v1.0.0-beta.16
 
-The [Nexo specification](../spec/README.md) is the contract: the [language](../spec/README.md#the-language), and the [runtime](../spec/README.md#the-runtime) its implementations offer a host. This design sets out how this implementation is built to meet it, and the reasons behind the choices that shape it. It describes language version `1.0.0-beta.15` and definition version 38, as the specification does; [the status overview](features-status.md) says where the implementation still differs.
+The [Nexo specification](../spec/README.md) is the contract: the [language](../spec/README.md#the-language), and the [runtime](../spec/README.md#the-runtime) its implementations offer a host. This design sets out how this implementation is built to meet it, and the reasons behind the choices that shape it. It describes language version `1.0.0-beta.16` and definition version 38, as the specification does; [the status overview](features-status.md) says where the implementation still differs.
 
 In this document:
 
@@ -86,14 +86,32 @@ A tool can check a source text known when the code is written against the metada
 One parser serves resolution and tooling alike. It reads a text into a lossless syntax tree, and the definition is lowered from that tree, so there is one grammar and one parser, and the definition stays the only contract resolution and the runtime act on.
 
 - **Nodes for constructs.** A node stands for a construct written, named after the grammar rule that produces it, as `equality`, `conjunction` and `dot-property-access` are. A rule that only passes an operand on, a level of precedence or a repetition, does not produce a node of its own. Tokens and their trivia, comments among them, carry the complete text, so the tree gives the text back character for character.
-- **Errors in one place.** Every syntax error the parser reports passes through one place, which a strict parse throws from. Line structure is checked there too, once a text is read, over its tree: each gap between two of a node's children is a one-line construct's, a break point or a boundary by the node's kind, so a layout is refused without the grammar reading it otherwise. That is the foundation for recovery: a parser that records a missing token and skips an unexpected one, so a text being written gives a tree and useful diagnostics without cascades. Recovery serves the editor alone; reading a script from text still refuses any syntax error, and a missing token is never permission to guess what the text meant.
-- **Tooling apart from resolution.** Token types and node kinds are listed for tooling, and the tokenizer reads any text tolerantly, an invalid token holding its diagnostic, so a highlighter reads tokens, trivia, ranges and structure without resolving anything. An editor's parser is this one, never a copy of the grammar.
+- **Errors in one place.** Every syntax error the parser reports passes through one place, which a strict parse throws from and a tolerant one records. Line structure is checked there too, once a text is read, over its tree: each gap between two of a node's children is a one-line construct's, a break point or a boundary by the node's kind, so a layout is refused without the grammar reading it otherwise. Recovery serves the editor alone; reading a script from text still refuses any syntax error, and a missing token is never permission to guess what the text meant.
+- **Tooling apart from resolution.** Token types and node kinds are listed for tooling, and the tokenizer reads any text tolerantly, an invalid token holding its diagnostic, so a highlighter reads tokens, trivia, ranges and structure without resolving anything, through `nexo.tooling.scan` and `nexo.tooling.parse`. An editor's parser is this one, never a copy of the grammar.
 - **From syntax to meaning.** Lowering records the syntax node each definition node comes from, and a resolution maps each definition node to its declarations and types, so a tool joins a position in the text to what resolution knows of it: completion after `room.` reads the receiver's type, and renaming a local follows the scope resolution records for it.
-- **What the implementation keeps.** A kept script holds its text, never its tree, so its memory is what it was before the tree existed; a tool that needs the tree reads the text again. A script created from a definition has no text, and its tree is the one read from its canonical text, marked generated.
+- **What the implementation keeps.** A kept script holds its text, never its tree, so its memory is what it was before the tree existed; a tool that needs the tree reads the text again. A script created from a definition has no text, and a tool reads the canonical text `nexo.format` gives it.
 - **Formatting that keeps the source.** `nexo.format` writes canonical text, which keeps no comment and no layout, and `nexo.quote` its compact form, one line but where line structure requires a break, each read back as the same definition. Formatting that keeps comments and each string's written form is a tooling operation over the syntax tree, whose tokens keep each string's quote and delimiter length for it.
 - **What it cost.** The tree was measured against the parser before it, before it was kept: the documents' scripts parse 7% slower and malformed texts 8% faster, a 60-field script within 3% with two-thirds more transient allocation, what a kept script retains is unchanged, and the bundle is 3% larger.
 
-The tree is internal until a public tooling API stabilizes it; [the status overview](features-status.md) tracks recovery, that API, source-keeping formatting and editor tooling.
+The tree is public through `nexo.tooling.parse`, each node and token a frozen copy; [the status overview](features-status.md) tracks what tooling still lacks.
+
+### Tolerant reading
+
+[Tooling](../spec/runtime/tooling.md) reads text being written, and never throws for any text. Each stage recovers where it raises its own failures, so its strict path keeps its code, and a strict reading's error is a tolerant one's first diagnostic.
+
+| Stage | Where it recovers | What it answers in a failure's place |
+| --- | --- | --- |
+| Reading | At each value and each element a construct reads: a field's value, an argument, a list's item, a local's initializer, a condition, a body's result, a group's, a key's and an interpolation's expression | A missing token, the tokens it skipped held by the token it resumes at; an element it can't read left out |
+| Lowering | Where a token is missing | A hole: a value the text lacks, a member whose name it lacks, holding its receiver, and an object of no field |
+| Validation | At each node | A hole |
+| Resolution | At each node, outside a speculative reading, whose failure refuses the reading | A value of `Any` |
+
+- **What a construct awaits.** A construct a tolerant reading enters names the tokens that close or continue it: its separator and its closer, a conditional's keywords, and a body's `let` and `return` where each begins a line. A recovery rewinds to the start of what failed and skips to the first token a construct being read awaits, passing over whole a construct a skipped token opens, so a comma inside a call's parentheses never ends the object field the call stands in.
+- **A missing closer.** A construct expecting its closer where a construct around it awaits what stands, or the text ends, stands the closer missing. Its constructs between close the same way, recording nothing more, so one break gives one diagnostic.
+- **Holes.** A hole is never a node a definition a strict operation answers holds: validation takes one only while recovering, and its copy is then never canonical. Each stage records its diagnostics in a `RecoveryRecord`, which leaves out a diagnostic at a hole or at a node holding one, since the hole may explain it.
+- **What tooling reads.** A tolerant resolution records the type each node gives and the scope each hole stands in, with its receiver's resolution, which completion and hover read.
+- **No host code.** Tooling binds the types its host declares, never values, so resolution asks no `typeOf`, and a script parameter's value settles nothing.
+- **Strict paths unchanged.** Every recovery point's catch rethrows in a strict reading, and a closer's diagnostic is made only where the closer is missing, so a strict parse allocates nothing for recovery. A tolerant resolution's records are made for it alone. Measured in nine paired rounds against the commit before it, parsing the account summary measured 4.8% slower and allocated 2.6% more, where the same commit against an unchanged copy of itself measured 7.7% and 2.4%, and resolving it measured 0.1% faster, against 1.9% slower: no change.
 
 ## Performance
 

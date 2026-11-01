@@ -647,3 +647,26 @@ Forty decisions were taken while implementing the declarations, member selection
   - A path names a part of a script's result, an object field or a list's item. `valueAt` read whatever its host language reached through a value, a list's `length` and an object's `constructor` among them, which name no part of a result.
   - A string's characters iterate as steps, so `validate('rooms')` passed: a path is a list, and one that is none is of another shape.
 - **Declined:** Leaving the check to `validate` alone, as the specification said: a host that forgets it gets an answer for a path that names nothing, and the check costs a pass over a few steps.
+
+<a id="d45"></a>
+
+## D45 — Tooling reads text through holes, and never throws for any text
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract.
+- **Decision:** `nexo.tooling` reads text being written. `scan` answers its tokens, `parse` its syntax tree and syntax diagnostics, and `getDiagnostics` every diagnostic of its syntax, its bindings' types, its structure and, given a registry, its resolution. The language advances to `1.0.0-beta.16`.
+  - **Recovery** stands a token the text lacks missing, and skips what a construct can't read to what it, or a construct around it, awaits. Once it reaches what a construct around it awaits, the constructs between close with what they lack and record nothing more, so one break gives one diagnostic.
+  - **A hole** is a part the text lacks, or a node whose validation or resolution failed. Every later stage reads it as a value of `Any`, and a diagnostic at a hole, or at a node holding one, is left out.
+  - **Bindings** are declared by their types alone, and hold no value.
+  - **A refused import** leaves out the resolution's other diagnostics, since what the script's names read depends on its imports.
+- **Why:**
+  - The status planned a tolerant API over the lossless tree and the tolerant tokenizer, both built and internal, and the design called for recovery that gives a tree and useful diagnostics without cascades.
+  - A hole lets every stage go on past a failure without a node kind in the definition format: no definition a strict operation answers holds one, so the format's contract is unchanged.
+  - Each stage recovers where it raises its own failures: the parser at the values and the elements of what it reads, validation and resolution at each node. Their strict paths keep their code, so a strict reading's error is a tolerant one's first diagnostic.
+  - Tooling runs no host code. A host knows its bindings' types without their values, and binding a value asks the modules' `typeOf`.
+- **Declined:**
+  - A node kind for a failure in the definition format, which every consumer of definitions would meet.
+  - Resolving again for each diagnostic, a hole at each failure found, which costs a resolution for each diagnostic; resolution recovers in one pass instead.
+  - Taking bindings' values: a fixed argument or a computed name a binding's value would settle is refused as one no value settles, which the specification states.
+  - Reading options a host misuses: a registry no `createRegistry` created, types that are no plain object and supplied imports that break their rules are refused, as every operation refuses its misuse. Any text is read.

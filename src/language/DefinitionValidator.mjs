@@ -5,7 +5,7 @@
 import { ObjectUtils } from '../common/ObjectUtils.mjs';
 import { DefinitionLocations } from './DefinitionLocations.mjs';
 import { Imports } from './Imports.mjs';
-import { NexoErrors } from './NexoError.mjs';
+import { NexoError, NexoErrors } from './NexoError.mjs';
 import { Names } from './Names.mjs';
 import { Versions } from './Versions.mjs';
 
@@ -45,6 +45,9 @@ const NODE_PROPERTIES = {
     and: { properties: ['kind', 'operands'], required: ['operands'] },
     or: { properties: ['kind', 'operands'], required: ['operands'] },
 };
+
+/** A part a tolerant reading's text lacks, or a node a tolerant validation recovered from, which a tolerant resolution reads as a value of `Any`. */
+const HOLE = Object.freeze({ kind: 'hole' });
 
 /** The kinds of node that continue a chain through their receiver, a call's member or an object expression's context, and so carry its optional chain to the access that is. */
 const CHAIN_KINDS = new Set(['memberAccess', 'call', 'indexerAccess', 'object']);
@@ -129,12 +132,21 @@ export class DefinitionValidator {
     #parametersWrittenAloneInText;
 
     /**
+     * What a tolerant validation, as tooling validates a definition a tolerant reading lowered, records as it recovers: each structure diagnostic, and the holes, which it takes where a node stands; null for a strict
+     * one, which throws its first diagnostic and refuses a hole as it refuses any node of no kind the format has.
+     * @type {import('./RecoveryRecord.mjs').RecoveryRecord | null}
+     */
+    #recovery;
+
+    /**
      * @param {TextLocations | null} locations Where in a text each part of the definition came from, for one parsed from text.
      * @param {WeakSet<object> | null} scriptParametersWrittenAlone The parameters a text wrote alone, for one parsed from text.
+     * @param {import('./RecoveryRecord.mjs').RecoveryRecord | null} [recovery] What a tolerant validation records; null for a strict one.
      */
-    constructor(locations = null, scriptParametersWrittenAlone = null) {
+    constructor(locations = null, scriptParametersWrittenAlone = null, recovery = null) {
         this.#locations = locations;
         this.#parametersWrittenAloneInText = scriptParametersWrittenAlone;
+        this.#recovery = recovery;
     }
 
     /** Whether a canonical definition's parameter node is a name a text wrote alone, which reads a local or field of its name where one is in scope, rather than a script parameter written with `~` or a definition's. */
@@ -216,7 +228,10 @@ export class DefinitionValidator {
             DefinitionValidator.#suppliedLocations.set(validated, new DefinitionLocations(validated, this.#partIndexes));
         }
 
-        DefinitionValidator.#canonicalDefinitions.add(validated);
+        // A tolerant validation's copy may hold holes, so it is never canonical, and never taken as one.
+        if (this.#recovery === null) {
+            DefinitionValidator.#canonicalDefinitions.add(validated);
+        }
 
         return validated;
     }
@@ -259,6 +274,10 @@ export class DefinitionValidator {
         }
 
         if (!ObjectUtils.isNonArrayObject(node) || !Object.hasOwn(NODE_PROPERTIES, node.kind)) {
+            if (this.#recovery !== null && ObjectUtils.isNonArrayObject(node) && node.kind === 'hole') {
+                return this.#validateHole(node, pointer, contextAvailability);
+            }
+
             this.#fail('NEXO2000', 'A node is an object whose kind is literal, scriptParameter, it, root, namespace, local, memberAccess, call, indexerAccess, object, list, dictionary, optionalChain, equality, comparison, interpolatedString, body, do, function, arithmetic, arithmeticNegation, fromEndIndex, range, conditional, coalescing, not, cast, conversion, try, and or or', pointer);
         }
 
@@ -273,9 +292,37 @@ export class DefinitionValidator {
 
         try {
             return this.#validateKind(node, pointer, contextAvailability);
+        } catch (error) {
+            return this.#recover(error, pointer);
         } finally {
             this.#optionalChain = enclosingOptionalChain;
         }
+    }
+
+    /**
+     * Recovers from a failure to validate the node at the pointer: a strict validation throws it, and a tolerant one records its structure diagnostic and answers a hole in the node's place, so validation goes on with
+     * the rest of the definition, as tooling's does.
+     */
+    #recover(error, pointer) {
+        if (this.#recovery === null || !(error instanceof NexoError) || error.kind !== 'structure') {
+            throw error;
+        }
+
+        this.#recovery.record(error, pointer);
+
+        return HOLE;
+    }
+
+    /**
+     * Validates a hole, which a tolerant validation alone takes: where the text lacks a member's name, the receiver it is read on, validated in its place in the chain, so a tool reads the receiver's type from it; any other
+     * holds nothing.
+     */
+    #validateHole(node, pointer, contextAvailability) {
+        if (node.receiver === undefined) {
+            return HOLE;
+        }
+
+        return Object.freeze({ kind: 'hole', receiver: this.#validateNode(node.receiver, `${pointer}/receiver`, contextAvailability) });
     }
 
     #validateKind(node, pointer, contextAvailability) {

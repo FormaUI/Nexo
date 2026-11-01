@@ -1,9 +1,10 @@
 /**
- * Parser — a Nexo text read into its lossless syntax tree, which the lowering turns into its definition
+ * Parser — a Nexo text read into its lossless syntax tree, which the lowering turns into its definition: strictly, throwing the first syntax error, or tolerantly, as tooling reads text being written, recording each
+ * diagnostic and recovering, so every text gives a tree
  */
 
 import { Imports } from './Imports.mjs';
-import { NexoErrors } from './NexoError.mjs';
+import { NexoError, NexoErrors } from './NexoError.mjs';
 import { LineStructure } from './LineStructure.mjs';
 import { Names } from './Names.mjs';
 import { SyntaxTree } from './SyntaxTree.mjs';
@@ -46,11 +47,48 @@ const COMPARISON_DIRECTIONS = Object.freeze({ '<': 'ascending', '<=': 'ascending
 /** The kinds of node a member expression is, each beginning with the token that joins it to its receiver. */
 const MEMBER_EXPRESSION_KINDS = new Set(['dot-property-access', 'computed-property-access', 'member-call', 'indexer', 'extension-access']);
 
+/**
+ * What closes or continues each construct a tolerant reading recovers within, by the token's type or a keyword's word, which recovery skips to: a body's, its statements, `let` and `return` where each begins a line;
+ * and each enclosing construct's, its separator and its closer.
+ */
+const AWAITED = Object.freeze({
+    script: new Set(),
+    body: new Set(['let', 'return']),
+    arguments: new Set([',', ')']),
+    group: new Set([')']),
+    list: new Set([',', ']']),
+    brackets: new Set([']']),
+    object: new Set([',', '}']),
+    conditional: new Set(['then', 'elseif', 'else', 'end']),
+    block: new Set(['end']),
+    function: new Set([',', ')', 'end']),
+    interpolation: new Set(['interpolation-end']),
+});
+
+/** The tokens, by type or keyword, that open a construct a skip passes over whole, each with the token that closes it. */
+const SKIPPED_OPENERS = new Map([['(', ')'], ['(?', ')'], ['[', ']'], ['?[', ']'], ['{', '}'], ['interpolation-start', 'interpolation-end'], ['interpolated-string-start', 'interpolated-string-end'], ['if', 'end'], ['do', 'end'], ['function', 'end']]);
+
+/** The tokens that close a construct, at which a skip stops where a construct being read awaits it, though a construct the skip passes over is open. */
+const CLOSERS = new Set([')', ']', '}', 'end', 'interpolation-end', 'interpolated-string-end']);
+
 export class Parser {
     #text;
     /** @type {Token[]} */
     #tokens;
     #index = 0;
+
+    /** The syntax diagnostics a tolerant reading records, each a syntax error, in the order it meets them; null for a strict reading, which throws its first. @type {NexoError[] | null} */
+    #diagnostics = null;
+
+    /** What each construct a tolerant reading is within awaits, the outermost first, a body's statements among them; null for a strict reading. @type {ReadonlySet<string>[] | null} */
+    #awaited = null;
+
+    /**
+     * The construct a tolerant reading recovers to, by its depth among those it is within, once a skip reached a token an enclosing construct awaits: the constructs within it close with what they lack, recording
+     * nothing more, until it is reached; null where none is.
+     * @type {number | null}
+     */
+    #abandonedTo = null;
 
     /** The local names the script's imports give modules, its own and those a host supplies, each beginning its module's namespace where a value stands. @type {ReadonlySet<string>} */
     #namespaceNames = Names.noNamespaceNames;
@@ -70,16 +108,58 @@ export class Parser {
     /**
      * @param {string} text The source text.
      * @param {readonly object[]} [suppliedImports] The imports a host supplies, in a definition's shape, checked already.
+     * @param {boolean} [isTolerant] Whether it reads tolerantly, recording each diagnostic and recovering, as tooling reads text, rather than strictly, throwing the first.
      */
-    constructor(text, suppliedImports = []) {
+    constructor(text, suppliedImports = [], isTolerant = false) {
         this.#text = text;
         this.#suppliedImports = suppliedImports;
-        this.#tokens = new Tokenizer(text).tokenize();
+
+        if (!isTolerant) {
+            this.#tokens = new Tokenizer(text).tokenize();
+
+            return;
+        }
+
+        this.#diagnostics = [];
+        this.#awaited = [AWAITED.script];
+        this.#tokens = this.#readTokens(Tokenizer.scan(text));
+    }
+
+    /**
+     * The tokens a tolerant reading parses: every token but the invalid ones, whose diagnostics it records, each invalid token held by the token after it, under `invalidBefore`, so the tree still holds every character.
+     * @param {Token[]} scanned
+     */
+    #readTokens(scanned) {
+        const tokens = [];
+        let invalid = [];
+
+        for (const token of scanned) {
+            if (token.type === 'invalid') {
+                this.#recordOnce(NexoErrors.syntax(token.diagnostic.code, token.diagnostic.message, this.#text, token.diagnostic.offset));
+                invalid.push(token);
+                continue;
+            }
+
+            if (invalid.length > 0) {
+                token.invalidBefore = invalid;
+                invalid = [];
+            }
+
+            tokens.push(token);
+        }
+
+        return tokens;
+    }
+
+    /** The syntax diagnostics a tolerant reading recorded, in the order it met them, each a syntax error at its offset; empty once a strict reading completes, which throws its first. */
+    get diagnostics() {
+        return this.#diagnostics ?? [];
     }
 
     /**
      * Reads the text into its syntax tree, whose script node holds the script's imports, each its own import declaration, then its body, an expression alone or locals and the `return` that gives its result, and the end of
-     * the text, with the trivia before it. The imports decide which names begin namespaces in the body, the host's beside the script's own.
+     * the text, with the trivia before it. The imports decide which names begin namespaces in the body, the host's beside the script's own. A tolerant reading recovers from each diagnostic it records, as
+     * [the design](../../docs/nexo-design.md#the-syntax-tree) sets out: a token the text lacks stands missing in its place, and the tokens it skips are held by the token it resumes at.
      * @returns {import('./SyntaxTree.mjs').ScriptNode}
      */
     parse() {
@@ -87,7 +167,13 @@ export class Parser {
         const imports = [];
 
         while (this.#isKeyword('import')) {
-            declarations.push(this.#parseImportDeclaration(imports));
+            const start = this.#index;
+
+            try {
+                declarations.push(this.#parseImportDeclaration(imports));
+            } catch (error) {
+                this.#recoverLine(error, start);
+            }
         }
 
         this.#namespaceNames = Imports.namespaceNamesOf([...imports, ...this.#suppliedImports]);
@@ -95,17 +181,270 @@ export class Parser {
         const body = this.#parseBody();
 
         if (this.#token.type !== 'end') {
-            throw this.#createAfterBodyError('NEXO1000', TOKEN_DESCRIPTIONS.end);
+            if (this.#diagnostics === null) {
+                throw this.#createAfterBodyError('NEXO1000', TOKEN_DESCRIPTIONS.end);
+            }
+
+            // What follows the body is skipped to the end of the text, which holds it.
+            this.#record(this.#createAfterBodyError('NEXO1000', TOKEN_DESCRIPTIONS.end));
+
+            const start = this.#index;
+
+            this.#index = this.#tokens.length - 1;
+            this.#holdSkipped(start);
         }
 
         const script = { kind: 'script', text: this.#text, children: [...declarations, body, this.#take()] };
 
-        // Its layout is checked once it is read, which it never changes: each failure passes through the parser's one error path.
-        new LineStructure(this.#text, this.#tokens).validate(script, (code, message, offset) => {
-            throw this.#createSyntaxError(code, message, offset);
+        if (this.#diagnostics === null) {
+            // Its layout is checked once it is read, which it never changes: each failure passes through the parser's one error path.
+            new LineStructure(this.#text, this.#tokens).validate(script, (code, message, offset) => {
+                throw this.#createSyntaxError(code, message, offset);
+            });
+
+            return script;
+        }
+
+        // A tolerant reading checks the layout of what it read, its tokens as the tree holds them, and records each failure.
+        this.#abandonedTo = null;
+        new LineStructure(this.#text, [...SyntaxTree.tokensOf(script, false)].filter(token => token.missing !== true), true).validate(script, (code, message, offset) => {
+            this.#recordOnce(this.#createSyntaxError(code, message, offset));
         });
 
         return script;
+    }
+
+    /**
+     * Recovers from a failure to read an import declaration, which stands on a line of its own: a strict reading throws it, and a tolerant one records it and skips the declaration's line, the next line's first token
+     * holding what it skips.
+     */
+    #recoverLine(error, start) {
+        this.#requireRecoverable(error);
+        this.#record(error);
+        this.#rewind(start);
+
+        do {
+            this.#index++;
+        } while (this.#token.type !== 'end' && !Tokenizer.holdsLineBreak(this.#text, this.#tokens[this.#index - 1].end, this.#token.start));
+
+        this.#holdSkipped(start);
+    }
+
+    /** Throws a failure no tolerant reading recovers from: any failure of a strict reading, and anything but a syntax error the parser made in a tolerant one, which is a fault of the parser's own. */
+    #requireRecoverable(error) {
+        if (this.#diagnostics === null || !(error instanceof NexoError) || error.kind !== 'syntax') {
+            throw error;
+        }
+    }
+
+    /**
+     * Records the syntax diagnostic, in a tolerant reading, unless a construct it is within is being abandoned, the token it is read at follows invalid text, whose own diagnostic explains it, or a diagnostic of its code
+     * at its offset is recorded already.
+     */
+    #record(error) {
+        if (this.#abandonedTo === null && this.#token?.invalidBefore === undefined) {
+            this.#recordOnce(error);
+        }
+    }
+
+    /** Records the syntax diagnostic unless one of its code at its offset is recorded already. */
+    #recordOnce(error) {
+        if (!this.#diagnostics.some(other => other.code === error.code && other.location.offset === error.location.offset)) {
+            this.#diagnostics.push(error);
+        }
+    }
+
+    /** Enters a construct a tolerant reading recovers within, which awaits what the set holds; a strict reading awaits nothing. */
+    #enter(awaited) {
+        if (this.#diagnostics !== null) {
+            this.#awaited.push(awaited);
+        }
+    }
+
+    /** Leaves the construct entered last, ending its abandonment where it is the construct recovery abandons the ones within it to. */
+    #leave() {
+        if (this.#diagnostics === null) {
+            return;
+        }
+
+        this.#awaited.pop();
+
+        if (this.#abandonedTo !== null && this.#awaited.length - 1 <= this.#abandonedTo) {
+            this.#abandonedTo = null;
+        }
+    }
+
+    /**
+     * Recovers from a failure to read a value: a strict reading throws it, and a tolerant one records it, skips from the value's first token to what a construct being read awaits, abandoning to it where an enclosing one
+     * does, and answers a value the text lacks, a missing identifier, the token it resumes at holding what it skipped.
+     */
+    #recover(error, start) {
+        this.#requireRecoverable(error);
+        this.#record(error);
+        this.#rewind(start);
+        this.#skipToAwaited();
+
+        return this.#createMissing('identifier');
+    }
+
+    /**
+     * Recovers from a failure to read an element of a construct, a local, an object field or an entry, as a value is recovered from, answering none, since the element is left out; its first token is skipped whatever it
+     * is, so a construct reading its elements goes on past it.
+     */
+    #recoverElement(error, start) {
+        this.#requireRecoverable(error);
+        this.#record(error);
+        this.#rewind(start);
+
+        if (this.#token.type !== 'end') {
+            this.#index++;
+        }
+
+        this.#skipToAwaited(start);
+
+        return null;
+    }
+
+    /**
+     * Moves back to the token at the start, clearing what each token read after it held, so a skip from there holds it again; the token at the start keeps what it held, which a recovery before it gave it.
+     */
+    #rewind(start) {
+        for (let index = start + 1; index <= this.#index && index < this.#tokens.length; index++) {
+            delete this.#tokens[index].skipped;
+        }
+
+        this.#index = start;
+    }
+
+    /**
+     * Skips from the current token to the first one a construct being read awaits, passing over every construct a skipped token opens, though one it passes over stops at a closer a construct being read awaits, and abandons
+     * the constructs within the one that awaits it; the end of the text is awaited by the outermost. The token it stops at holds what it skips, from the start given, a token skipped before the current one among it.
+     */
+    #skipToAwaited(start = this.#index) {
+        const open = [];
+        let depth = -1;
+
+        while (this.#token.type !== 'end') {
+            const key = Parser.#keyOf(this.#token);
+
+            if (open.length > 0 && key === open.at(-1)) {
+                open.pop();
+                this.#index++;
+                continue;
+            }
+
+            depth = open.length === 0 || CLOSERS.has(key) ? this.#awaitingDepthOf(this.#token) : -1;
+
+            if (depth !== -1) {
+                break;
+            }
+
+            if (SKIPPED_OPENERS.has(key)) {
+                open.push(SKIPPED_OPENERS.get(key));
+            }
+
+            this.#index++;
+        }
+
+        this.#holdSkipped(start);
+
+        const reached = this.#token.type === 'end' ? 0 : depth;
+
+        if (reached < this.#awaited.length - 1) {
+            this.#abandonedTo = Math.min(this.#abandonedTo ?? reached, reached);
+        }
+    }
+
+    /** The depth of the innermost construct being read that awaits the token, a body's statement only where it begins its line; -1 where none does. */
+    #awaitingDepthOf(token) {
+        const key = Parser.#keyOf(token);
+        const isStatement = token.type === 'keyword' && AWAITED.body.has(key);
+
+        for (let depth = this.#awaited.length - 1; depth >= 0; depth--) {
+            const awaited = this.#awaited[depth];
+
+            // A body's statements are its own alone, the innermost body's.
+            if (awaited === AWAITED.body) {
+                if (isStatement) {
+                    return Tokenizer.holdsLineBreak(this.#text, this.#tokens[this.#index - 1]?.end ?? 0, token.start) ? depth : -1;
+                }
+
+                continue;
+            }
+
+            if (awaited.has(key)) {
+                return depth;
+            }
+        }
+
+        return -1;
+    }
+
+    /**
+     * Makes the current token hold the tokens from the start to it, each with what it held, before the invalid tokens before it, as what recovery skipped there. A token from the start on held nothing a recovery gave it
+     * but what a skip resumed at it with, since a rewind clears what it held.
+     */
+    #holdSkipped(start) {
+        if (start === this.#index) {
+            return;
+        }
+
+        const holder = this.#token;
+        const skipped = [];
+
+        for (let index = start; index < this.#index; index++) {
+            const token = this.#tokens[index];
+
+            skipped.push(...SyntaxTree.skippedBefore(token), token);
+        }
+
+        holder.skipped = [...skipped, ...(holder.invalidBefore ?? [])];
+    }
+
+    /** A token the text lacks, of the type, a keyword's of the word, standing where it was expected, after the token before it, with no text. */
+    #createMissing(type, value = undefined) {
+        const offset = this.#tokens[this.#index - 1]?.end ?? 0;
+
+        return { type, ...(value === undefined ? {} : { value }), start: offset, end: offset, triviaStart: offset, spaced: false, missing: true };
+    }
+
+    /**
+     * Takes the token that closes a construct, of the type or the keyword given, which the construct being read awaits. Where another stands, a strict reading throws the error of the code saying what was expected, or,
+     * after a body, the one `#createAfterBodyError` gives; a tolerant one records it, skips to what a construct being read awaits, and takes the closer it reaches, or answers it missing.
+     */
+    #close(key, expected, code = 'NEXO1000', isAfterBody = false) {
+        if (Parser.#keyOf(this.#token) === key) {
+            return this.#take();
+        }
+
+        const error = isAfterBody ? this.#createAfterBodyError(code, expected) : this.#createUnexpectedTokenError(code, expected);
+
+        if (this.#diagnostics === null) {
+            throw error;
+        }
+
+        this.#record(error);
+        this.#skipToAwaited();
+
+        if (Parser.#keyOf(this.#token) === key && this.#abandonedTo === null) {
+            return this.#take();
+        }
+
+        return Parser.#isKeywordKey(key) ? this.#createMissing('keyword', key) : this.#createMissing(key);
+    }
+
+    /** What a token is awaited by: a keyword's word, and any other token's type, the end of the text's none, since its type is spelled as the keyword `end`. */
+    static #keyOf(token) {
+        if (token.type === 'keyword') {
+            return token.value;
+        }
+
+        return token.type === 'end' ? '' : token.type;
+    }
+
+    /** Whether the key is a keyword's word rather than a token's type. */
+    static #isKeywordKey(key) {
+        return Names.isKeyword(key);
     }
 
     /**
@@ -176,13 +515,24 @@ export class Parser {
      * What closes it, the end of the text, `end`, `elseif` or `else`, is its holder's to read.
      */
     #parseBody() {
+        this.#enter(AWAITED.body);
+
+        try {
+            return this.#parseBodyWithin();
+        } finally {
+            this.#leave();
+        }
+    }
+
+    /** Reads a body, once the construct it is is entered. */
+    #parseBodyWithin() {
         if (!this.#isKeyword('let') && !this.#isKeyword('return')) {
             const start = this.#token.start;
-            const expression = this.#parseExpression();
+            const expression = this.#parseValue();
 
             // An expression alone is its body's result, so a `return` after it follows what no local holds.
             if (this.#isKeyword('return')) {
-                throw this.#createSyntaxError('NEXO1031', "Only locals may precede a body's result.", start);
+                this.#refuseAfterResult('NEXO1031', "Only locals may precede a body's result.", start);
             }
 
             return expression;
@@ -194,7 +544,13 @@ export class Parser {
 
         try {
             while (this.#isKeyword('let')) {
-                children.push(this.#parseLocal());
+                const start = this.#index;
+
+                try {
+                    children.push(this.#parseLocal());
+                } catch (error) {
+                    this.#recoverElement(error, start);
+                }
             }
         } finally {
             this.#bodyLocalsBeingRead--;
@@ -203,49 +559,127 @@ export class Parser {
         // After its locals a body's result follows its `return`; an expression there is one a `return` follows, which only a local may precede, or the result its `return` was left off.
         if (!this.#isKeyword('return')) {
             const start = this.#token.start;
+            const first = this.#index;
+            const isClosed = this.#token.type === 'end' || this.#isKeyword('end') || this.#isKeyword('elseif') || this.#isKeyword('else');
+            const written = isClosed ? null : this.#parseValue();
 
-            if (this.#token.type !== 'end' && !this.#isKeyword('end') && !this.#isKeyword('elseif') && !this.#isKeyword('else')) {
-                this.#parseExpression();
+            if (!this.#isKeyword('return')) {
+                const error = this.#createSyntaxError('NEXO1030', "Introduce the body's result with return.", start);
 
-                if (this.#isKeyword('return')) {
-                    throw this.#createSyntaxError('NEXO1031', "Only locals may precede a body's result.", start);
+                if (this.#diagnostics === null) {
+                    throw error;
                 }
+
+                // A tolerant reading takes what is written as the result its `return` was left off.
+                this.#record(error);
+                children.push(this.#createMissing('keyword', 'return'), written ?? this.#createMissing('identifier'));
+
+                return this.#completeBody(children);
             }
 
-            throw this.#createSyntaxError('NEXO1030', "Introduce the body's result with return.", start);
+            if (this.#diagnostics === null) {
+                throw this.#createSyntaxError('NEXO1031', "Only locals may precede a body's result.", start);
+            }
+
+            // A tolerant reading skips the expression before the `return`, which holds it.
+            this.#record(this.#createSyntaxError('NEXO1031', "Only locals may precede a body's result.", start));
+            this.#holdSkipped(first);
         }
 
         const returnKeyword = this.#take();
 
         if (this.#token.type === 'end' || this.#isKeyword('end') || this.#isKeyword('elseif') || this.#isKeyword('else')) {
-            throw this.#createSyntaxError('NEXO1056', "'return' gives its body's result: write the value after it, as in 'return width'", returnKeyword.start);
+            const error = this.#createSyntaxError('NEXO1056', "'return' gives its body's result: write the value after it, as in 'return width'", returnKeyword.start);
+
+            if (this.#diagnostics === null) {
+                throw error;
+            }
+
+            this.#record(error);
+            children.push(returnKeyword, this.#createMissing('identifier'));
+
+            return Parser.#node('body', children);
         }
 
-        children.push(returnKeyword, this.#parseExpression());
+        children.push(returnKeyword, this.#parseValue());
 
+        return this.#completeBody(children);
+    }
+
+    /** The body of the children read, refusing a local or a `return` after its result, which ends it (NEXO1055). */
+    #completeBody(children) {
         if (this.#isKeyword('let') || this.#isKeyword('return')) {
-            throw this.#createSyntaxError('NEXO1055', "Nothing follows a body's result, which ends it", this.#token.start);
+            this.#refuseAfterResult('NEXO1055', "Nothing follows a body's result, which ends it", this.#token.start);
         }
 
         return Parser.#node('body', children);
     }
 
+    /**
+     * Refuses what follows a body's result, of the code and the message, at the offset: a strict reading throws it, and a tolerant one records it and skips to what closes the construct the body stands in, its own
+     * statements passed over, abandoning the body to it.
+     */
+    #refuseAfterResult(code, message, offset) {
+        const error = this.#createSyntaxError(code, message, offset);
+
+        if (this.#diagnostics === null) {
+            throw error;
+        }
+
+        this.#record(error);
+
+        const body = this.#awaited.pop();
+
+        try {
+            this.#skipToAwaited();
+        } finally {
+            this.#awaited.push(body);
+        }
+
+        this.#abandonedTo = Math.min(this.#abandonedTo ?? this.#awaited.length - 2, this.#awaited.length - 2);
+    }
+
+    /**
+     * Reads a value where a construct holds one, an expression: a strict reading throws the first failure; a tolerant one recovers from a failure to read it, as `#recover` sets out, answering it missing, the tokens it
+     * skips held by the token it resumes at.
+     */
+    #parseValue() {
+        const start = this.#index;
+
+        try {
+            return this.#parseExpression();
+        } catch (error) {
+            return this.#recover(error, start);
+        }
+    }
+
     /** Reads a function: `function`, its parameters' names in parentheses, separated by commas, the body a call evaluates and the `end` that closes it. */
     #parseFunctionExpression() {
+        this.#enter(AWAITED.function);
+
+        try {
+            return this.#parseFunctionExpressionWithin();
+        } finally {
+            this.#leave();
+        }
+    }
+
+    /** Reads a function, once the construct it is is entered. */
+    #parseFunctionExpressionWithin() {
         const children = [this.#take(), this.#expect('(')];
 
         // A comma stands between two parameters alone, so one before ')' is refused.
         if (this.#token.type !== ')') {
             for (;;) {
-                if (this.#token.type === 'lexical-reference') {
-                    throw this.#createSyntaxError('NEXO1008', `A parameter is declared as it is written, with no '@': write '${this.#token.value}'`, this.#token.start);
-                }
+                const error = this.#token.type === 'lexical-reference'
+                    ? this.#createSyntaxError('NEXO1008', `A parameter is declared as it is written, with no '@': write '${this.#token.value}'`, this.#token.start)
+                    : !this.#isWord(this.#token) ? this.#createUnexpectedTokenError('NEXO1000', "a parameter's name") : null;
 
-                if (!this.#isWord(this.#token)) {
-                    throw this.#createUnexpectedTokenError('NEXO1000', "a parameter's name");
+                if (error === null) {
+                    children.push(this.#take());
+                } else if (!this.#skipFailedElement(error)) {
+                    break;
                 }
-
-                children.push(this.#take());
 
                 if (this.#token.type !== ',') {
                     break;
@@ -253,27 +687,42 @@ export class Parser {
 
                 children.push(this.#take());
             }
-
-            if (this.#token.type !== ')') {
-                throw this.#createUnexpectedTokenError('NEXO1000', "',' before the next parameter, or ')' closing them");
-            }
         }
 
-        children.push(this.#take());
+        children.push(this.#close(')', "',' before the next parameter, or ')' closing them"));
 
         if (this.#isKeyword('end')) {
-            throw this.#createSyntaxError('NEXO1511', "A function holds a body: write 'function(…) return … end' or the expression it gives", this.#token.start);
+            const error = this.#createSyntaxError('NEXO1511', "A function holds a body: write 'function(…) return … end' or the expression it gives", this.#token.start);
+
+            if (this.#diagnostics === null) {
+                throw error;
+            }
+
+            this.#record(error);
+            children.push(this.#createMissing('identifier'), this.#take());
+
+            return Parser.#node('function-expression', children);
         }
 
         children.push(this.#parseBody());
-
-        if (!this.#isKeyword('end')) {
-            throw this.#createAfterBodyError('NEXO1029', "'end' closing the function");
-        }
-
-        children.push(this.#take());
+        children.push(this.#close('end', "'end' closing the function", 'NEXO1029', true));
 
         return Parser.#node('function-expression', children);
+    }
+
+    /**
+     * Skips an element a list can't read, of the error given: a strict reading throws it, and a tolerant one records it and skips to what a construct being read awaits, answering whether a comma follows, which another
+     * element follows.
+     */
+    #skipFailedElement(error) {
+        if (this.#diagnostics === null) {
+            throw error;
+        }
+
+        this.#record(error);
+        this.#skipToAwaited();
+
+        return this.#abandonedTo === null && this.#token.type === ',';
     }
 
     /** Whether an arrow function starts here: a parameter's name and `=>`, or the parameters' names in parentheses, separated by commas, and `=>`. */
@@ -360,53 +809,78 @@ export class Parser {
      */
     #parseArguments(written, isMember) {
         const children = [this.#take()];
+        const expected = "',' before the next argument, or ')' closing them";
 
-        if (this.#token.type !== ')') {
-            for (;;) {
-                if (this.#startsEntry()) {
-                    const options = isMember ? `; a member that takes options is given them as the object fields of an object, as { ${this.#token.value} = … }` : '';
+        this.#enter(AWAITED.arguments);
 
-                    throw this.#createSyntaxError('NEXO1012', `An argument is written as its value alone, as '${written}(…)' takes it${options}`, this.#token.start);
-                }
-
-                if (this.#isKeyword('function')) {
-                    throw this.#createSyntaxError('NEXO1035', "A function declared with 'function' cannot appear directly as an argument. Bind it to a local and pass its name, or use an arrow function.", this.#token.start);
-                }
-
-                children.push(this.#startsArrowFunction() ? this.#parseArrowFunction() : this.#parseExpression());
-
-                if (this.#token.type !== ',') {
-                    break;
-                }
-
-                children.push(this.#take());
-            }
-
+        try {
             if (this.#token.type !== ')') {
-                throw this.#createUnexpectedTokenError('NEXO1000', "',' before the next argument, or ')' closing them");
+                for (;;) {
+                    const start = this.#index;
+
+                    try {
+                        children.push(this.#parseArgument(written, isMember));
+                    } catch (error) {
+                        children.push(this.#recover(error, start));
+                    }
+
+                    if (this.#token.type === ')' || (this.#token.type !== ',' && !this.#skipFailedElement(this.#createUnexpectedTokenError('NEXO1000', expected)))) {
+                        break;
+                    }
+
+                    children.push(this.#take());
+                }
             }
+
+            children.push(this.#close(')', expected));
+        } finally {
+            this.#leave();
         }
 
-        children.push(this.#take());
-
         return children;
+    }
+
+    /** Reads an argument: an expression or an arrow function, written as its value alone, refusing one written as a named one would be (NEXO1012) and a function declared with `function` (NEXO1035). */
+    #parseArgument(written, isMember) {
+        if (this.#startsEntry()) {
+            const options = isMember ? `; a member that takes options is given them as the object fields of an object, as { ${this.#token.value} = … }` : '';
+
+            throw this.#createSyntaxError('NEXO1012', `An argument is written as its value alone, as '${written}(…)' takes it${options}`, this.#token.start);
+        }
+
+        if (this.#isKeyword('function')) {
+            throw this.#createSyntaxError('NEXO1035', "A function declared with 'function' cannot appear directly as an argument. Bind it to a local and pass its name, or use an arrow function.", this.#token.start);
+        }
+
+        return this.#startsArrowFunction() ? this.#parseArrowFunction() : this.#parseExpression();
     }
 
     /** Reads a do block: `do`, the body it evaluates where execution reaches it, and the `end` that closes it. */
     #parseDoExpression() {
         const doKeyword = this.#take();
 
-        if (this.#isKeyword('end')) {
-            throw this.#createSyntaxError('NEXO1511', "A do block holds a body: write 'do return … end'", this.#token.start);
+        this.#enter(AWAITED.block);
+
+        let node;
+
+        try {
+            if (this.#isKeyword('end')) {
+                const error = this.#createSyntaxError('NEXO1511', "A do block holds a body: write 'do return … end'", this.#token.start);
+
+                if (this.#diagnostics === null) {
+                    throw error;
+                }
+
+                this.#record(error);
+                node = Parser.#node('do-expression', [doKeyword, this.#createMissing('identifier'), this.#take()]);
+            } else {
+                const body = this.#parseBody();
+
+                node = Parser.#node('do-expression', [doKeyword, body, this.#close('end', "'end' closing the do block", 'NEXO1029', true)]);
+            }
+        } finally {
+            this.#leave();
         }
-
-        const body = this.#parseBody();
-
-        if (!this.#isKeyword('end')) {
-            throw this.#createAfterBodyError('NEXO1029', "'end' closing the do block");
-        }
-
-        const node = Parser.#node('do-expression', [doKeyword, body, this.#take()]);
 
         this.#refuseChainFrom('do-expression');
 
@@ -477,56 +951,93 @@ export class Parser {
      * and the alternative `else` gives, which every conditional ends with.
      */
     #parseConditionalExpression(children) {
+        this.#enter(AWAITED.conditional);
+
+        try {
+            this.#parseConditionalClauses(children);
+        } finally {
+            this.#leave();
+        }
+
+        this.#refuseChainFrom('conditional-expression');
+
+        return Parser.#node('conditional-expression', children);
+    }
+
+    /** Reads a conditional's clauses after its `if`, which the children begin with, and the `end` that closes them, once the construct it is is entered. */
+    #parseConditionalClauses(children) {
         const branches = [];
 
         for (;;) {
-            if (this.#isKeyword('if')) {
-                throw this.#createSyntaxError('NEXO1027', 'A conditional that is a condition is enclosed in parentheses: write if (if … then … else … end) then …', this.#token.start);
+            const start = this.#index;
+
+            try {
+                if (this.#isKeyword('if')) {
+                    throw this.#createSyntaxError('NEXO1027', 'A conditional that is a condition is enclosed in parentheses: write if (if … then … else … end) then …', this.#token.start);
+                }
+
+                children.push(this.#isKeyword('let') ? this.#parseConditionalBinding() : this.#parseSimpleValueExpression());
+            } catch (error) {
+                children.push(this.#recover(error, start));
             }
 
-            children.push(this.#isKeyword('let') ? this.#parseConditionalBinding() : this.#parseSimpleValueExpression());
-
-            if (!this.#isKeyword('then')) {
-                throw this.#createUnexpectedTokenError('NEXO1000', "'then' after the condition");
-            }
-
-            const thenKeyword = this.#take();
+            const thenKeyword = this.#close('then', "'then' after the condition");
             const consequent = this.#parseBody();
 
             children.push(thenKeyword, consequent);
             branches.push(consequent);
 
+            if (!this.#isKeyword('elseif') && !this.#isKeyword('else')) {
+                const error = this.#createAfterBodyError('NEXO1505', "'elseif' or 'else', which every conditional ends with");
+
+                if (this.#diagnostics === null) {
+                    throw error;
+                }
+
+                // A tolerant reading skips to the next clause, or stands the alternative and the `end` the text lacks in their place.
+                this.#record(error);
+                this.#skipToAwaited();
+
+                if (this.#abandonedTo !== null || (!this.#isKeyword('elseif') && !this.#isKeyword('else'))) {
+                    children.push(this.#createMissing('keyword', 'else'), this.#createMissing('identifier'), this.#createMissing('keyword', 'end'));
+
+                    return;
+                }
+            }
+
             if (this.#isKeyword('elseif')) {
                 children.push(this.#take());
-            } else if (this.#isKeyword('else')) {
-                const elseKeyword = this.#take();
-                const alternative = this.#parseBody();
-
-                children.push(elseKeyword, alternative);
-                branches.push(alternative);
-
-                if (!this.#isKeyword('end')) {
-                    throw this.#createAfterBodyError('NEXO1029', "'end' closing the conditional");
-                }
-
-                // Every branch of one conditional gives its result with `return`, or none does; an `else` whose expression is a conditional, `else if … end`, follows branches of expressions in either style, and branches that return in theirs, as an `elseif` would.
-                const isExplicit = branch => !SyntaxTree.isToken(branch) && branch.kind === 'body';
-                const fits = branch => (branch === alternative && !SyntaxTree.isToken(branch) && branch.kind === 'conditional-expression'
-                    ? !isExplicit(branches[0]) || isExplicit(branch.children[3])
-                    : isExplicit(branch) === isExplicit(branches[0]));
-                const differing = branches.find(branch => !fits(branch));
-
-                if (differing !== undefined) {
-                    throw this.#createSyntaxError('NEXO1054', 'All branches of this conditional must give their results with return, or none of them', SyntaxTree.startOf(isExplicit(differing) ? branches[0] : differing));
-                }
-
-                children.push(this.#take());
-                this.#refuseChainFrom('conditional-expression');
-
-                return Parser.#node('conditional-expression', children);
-            } else {
-                throw this.#createAfterBodyError('NEXO1505', "'elseif' or 'else', which every conditional ends with");
+                continue;
             }
+
+            const elseKeyword = this.#take();
+            const alternative = this.#parseBody();
+
+            children.push(elseKeyword, alternative);
+            branches.push(alternative);
+
+            const end = this.#close('end', "'end' closing the conditional", 'NEXO1029', true);
+
+            // Every branch of one conditional gives its result with `return`, or none does; an `else` whose expression is a conditional, `else if … end`, follows branches of expressions in either style, and branches that return in theirs, as an `elseif` would.
+            const isExplicit = branch => !SyntaxTree.isToken(branch) && branch.kind === 'body';
+            const fits = branch => (branch === alternative && !SyntaxTree.isToken(branch) && branch.kind === 'conditional-expression'
+                ? !isExplicit(branches[0]) || isExplicit(branch.children[3])
+                : isExplicit(branch) === isExplicit(branches[0]));
+            const differing = branches.find(branch => !fits(branch));
+
+            if (differing !== undefined) {
+                const error = this.#createSyntaxError('NEXO1054', 'All branches of this conditional must give their results with return, or none of them', SyntaxTree.startOf(isExplicit(differing) ? branches[0] : differing));
+
+                if (this.#diagnostics === null) {
+                    throw error;
+                }
+
+                this.#record(error);
+            }
+
+            children.push(end);
+
+            return;
         }
     }
 
@@ -963,8 +1474,18 @@ export class Parser {
             case '(': {
                 // A parenthesized expression holds the expression in its parentheses, which a chain may then continue from, and groups a coalescing operator it holds.
                 const open = this.#take();
-                const expression = this.#parseExpression();
-                const close = this.#expect(')');
+
+                this.#enter(AWAITED.group);
+
+                let expression;
+                let close;
+
+                try {
+                    expression = this.#parseValue();
+                    close = this.#expect(')');
+                } finally {
+                    this.#leave();
+                }
 
                 this.#ungroupedCoalescings.delete(expression);
 
@@ -1210,8 +1731,22 @@ export class Parser {
                     children.push(this.#take());
 
                     return Parser.#node('interpolated-string', children);
-                default:
-                    throw this.#createUnexpectedTokenError('NEXO1000', `'"' closing the interpolated string`);
+                default: {
+                    const error = this.#createUnexpectedTokenError('NEXO1000', `'"' closing the interpolated string`);
+
+                    if (this.#diagnostics === null) {
+                        throw error;
+                    }
+
+                    // A string never closed is an invalid token, whose diagnostic says so, so the code after it stands where its closing quote is missing.
+                    if (this.#token.invalidBefore === undefined) {
+                        this.#record(error);
+                    }
+
+                    children.push(this.#createMissing('interpolated-string-end'));
+
+                    return Parser.#node('interpolated-string', children);
+                }
             }
         }
     }
@@ -1220,17 +1755,27 @@ export class Parser {
     #parseInterpolation() {
         const open = this.#take();
 
-        if (this.#token.type === 'interpolation-end') {
-            throw this.#createSyntaxError('NEXO1039', "An interpolation holds an expression between '{' and '}'", open.start);
+        this.#enter(AWAITED.interpolation);
+
+        try {
+            if (this.#token.type === 'interpolation-end') {
+                const error = this.#createSyntaxError('NEXO1039', "An interpolation holds an expression between '{' and '}'", open.start);
+
+                if (this.#diagnostics === null) {
+                    throw error;
+                }
+
+                this.#record(error);
+
+                return Parser.#node('interpolation', [open, this.#createMissing('identifier'), this.#take()]);
+            }
+
+            const expression = this.#parseValue();
+
+            return Parser.#node('interpolation', [open, expression, this.#close('interpolation-end', "'}' closing the interpolation")]);
+        } finally {
+            this.#leave();
         }
-
-        const expression = this.#parseExpression();
-
-        if (this.#token.type !== 'interpolation-end') {
-            throw this.#createUnexpectedTokenError('NEXO1000', "'}' closing the interpolation");
-        }
-
-        return Parser.#node('interpolation', [open, expression, this.#take()]);
     }
 
     /** Refuses a chain continuing from the conditional or the do block of the kind just read, grouped or not, whose value is no receiver: a local holds it first. */
@@ -1252,19 +1797,42 @@ export class Parser {
     #parseIndexer() {
         const open = this.#take();
 
-        if (this.#token.type === ']') {
-            throw this.#createSyntaxError('NEXO1017', 'An indexer takes one key in its brackets', this.#token.start);
+        this.#enter(AWAITED.brackets);
+
+        try {
+            const start = this.#index;
+            let key;
+
+            try {
+                if (this.#token.type === ']') {
+                    throw this.#createSyntaxError('NEXO1017', 'An indexer takes one key in its brackets', this.#token.start);
+                }
+
+                this.#refuseFunctionAsData("An indexer's key");
+                key = this.#parseExpression();
+            } catch (error) {
+                key = this.#recover(error, start);
+            }
+
+            if (this.#token.type === ',') {
+                const error = this.#createSyntaxError('NEXO1017', 'An indexer takes one key', this.#token.start);
+
+                if (this.#diagnostics === null) {
+                    throw error;
+                }
+
+                // A tolerant reading skips the keys after the first, from the comma.
+                this.#record(error);
+
+                const comma = this.#index++;
+
+                this.#skipToAwaited(comma);
+            }
+
+            return Parser.#node('indexer', [open, key, this.#expect(']')]);
+        } finally {
+            this.#leave();
         }
-
-        this.#refuseFunctionAsData("An indexer's key");
-
-        const key = this.#parseExpression();
-
-        if (this.#token.type === ',') {
-            throw this.#createSyntaxError('NEXO1017', 'An indexer takes one key', this.#token.start);
-        }
-
-        return Parser.#node('indexer', [open, key, this.#expect(']')]);
     }
 
     /**
@@ -1322,9 +1890,16 @@ export class Parser {
         }
 
         const open = this.#take();
-        const expression = this.#parseExpression();
 
-        return Parser.#node('computed-property-access', [dot, open, expression, this.#expect(']')]);
+        this.#enter(AWAITED.brackets);
+
+        try {
+            const expression = this.#parseValue();
+
+            return Parser.#node('computed-property-access', [dot, open, expression, this.#expect(']')]);
+        } finally {
+            this.#leave();
+        }
     }
 
     /** Reads a member after its dot, or the `?.` of an optional access: a dot property access, or a member call where parentheses follow the name. */
@@ -1400,15 +1975,50 @@ export class Parser {
     /** Reads an object expression: its locals, each followed by a comma, and then its fields, at least one. */
     #parseObject() {
         const children = [this.#expect('{')];
+
+        this.#enter(AWAITED.object);
+
+        try {
+            this.#parseObjectEntries(children);
+        } finally {
+            this.#leave();
+        }
+
+        return Parser.#node('object', children);
+    }
+
+    /**
+     * Reads an object expression's locals, each followed by a comma, its fields, at least one, and its closing brace, once the construct it is is entered. A tolerant reading leaves out an entry it can't read, and records an
+     * object of no field, which the lowering reads as a value the text lacks.
+     */
+    #parseObjectEntries(children) {
         let locals = 0;
 
         while (this.#startsLocal()) {
-            children.push(this.#parseLocal());
-            locals++;
+            const start = this.#index;
+
+            try {
+                children.push(this.#parseLocal());
+                locals++;
+            } catch (error) {
+                this.#recoverElement(error, start);
+            }
 
             if (this.#token.type !== ',') {
                 // An object expression closed after its local holds no field.
-                throw this.#createUnexpectedTokenError(this.#token.type === '}' ? 'NEXO1018' : 'NEXO1000', "',' after the local, which the object fields follow");
+                const code = this.#token.type === '}' ? 'NEXO1018' : 'NEXO1000';
+                const error = this.#createUnexpectedTokenError(code, "',' after the local, which the object fields follow");
+
+                if (this.#diagnostics === null) {
+                    throw error;
+                }
+
+                if (this.#token.type === '}' || !this.#skipFailedElement(error)) {
+                    this.#record(error);
+                    children.push(this.#close('}', "',' after the local, which the object fields follow", code));
+
+                    return;
+                }
             }
 
             children.push(this.#take());
@@ -1416,23 +2026,37 @@ export class Parser {
 
         if (this.#token.type === '}') {
             const example = locals > 0 ? '{ let climate = it.climate, warmth = climate?.temperature }' : '{ size = it.size }';
+            const error = this.#createSyntaxError('NEXO1018', `An object expression holds at least one object field${locals > 0 ? ' after its locals' : ''}, as ${example}`, this.#token.start);
 
-            throw this.#createSyntaxError('NEXO1018', `An object expression holds at least one object field${locals > 0 ? ' after its locals' : ''}, as ${example}`, this.#token.start);
+            if (this.#diagnostics === null) {
+                throw error;
+            }
+
+            this.#record(error);
+            children.push(this.#take());
+
+            return;
         }
+
+        const expected = "',' or '}'";
 
         while (this.#token.type !== '}') {
-            children.push(this.#parseField());
+            const start = this.#index;
 
-            if (this.#token.type === ',') {
-                children.push(this.#take());
-            } else if (this.#token.type !== '}') {
-                throw this.#createUnexpectedTokenError('NEXO1000', "',' or '}'");
+            try {
+                children.push(this.#parseField());
+            } catch (error) {
+                this.#recoverElement(error, start);
             }
+
+            if (this.#token.type === '}' || (this.#token.type !== ',' && !this.#skipFailedElement(this.#createUnexpectedTokenError('NEXO1000', expected)))) {
+                break;
+            }
+
+            children.push(this.#take());
         }
 
-        children.push(this.#take());
-
-        return Parser.#node('object', children);
+        children.push(this.#close('}', expected));
     }
 
     /**
@@ -1456,35 +2080,63 @@ export class Parser {
         }
 
         const isDictionary = this.#startsDictionaryEntry();
+        const expected = "',' or ']'";
 
-        while (this.#token.type !== ']') {
-            if (this.#token.type === ',') {
-                throw this.#createSyntaxError('NEXO1068', 'A collection expression holds an item between each two commas: write one there, or remove the comma', this.#token.start);
-            }
+        this.#enter(AWAITED.list);
 
-            if (isDictionary !== this.#startsDictionaryEntry()) {
-                const kind = isDictionary ? 'an item without a key' : 'an entry of a key and a value';
+        try {
+            while (this.#token.type !== ']') {
+                const start = this.#index;
 
-                throw this.#createSyntaxError('NEXO1067', `A collection expression holds a list's items or a dictionary's entries, never both, and this one, ${isDictionary ? 'a dictionary' : 'a list'}, holds ${kind}`, this.#token.start);
-            }
+                try {
+                    children.push(this.#parseCollectionEntry(isDictionary));
+                } catch (error) {
+                    // A list's item the text can't give stands missing, and a dictionary's entry is left out.
+                    const missing = this.#recover(error, start);
 
-            children.push(isDictionary ? this.#parseDictionaryEntry() : this.#parseListItem());
+                    if (!isDictionary) {
+                        children.push(missing);
+                    }
+                }
 
-            if (this.#token.type === ',') {
+                if (this.#token.type === ']' || (this.#token.type !== ',' && !this.#skipFailedElement(this.#createUnexpectedTokenError('NEXO1000', expected)))) {
+                    break;
+                }
+
                 children.push(this.#take());
-            } else if (this.#token.type !== ']') {
-                throw this.#createUnexpectedTokenError('NEXO1000', "',' or ']'");
             }
-        }
 
-        children.push(this.#take());
+            children.push(this.#close(']', expected));
+        } finally {
+            this.#leave();
+        }
 
         return Parser.#node(isDictionary ? 'dictionary-expression' : 'list-expression', children);
     }
 
+    /** Reads a collection expression's item or entry, of the kind its first gave it: never left out between commas (NEXO1068), nor of the other kind (NEXO1067). */
+    #parseCollectionEntry(isDictionary) {
+        // A dictionary's text that ends where an entry would stand lacks its entry, or its closing bracket.
+        if (isDictionary && this.#token.type === 'end') {
+            throw this.#createUnexpectedTokenError('NEXO1000', "a dictionary's entry, or ']' closing it");
+        }
+
+        if (this.#token.type === ',') {
+            throw this.#createSyntaxError('NEXO1068', 'A collection expression holds an item between each two commas: write one there, or remove the comma', this.#token.start);
+        }
+
+        if (isDictionary !== this.#startsDictionaryEntry()) {
+            const kind = isDictionary ? 'an item without a key' : 'an entry of a key and a value';
+
+            throw this.#createSyntaxError('NEXO1067', `A collection expression holds a list's items or a dictionary's entries, never both, and this one, ${isDictionary ? 'a dictionary' : 'a list'}, holds ${kind}`, this.#token.start);
+        }
+
+        return isDictionary ? this.#parseDictionaryEntry() : this.#parseListItem();
+    }
+
     /** Whether a dictionary's entry starts here: a key, one token, and the `=` after it, a key no string writes among them, which its entry refuses. */
     #startsDictionaryEntry() {
-        return this.#tokens[this.#index + 1].type === '=' && this.#token.type !== ',' && this.#token.type !== ']';
+        return this.#tokens[this.#index + 1]?.type === '=' && this.#token.type !== ',' && this.#token.type !== ']';
     }
 
     /** Reads a list's item: an expression, never an arrow function, since a collection holds data (NEXO1057); one an `=` follows is a dictionary's key no single token writes, which is refused (NEXO1066). */
@@ -1542,12 +2194,17 @@ export class Parser {
 
         const name = this.#take();
         const equals = this.#take();
+        const start = this.#index;
         let initializer;
 
-        if (this.#isKeyword('function')) {
-            initializer = this.#parseFunctionExpression();
-        } else {
-            initializer = this.#startsArrowFunction() ? this.#parseArrowFunction() : this.#parseExpression();
+        try {
+            if (this.#isKeyword('function')) {
+                initializer = this.#parseFunctionExpression();
+            } else {
+                initializer = this.#startsArrowFunction() ? this.#parseArrowFunction() : this.#parseExpression();
+            }
+        } catch (error) {
+            initializer = this.#recover(error, start);
         }
 
         return Parser.#node('local', [letKeyword, name, equals, initializer]);
@@ -1564,7 +2221,7 @@ export class Parser {
             this.#refuseName(this.#isKeyword('return') ? 'NEXO1033' : 'NEXO1051', 'An object field takes its value after =', 'An object field is written with its name and = before its value, as size = it.size', '');
         }
 
-        return Parser.#node('field', [this.#take(), this.#take(), this.#parseExpression()]);
+        return Parser.#node('field', [this.#take(), this.#take(), this.#parseValue()]);
     }
 
     /**
@@ -1614,11 +2271,29 @@ export class Parser {
         return this.#tokens[this.#index++];
     }
 
+    /**
+     * Takes the token of the type, refusing another: a strict reading throws, and a tolerant one records the diagnostic and closes a construct with a closer it lacks, as `#close` does, and answers any other token
+     * missing where it stands, skipping nothing, since what stands there begins what follows it.
+     */
     #expect(type) {
         const token = this.#token;
 
         if (token.type !== type) {
-            throw this.#createUnexpectedTokenError('NEXO1000', TOKEN_DESCRIPTIONS[type] ?? `'${type}'`);
+            const expected = TOKEN_DESCRIPTIONS[type] ?? `'${type}'`;
+
+            if (CLOSERS.has(type)) {
+                return this.#close(type, expected);
+            }
+
+            const error = this.#createUnexpectedTokenError('NEXO1000', expected);
+
+            if (this.#diagnostics === null) {
+                throw error;
+            }
+
+            this.#record(error);
+
+            return this.#createMissing(type);
         }
 
         this.#advance();

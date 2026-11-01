@@ -1,6 +1,6 @@
 // How a TypeScript host uses Nexo, which the declarations must accept; the declarations test compiles this file.
 import { nexo, NexoError } from '../../src/nexo.js';
-import type { NexoModuleContents, NexoMemberDeclaration, NexoOperatorDeclaration, NexoRegistry } from '../../src/nexo.js';
+import type { NexoDiagnostic, NexoModuleContents, NexoMemberDeclaration, NexoOperatorDeclaration, NexoRegistry, NexoSyntaxNode, NexoToken } from '../../src/nexo.js';
 
 const { createPropertyDeclaration: property } = nexo.declarations;
 
@@ -52,4 +52,10 @@ const hostCall = registry.resolve('nothing', { nothing: null }).hostCall;
 const candidates: readonly NexoMemberDeclaration[] = hostCall === null ? [] : hostCall.candidates;
 const callPointer: string | undefined = hostCall?.pointer;
 
-export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer };
+// An editor reads text being written: its tokens, its tree and every diagnostic, each with the range it stands at.
+const tokens: readonly NexoToken[] = nexo.tooling.scan('shelf.count');
+const tree: NexoSyntaxNode = nexo.tooling.parse('shelf.', { imports: ['Pantry'] }).tree;
+const diagnostics: readonly NexoDiagnostic[] = nexo.tooling.getDiagnostics('shelf.cuont', { registry, types: { shelf: 'Pantry.Shelf' } });
+const squiggles: number[] = diagnostics.flatMap(diagnostic => (diagnostic.range === undefined ? [] : [diagnostic.range.start, diagnostic.range.end]));
+
+export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer, tokens, tree, squiggles };

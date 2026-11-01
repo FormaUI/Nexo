@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { nexo } from '#nexo/nexo.js';
+import { TextReading } from '#nexo/language/TextReading.mjs';
 import { Tokenizer } from '#nexo/language/Tokenizer.mjs';
 import { errorThrownBy } from '../support/errors.mjs';
 
@@ -142,6 +143,14 @@ describe('LineStructure', () => {
             const [first, ...rest] = layouts.map(text => nexo.parse(text));
 
             rest.forEach(definition => expect(definition).toEqual(first));
+        });
+    });
+
+    describe('a tolerant reading', () => {
+        it('records each failure of a layout and goes on, leaving unchecked a gap beside a token the text lacks or tokens it skipped', () => {
+            const reading = new TextReading('{\n    a = 1\n        + 2,\n    b = c.\n        d,\n    e = 1 #\n        + 2\n}', []);
+
+            expect(reading.syntaxDiagnostics.map(error => [error.code, error.location.line])).toEqual([['NEXO1042', 3], ['NEXO1041', 5], ['NEXO1000', 6]]);
         });
     });
 });

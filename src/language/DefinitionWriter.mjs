@@ -183,6 +183,9 @@ export class DefinitionWriter {
             case 'and':
             case 'or':
                 return node.operands.map(operand => DefinitionWriter.#within(operand, PRECEDENCE[node.kind] + 1, level)).join(` ${node.kind} `);
+            case 'hole':
+                // A part a tolerant reading's text lacks, which a diagnostic quotes as an ellipsis, after its receiver where it is a member's name.
+                return node.receiver === undefined ? '…' : `${DefinitionWriter.#within(node.receiver, CHAIN_PRECEDENCE, level)}.…`;
             default: {
                 const objectText = DefinitionWriter.#object(node, level);
 

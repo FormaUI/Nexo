@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Parser } from '#nexo/language/Parser.mjs';
 import { SYNTAX_NODE_KINDS, SyntaxTree } from '#nexo/language/SyntaxTree.mjs';
 import { Tokenizer } from '#nexo/language/Tokenizer.mjs';
 
@@ -29,6 +30,31 @@ describe('SyntaxTree', () => {
     it("tells the tokens that make an access optional, a property access's or a call's ?., an indexer's ?[ and an extension access's ?:, from those that don't", () => {
         expect(['?.', '?[', '?:'].map(type => SyntaxTree.isOptionalAccess(type))).toEqual([true, true, true]);
         expect(['.', '[', ':', '??', '(?'].map(type => SyntaxTree.isOptionalAccess(type))).toEqual([false, false, false, false, false]);
+    });
+
+    it("yields the tokens a tolerant reading skipped before a token, where they are asked for, and every token the tree holds, a missing one among them", () => {
+        const text = '{ a = 1 # 2, b = x. }';
+        const tree = new Parser(text, [], true).parse();
+        const tokens = [...SyntaxTree.tokensOf(tree)];
+        const comma = tokens.find(token => token.type === ',');
+
+        expect(SyntaxTree.skippedBefore(comma).map(token => [token.type, SyntaxTree.wordOf(token, text)])).toEqual([['invalid', '#'], ['literal', '2']]);
+        expect(tokens.filter(token => token.missing === true).map(token => [token.type, token.start])).toEqual([['identifier', 19]]);
+        expect([...SyntaxTree.tokensOf(tree, false)].some(token => token.type === 'invalid')).toBe(false);
+        expect(SyntaxTree.textOf(tree)).toBe(text);
+    });
+
+    it('answers a token and a node as the tooling API does, frozen: a token with its trivia and the tokens it holds, and a node with its range', () => {
+        const text = '/* note */ a + b ) c';
+        const tree = new Parser(text, [], true).parse();
+        const view = SyntaxTree.createNodeView(tree, text);
+        const [additive, end] = view.children;
+
+        expect(view).toMatchObject({ kind: 'script', start: 11, end: 20 });
+        expect(additive).toMatchObject({ kind: 'additive', start: 11, end: 16 });
+        expect(additive.children[0]).toEqual({ type: 'identifier', start: 11, end: 12, triviaStart: 0, trivia: [{ kind: 'block-comment', start: 0, end: 10 }, { kind: 'whitespace', start: 10, end: 11 }], value: 'a' });
+        expect(end.skipped.map(token => token.type)).toEqual([')', 'identifier']);
+        expect(Object.isFrozen(view) && Object.isFrozen(additive.children[0]) && Object.isFrozen(end.skipped)).toBe(true);
     });
 
     it('names the kind of each node a grammar construct is, frozen', () => {

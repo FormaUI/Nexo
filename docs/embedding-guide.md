@@ -126,6 +126,24 @@ reads; // ['price', 'discount', 'completed']
 
 Only the reads an evaluation reaches are reported: a branch not taken reports nothing, and each evaluation reports the branch it took. The [design](nexo-design.md#evaluation) sets out every hook, maintained members' samples among them.
 
+## Read text being written
+
+An editor reads a script while it is being written. `nexo.tooling` reads any text without throwing, and answers what a strict operation would refuse as diagnostics, each with the range of text it stands at:
+
+```js
+const text = '{\n    price = product:price,\n    cut = product:discont(code),\n    label = product.\n}';
+
+nexo.tooling.getDiagnostics(text, { registry, types: { product: 'String', code: 'String' }, imports: ['Shop'] })
+    .map(({ code, range }) => [code, range]);
+// [['NEXO1000', { start: 83, end: 84 }], ['NEXO3062', { start: 39, end: 60 }]]
+```
+
+- **Every stage reads what it can.** The syntax tree is recovered where the text breaks the grammar, so `product.`, which lacks its member's name, still lets the rest of the script be checked.
+- **One diagnostic for one mistake.** A part the text lacks, and a node that fails, reads as a value of `Any` from then on, so nothing that holds it is reported again.
+- **No host code runs.** A binding is declared by its type alone, as `createBindings` declares one, and holds no value.
+
+`nexo.tooling.scan` answers the tokens a highlighter colors, and `nexo.tooling.parse` the syntax tree, which holds every character of the text. [Tooling](../spec/runtime/tooling.md) sets out what each answers.
+
 ## Handle errors
 
 Every failure is a `NexoError` with the code of its condition, a `kind` and the location it concerns:

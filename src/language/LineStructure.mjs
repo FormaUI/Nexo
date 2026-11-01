@@ -47,24 +47,30 @@ export class LineStructure {
     /** @type {Token[]} */
     #tokens;
 
-    /** @type {(code: string, message: string, offset: number) => never} */
+    /** @type {(code: string, message: string, offset: number) => void} */
     #fail;
+
+    /** Whether the tree is a tolerant reading's, whose gaps beside a missing token or tokens it skipped are left unchecked, since no layout of them is the text's. */
+    #isTolerant;
 
     /**
      * @param {string} text The text the syntax tree was read from.
      * @param {Token[]} tokens The text's tokens, in order, the tree's among them.
+     * @param {boolean} [isTolerant] Whether the tree is a tolerant reading's, which records each failure and goes on.
      */
-    constructor(text, tokens) {
+    constructor(text, tokens, isTolerant = false) {
         this.#text = text;
         this.#tokens = tokens;
+        this.#isTolerant = isTolerant;
         tokens.forEach((token, index) => this.#indexes.set(token, index));
     }
 
     /**
      * Validates the script's layout, refusing the first line break, in the order of the text, that a one-line construct holds (NEXO1041), one before a binary operator outside an enclosure (NEXO1042) or after one
-     * (NEXO1064), a keyword block spanning lines outside block form (NEXO1043), and a boundary with earlier code on its line (NEXO1044), each through the failure given, which throws.
+     * (NEXO1064), a keyword block spanning lines outside block form (NEXO1043), and a boundary with earlier code on its line (NEXO1044), each through the failure given, which throws for a strict reading and records
+     * the failure for a tolerant one, which goes on to the next.
      * @param {import('./SyntaxTree.mjs').ScriptNode} script
-     * @param {(code: string, message: string, offset: number) => never} fail
+     * @param {(code: string, message: string, offset: number) => void} fail
      */
     validate(script, fail) {
         this.#fail = fail;
@@ -96,6 +102,11 @@ export class LineStructure {
     #validateGap(node, index, isEnclosed, isBlock) {
         const before = LineStructure.#lastTokenOf(node.children[index - 1]);
         const after = LineStructure.#firstTokenOf(node.children[index]);
+
+        if (this.#isTolerant && (before.missing === true || after.missing === true || SyntaxTree.skippedBefore(after).length > 0)) {
+            return;
+        }
+
         const breaks = Tokenizer.holdsLineBreak(this.#text, before.end, after.start);
         const rule = this.#ruleOf(node, index, isEnclosed, isBlock);
 
@@ -301,6 +312,10 @@ export class LineStructure {
 
     /** Validates what follows a keyword block's `end` on its line in block form, closing punctuation alone (NEXO1043). */
     #validateAfterEnd(end) {
+        if (end.missing === true) {
+            return;
+        }
+
         let previous = end;
 
         for (let index = this.#indexes.get(end) + 1; index < this.#tokens.length; index++) {
@@ -312,6 +327,8 @@ export class LineStructure {
 
             if (!CLOSING_PUNCTUATION.has(token.type)) {
                 this.#fail('NEXO1043', `${BLOCK_FORM}: only closing punctuation follows its 'end' on that line, so continue the expression on the line after it, as 'end' then ') + 2'`, token.start);
+
+                return;
             }
 
             previous = token;

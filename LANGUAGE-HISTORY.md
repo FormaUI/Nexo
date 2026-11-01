@@ -7,6 +7,20 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-16"></a>
+
+## `1.0.0-beta.16`
+
+*November 1, 2026 · definition format 38*
+
+**Runtime**
+
+- [Tooling](spec/runtime/tooling.md): `nexo.tooling` reads text being written, and never throws for any text. `scan` answers its tokens and their trivia. `parse` answers its syntax tree, recovered where the text breaks the grammar, and its syntax diagnostics. `getDiagnostics` answers every diagnostic of its syntax, its bindings' types, its structure and, against a registry, its resolution, each with the range of text it stands at. `tokenTypes` and `nodeKinds` list what a token and a node are.
+- [Tolerant reading](spec/runtime/errors.md#diagnostics-tolerant-reading): a strict reading's error is a tolerant one's first diagnostic, and a tolerant reading goes on to report every diagnostic it can.
+- [Structure errors](spec/runtime/errors.md#runtime-structure-errors): a tooling operation refuses a registry `nexo.createRegistry` did not create (NEXO2647), and what is no text (NEXO2645), as `nexo.parse` does.
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-15"></a>
 
 ## `1.0.0-beta.15`

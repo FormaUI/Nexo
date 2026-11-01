@@ -1,4 +1,4 @@
-# Nexo Specification v1.0.0-beta.15
+# Nexo Specification v1.0.0-beta.16
 
 Nexo is a general-purpose, embeddable language that lets applications define their own domain as an integral part of the language. Its expressions and data are immutable, and evaluation is read-only; changes to the domain are explicit requests carried out by the host. Nexo has no application domain of its own: modules declare the types and members available to a script, and adding them never changes the grammar.
 
@@ -6,7 +6,7 @@ This specification is the authoritative contract for the language and for the ho
 
 <a id="version"></a>
 
-**Version.** This specification describes language version `1.0.0-beta.15`, and describes definition version 38. The two change apart: the language specification's version as the language's contract does, and the definition format's version as the serialized definition's contract does, as [the definition](runtime/definition.md#definition) sets out; one change can advance both. An implementation says which of each it follows, as [versions](runtime/versions.md#runtime-versions) set out.
+**Version.** This specification describes language version `1.0.0-beta.16`, and describes definition version 38. The two change apart: the language specification's version as the language's contract does, and the definition format's version as the serialized definition's contract does, as [the definition](runtime/definition.md#definition) sets out; one change can advance both. An implementation says which of each it follows, as [versions](runtime/versions.md#runtime-versions) set out.
 
 ## What it covers
 
@@ -67,5 +67,6 @@ Where the two meet, a document explains the other contract's part briefly and li
 10. [Type selectors](runtime/type-selectors.md): declaring type selectors and their keys.
 11. [Definition](runtime/definition.md): the JSON definition, its nodes, its structural validation and its canonical text.
 12. [Versions](runtime/versions.md): the versions an implementation reports.
-13. [Errors](runtime/errors.md): the error object, codes, locations, the conditions of definitions, bindings, declarations, host code and the API's use, and tolerant reading.
-14. [Terms](runtime/terms.md): the runtime's glossary.
+13. [Tooling](runtime/tooling.md): reading text being written, never throwing for any text: its tokens, its syntax tree and its diagnostics.
+14. [Errors](runtime/errors.md): the error object, codes, locations, the conditions of definitions, bindings, declarations, host code and the API's use, and tolerant reading.
+15. [Terms](runtime/terms.md): the runtime's glossary.

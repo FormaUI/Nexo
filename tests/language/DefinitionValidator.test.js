@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { DefinitionValidator } from '#nexo/language/DefinitionValidator.mjs';
 import { ParsedTexts } from '#nexo/language/ParsedTexts.mjs';
+import { RecoveryRecord } from '#nexo/language/RecoveryRecord.mjs';
+import { Versions } from '#nexo/language/Versions.mjs';
+import { errorThrownBy } from '../support/errors.mjs';
 
 /** Every object the part holds, itself among them, in order. */
 const objectsOf = (part, found = []) => {
@@ -48,6 +51,34 @@ describe('DefinitionValidator', () => {
                 { name: 'a', isWrittenAlone: true, isHidden: false },
                 { name: 'a', isWrittenAlone: true, isHidden: false },
             ]);
+        });
+    });
+
+    describe('a tolerant validation', () => {
+        it('takes a hole, a hole of a receiver validating its receiver, and records each node it recovers from, answering a hole in its place, so validation goes on with the rest', () => {
+            const recovery = new RecoveryRecord(['/expression/objectFields/0/value']);
+            const definition = { version: Versions.definition, imports: [], expression: { kind: 'object', objectFields: [
+                { name: 'a', value: { kind: 'hole' } },
+                { name: 'b', value: { kind: 'hole', receiver: { kind: 'scriptParameter', name: 'room' } } },
+                { name: 'c', value: { kind: 'memberAccess', receiver: { kind: 'it' }, name: 'size' } },
+                { name: 'd', value: { kind: 'local', name: 'nothing' } },
+            ] } };
+            const validated = new DefinitionValidator(null, null, recovery).validate(definition);
+
+            // The innermost node that fails is the hole: `it`, which the access of `size` keeps reading.
+            expect(validated.expression.objectFields.map(field => field.value)).toEqual([
+                { kind: 'hole' },
+                { kind: 'hole', receiver: { kind: 'scriptParameter', name: 'room' } },
+                { kind: 'memberAccess', receiver: { kind: 'hole' }, name: 'size' },
+                { kind: 'hole' },
+            ]);
+            expect(recovery.diagnostics.map(error => [error.code, error.location.pointer])).toEqual([['NEXO2026', '/expression/objectFields/2/value/receiver'], ['NEXO2012', '/expression/objectFields/3/value']]);
+            // Its copy is never canonical, so a strict validation reads it again and refuses its holes.
+            expect(errorThrownBy(() => new DefinitionValidator().validate(validated))).toMatchObject({ code: 'NEXO2000', location: { pointer: '/expression/objectFields/0/value' } });
+        });
+
+        it('is the strict validation\'s alone, which refuses a hole as a node of no kind the format has (NEXO2000)', () => {
+            expect(errorThrownBy(() => new DefinitionValidator().validate({ version: Versions.definition, imports: [], expression: { kind: 'hole' } }))).toMatchObject({ code: 'NEXO2000', location: { pointer: '/expression' } });
         });
     });
 });

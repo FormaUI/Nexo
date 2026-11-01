@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { Lowering } from '#nexo/language/Lowering.mjs';
 import { TextLocations } from '#nexo/language/TextLocations.mjs';
+import { TextReading } from '#nexo/language/TextReading.mjs';
 
 describe('TextLocations', () => {
     const text = 'let total = items.sum(it.price)\nreturn {\n    total = total,\n    label = $"{total} due"\n}';
@@ -24,6 +26,16 @@ describe('TextLocations', () => {
 
         expect(locations.locate('/expression/receiver')).toEqual({ pointer: '/expression/receiver', offset: 0, line: 1, column: 1 });
         expect(locations.locate('/imports/0')).toEqual({ pointer: '/imports/0' });
+    });
+
+    it('takes the spans of a definition a tolerant reading lowered, rather than reading a text that breaks the grammar again, and answers the span of a pointer\'s nearest part', () => {
+        const reading = new TextReading('{ a = room., b = 2 }', []);
+        const locations = new TextLocations(reading.text, [], Lowering.lower(reading.tree));
+
+        expect(locations.getSpan('/expression/objectFields/1/value')).toEqual({ start: 17, end: 18 });
+        expect(locations.getSpan('/expression/objectFields/0/value/receiver')).toEqual({ start: 6, end: 10 });
+        expect(locations.getSpan('/version')).toBeNull();
+        expect(locations.locate('/expression/objectFields/1/value')).toEqual({ pointer: '/expression/objectFields/1/value', offset: 17, line: 1, column: 18 });
     });
 
     it('locates a written import at its declaration', () => {

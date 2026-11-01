@@ -21,6 +21,9 @@ export class ParameterBindings {
     /** @type {Map<string, Type>} */
     #types = new Map();
 
+    /** Whether the bindings hold their values, which bindings of declared types alone, as tooling resolves a script against, do not. */
+    #holdsValues = true;
+
     /**
      * Binds each value to its name, asking the registry's modules which values are references before copying anything: a reference is kept as it is, by its identity, a reference nested in data among them, and the rest of the data
      * is copied and frozen. A top-level binding's declared type, a notation the registry resolves, is its type in place of recognition: a reference type's value checked by the type's membership, and any other
@@ -66,9 +69,42 @@ export class ParameterBindings {
         return this.#registry;
     }
 
-    /** Whether a value is bound to the name. */
+    /**
+     * Bindings of declared types alone, with no value, which tooling resolves a script against as its host's bindings of those types would resolve it, so a script parameter's value settles nothing: each top-level binding's
+     * declared type, a notation read as a declared binding type is, its names qualified or not. A declaration refused as a declared binding type is refused (NEXO2033, NEXO2036, NEXO2037, NEXO2044), through `refuse`,
+     * which records it, and the binding left out.
+     * @param {import('./vocabulary/NexoRegistry.mjs').NexoRegistry} registry
+     * @param {Record<string, string>} typeNames Each binding's name and the notation of the type declared for it.
+     * @param {(error: import('./NexoError.mjs').NexoError) => void} refuse
+     */
+    static declare(registry, typeNames, refuse) {
+        const bindings = new ParameterBindings(registry);
+
+        bindings.#holdsValues = false;
+
+        for (const [name, typeName] of Object.entries(typeNames)) {
+            try {
+                if (!Names.isIdentifier(name)) {
+                    throw NexoErrors.structure('NEXO2033', 'A binding is named by a letter followed by letters and digits', { binding: name });
+                }
+
+                bindings.#types.set(name, bindings.#resolveDeclaredType(name, typeName));
+            } catch (error) {
+                refuse(error);
+            }
+        }
+
+        return bindings;
+    }
+
+    /** Whether the bindings hold their values, rather than declared types alone. */
+    get holdsValues() {
+        return this.#holdsValues;
+    }
+
+    /** Whether a value is bound to the name, or a type is declared for it where the bindings hold no values. */
     has(name) {
-        return this.#values.has(name);
+        return this.#types.has(name);
     }
 
     /** Reads the value bound to the name: its data a frozen copy of the data given, and each reference the reference itself. */
@@ -100,10 +136,7 @@ export class ParameterBindings {
      * null where a nullable reference type is declared, and data the type doesn't admit refused (NEXO2045), naming the part; the capture freezes the data it makes, as bound data is, its references kept as they are.
      */
     #bindDeclared(name, value, typeName) {
-        const fail = (code, message) => {
-            throw NexoErrors.structure(code, `The type declared for '${name}': ${message}`, { binding: name });
-        };
-        const type = typeof typeName === 'string' ? this.#registry.resolveBindingType(typeName, fail) : fail('NEXO2036', `${String(typeName)} is no public type`);
+        const type = this.#resolveDeclaredType(name, typeName);
 
         if (this.#registry.isReferenceType(type)) {
             if (value === null && type.isNullable) {
@@ -121,10 +154,6 @@ export class ParameterBindings {
             return { type, value };
         }
 
-        if (!this.#holdsBoundValues(type, new Set())) {
-            fail('NEXO2044', `${typeName} is a type no binding holds, or holds one in its data, as Any, Never, an Index and a Range are`);
-        }
-
         const captured = new ValueCapture(this.#registry).capture(value, type, (path, part, partType, reason) => {
             if (reason === 'cycle') {
                 throw NexoErrors.structure('NEXO2022', `A binding holds a cycle, a list or an object that reaches itself, which data never does${path === '' ? '' : `, at '${path}'`}`, { binding: name });
@@ -137,6 +166,22 @@ export class ParameterBindings {
 
         // The capture freezes each part of the data it makes, never a reference it holds, which stays the host's own.
         return { type, value: captured };
+    }
+
+    /**
+     * The type declared for the top-level binding of the name: the notation read in the binding scope, its names qualified or not, a reference type, or a type whose values, at any depth, a binding holds (NEXO2044).
+     */
+    #resolveDeclaredType(name, typeName) {
+        const fail = (code, message) => {
+            throw NexoErrors.structure(code, `The type declared for '${name}': ${message}`, { binding: name });
+        };
+        const type = typeof typeName === 'string' ? this.#registry.resolveBindingType(typeName, fail) : fail('NEXO2036', `${String(typeName)} is no public type`);
+
+        if (!this.#registry.isReferenceType(type) && !this.#holdsBoundValues(type, new Set())) {
+            fail('NEXO2044', `${typeName} is a type no binding holds, or holds one in its data, as Any, Never, an Index and a Range are`);
+        }
+
+        return type;
     }
 
     /**

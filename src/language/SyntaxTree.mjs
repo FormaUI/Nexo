@@ -2,7 +2,11 @@
  * SyntaxTree — the lossless syntax tree of a Nexo text: its constructs, each a node named after the grammar rule that produces it, holding its tokens and the nodes within it, every token with the trivia before it
  */
 
-/** @typedef {import('./Tokenizer.mjs').Token} Token */
+/**
+ * A token as a tree holds it: one the tokenizer read, or, in a tolerant reading's tree, one the text lacks, `missing`, standing where it was expected with no text, of the type expected, a value the text lacks a missing
+ * identifier; and the tokens a tolerant reading skipped before it, `skipped`, invalid ones among them, `invalidBefore` the invalid ones alone where it skipped nothing else.
+ * @typedef {import('./Tokenizer.mjs').Token & { missing?: true, skipped?: Token[], invalidBefore?: Token[] }} Token
+ */
 /** @typedef {{ kind: string, children: (SyntaxNode | Token)[] }} SyntaxNode */
 /** @typedef {{ kind: 'script', text: string, children: (SyntaxNode | Token)[] }} ScriptNode The script's import declarations, its body and the end of its text, with the trivia before it. */
 /** @typedef {{ kind: 'whitespace' | 'line-comment' | 'block-comment', start: number, end: number }} TriviaPiece */
@@ -137,20 +141,30 @@ export class SyntaxTree {
     }
 
     /**
-     * The tokens of the node, in the order of the text.
+     * The tokens of the node, in the order of the text: those a tolerant reading skipped before a token among them, where they are asked for, and every token the tree holds, a missing one among them.
      * @param {SyntaxNode | Token} child
+     * @param {boolean} [includesSkipped] Whether the tokens skipped before a token are yielded before it.
      * @returns {Generator<Token>}
      */
-    static *tokensOf(child) {
+    static *tokensOf(child, includesSkipped = true) {
         if (SyntaxTree.isToken(child)) {
+            if (includesSkipped) {
+                yield* SyntaxTree.skippedBefore(child);
+            }
+
             yield child;
 
             return;
         }
 
         for (const each of child.children) {
-            yield* SyntaxTree.tokensOf(each);
+            yield* SyntaxTree.tokensOf(each, includesSkipped);
         }
+    }
+
+    /** The tokens a tolerant reading skipped before the token, which it holds, in the order of the text, each invalid one among them; none for a token of a strict reading. */
+    static skippedBefore(token) {
+        return token.skipped ?? token.invalidBefore ?? [];
     }
 
     /**
@@ -165,6 +179,41 @@ export class SyntaxTree {
         }
 
         return text;
+    }
+
+    /**
+     * The token as tooling's API answers it, frozen: its type, where it and the trivia before it begin, where it ends, its trivia's pieces, and what of its value, its string's form, its diagnostic, its being missing and
+     * the tokens skipped before it it has, each skipped one answered alike.
+     * @param {Token} token
+     * @param {string} text The text the token was read from.
+     */
+    static createTokenView(token, text) {
+        const skipped = SyntaxTree.skippedBefore(token);
+        const view = {
+            type: token.type,
+            start: token.start,
+            end: token.end,
+            triviaStart: token.triviaStart,
+            trivia: Object.freeze(SyntaxTree.triviaOf(token, text).map(piece => Object.freeze(piece))),
+            ...(token.value === undefined ? {} : { value: token.value }),
+            ...(token.quote === undefined ? {} : { quote: token.quote, delimiter: token.delimiter }),
+            ...(token.diagnostic === undefined ? {} : { diagnostic: Object.freeze({ ...token.diagnostic }) }),
+            ...(token.missing === true ? { missing: true } : {}),
+            ...(skipped.length === 0 ? {} : { skipped: Object.freeze(skipped.map(each => SyntaxTree.createTokenView(each, text))) }),
+        };
+
+        return Object.freeze(view);
+    }
+
+    /**
+     * The node as tooling's API answers it, frozen: its kind, where its first token begins and its last ends, and its children, each node and each token answered alike.
+     * @param {SyntaxNode} node
+     * @param {string} text The text the node was read from.
+     */
+    static createNodeView(node, text) {
+        const children = node.children.map(child => (SyntaxTree.isToken(child) ? SyntaxTree.createTokenView(child, text) : SyntaxTree.createNodeView(child, text)));
+
+        return Object.freeze({ kind: node.kind, start: SyntaxTree.startOf(node), end: SyntaxTree.endOf(node), children: Object.freeze(children) });
     }
 
     /**

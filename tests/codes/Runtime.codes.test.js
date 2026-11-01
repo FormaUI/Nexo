@@ -220,6 +220,13 @@ describe('the runtime codes', () => {
             expectNexoError(errorThrownBy(() => nexo.parse(5)), 'NEXO2645', 'structure');
             expectNexoError(errorThrownBy(() => nexo.parse({ version: 36 })), 'NEXO2645', 'structure');
             expect(errorThrownBy(() => nexo.parse(5)).message).toBe("What parse reads is a script's source");
+            expectNexoError(errorThrownBy(() => nexo.tooling.parse(5)), 'NEXO2645', 'structure');
+            expect(errorThrownBy(() => nexo.tooling.getDiagnostics(null)).message).toBe("What tooling reads is a script's source");
+        });
+
+        it('NEXO2647: a tooling operation given a registry createRegistry did not create', () => {
+            expectNexoError(errorThrownBy(() => nexo.tooling.getDiagnostics('1', { registry: createImportingRegistry() })), 'NEXO2647', 'structure');
+            expect(errorThrownBy(() => nexo.tooling.getDiagnostics('1', { registry: {} }))).toMatchObject({ message: "A tooling operation's registry is one nexo.createRegistry created", location: {} });
         });
 
         it('NEXO2040: creating or entering an evaluator, or projecting a prepared call, once its resolution is no longer current', () => {

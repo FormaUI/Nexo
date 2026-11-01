@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { LanguageResolver } from '#nexo/language/LanguageResolver.mjs';
 import { ParameterBindings } from '#nexo/language/ParameterBindings.mjs';
 import { ParsedTexts } from '#nexo/language/ParsedTexts.mjs';
+import { RecoveryRecord } from '#nexo/language/RecoveryRecord.mjs';
+import { TextReading } from '#nexo/language/TextReading.mjs';
 import { Declarations } from '#nexo/language/vocabulary/Declarations.mjs';
 import { NexoModule } from '#nexo/language/vocabulary/NexoModule.mjs';
 import { NexoRegistry } from '#nexo/language/vocabulary/NexoRegistry.mjs';
@@ -245,6 +247,50 @@ describe('LanguageResolver', () => {
 
         it('may not where nothing it uses gives it a value of Any and its host call supplies no nullable reference, a value parameter of Any and a host call supplying a number among them', () => {
             expect([mayRecognize('shop.count() + 1'), mayRecognize('shop.close()'), mayRecognize('shop.restocks()'), mayRecognize('shop.takes(1)')]).toEqual([false, false, false, false]);
+        });
+    });
+
+    describe('a tolerant resolution', () => {
+        /** The text read tolerantly and resolved tolerantly against the shop, with the bindings of the types given, its diagnostics, by code and pointer, and its resolver. */
+        const resolveTolerantly = (text, types = { word: 'shop.Word' }) => {
+            const reading = new TextReading(text, [{ module: 'shop' }]);
+            const { definition, recovery: validation } = reading.validate();
+            const recovery = new RecoveryRecord(validation.holes);
+            const resolver = new LanguageResolver(registry, ParameterBindings.declare(registry, types, error => recovery.record(error)), reading.locations, recovery);
+
+            resolver.resolveDefinition(definition);
+
+            return { diagnostics: recovery.diagnostics.map(error => [error.code, error.location.pointer ?? error.location.binding]), resolver };
+        };
+
+        it('records each node whose resolution fails and reads it as a value of Any, resolving the rest, the type of each node recorded by its pointer', () => {
+            const { diagnostics, resolver } = resolveTolerantly('{ a = word.nothing, b = a.anything, c = word.pad(1), d = 1 + true }');
+
+            expect(diagnostics).toEqual([['NEXO3001', '/expression/objectFields/0/value'], ['NEXO3067', '/expression/objectFields/3/value/right']]);
+            expect(String(resolver.nodeTypes.get('/expression/objectFields/2/value'))).toBe('String');
+            expect(resolver.nodeTypes.get('/expression/objectFields/1/value').kind).toBe('any');
+        });
+
+        it('records the scope each hole stands in, and its receiver\'s resolution, which a tool reads', () => {
+            const { diagnostics, resolver } = resolveTolerantly('let n = 2\nreturn { a = word., b = }');
+            const member = resolver.holeScopes.get('/expression/result/objectFields/0/value');
+            const value = resolver.holeScopes.get('/expression/result/objectFields/1/value');
+
+            expect(diagnostics).toEqual([]);
+            expect(String(member.receiver.type)).toBe('Word');
+            expect(value.receiver).toBeNull();
+            expect([value.scope.locals.has('n'), value.scope.locals.has('a'), member.scope.locals.has('a')]).toEqual([true, true, false]);
+        });
+
+        it('records an import the registry cannot give and resolves with the rest, a hole of a refused import\'s namespace refusing nothing more', () => {
+            const { diagnostics } = resolveTolerantly('import Stock\n\n{ a = Stock.level, b = word.pad(1) }');
+
+            expect(diagnostics[0]).toEqual(['NEXO3002', '/imports/0']);
+        });
+
+        it('settles nothing from bindings of declared types alone, which hold no value', () => {
+            expect(resolveTolerantly('word.pad(count)', { word: 'shop.Word', count: 'Number' }).diagnostics).toEqual([]);
+            expect(resolveTolerantly('"a".[name]', { name: 'String' }).diagnostics.map(([code]) => code)).toEqual(['NEXO3014']);
         });
     });
 });
