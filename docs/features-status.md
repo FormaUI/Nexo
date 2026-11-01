@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.10` and definition version 38, the tenth beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.11` and definition version 38, the eleventh beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.10` | `1.0.0-beta.10` |
+| Language | `1.0.0-beta.11` | `1.0.0-beta.11` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -75,7 +75,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Values in a host's forms | [A value in a host's form](../spec/runtime/evaluation.md#runtime-host-forms) | Implemented | [`alpha.35`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-35) |
 | Preparing host calls and projecting what their host supplies | [Host calls](../spec/runtime/host-calls.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Modules: their declarations, operators, internal declarations, duplicates and registries | [Modules](../spec/runtime/modules.md) | Implemented, with a [gap](#open-decisions): a type's copy keeps a key holding `undefined` | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
-| Declaring members, their parameter keys and the declaration helpers | [Members](../spec/runtime/members.md) | Implemented, with a [gap](#open-decisions): parameter defaults, options the helpers drop, and a value parameter's `context` left unchecked | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
+| Declaring members, their parameter keys and the declaration helpers | [Members](../spec/runtime/members.md) | Implemented, with a [gap](#open-decisions): options the helpers drop, and a value parameter's `context` left unchecked | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Extensions a module declares | [Extensions](../spec/runtime/extensions.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | Observation types and targets | [Observations](../spec/runtime/observations.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Type selectors' keys as mappings | [Type selectors](../spec/runtime/type-selectors.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
@@ -144,7 +144,6 @@ No open decision remains. [Decisions](decisions.md#d26) settles who may change d
 
 These gaps between the specification and the code, found by audits and by the review above, are each open until decided:
 
-- **Parameter defaults.** [Null arguments](../spec/language/members.md#nullability-a-null-argument-follows-the-parameter) make propagating null a parameter's default, and a parameter required unless marked optional, while `createModule` requires `required` and `nulls` of every parameter (NEXO4536), and only the [declaration helpers](../spec/runtime/members.md#members-declaration-helpers) supply defaults.
 - **`distinctBy`'s key.** [List members](../spec/language/collections.md#collections-list-members) refuse a key of no key type that `distinctBy` gives (NEXO3083), while the resolver refuses one only where a call answers a dictionary, so `xs.distinctBy({ a = it })` is accepted.
 - **Membership of other values.** `contains`, `indexOf`, `distinct` and `distinctBy` compare by [key equality](../spec/language/collections.md#collections-dictionaries-and-pairs), which defines none for an object, a list or a structured value, while the evaluator compares those by identity, so `[[1], [1]].distinct.count` is 2.
 - **A dictionary's metadata.** [Provenance](../spec/runtime/evaluation.md#runtime-results-provenance) gives a list's lineage through filtering and reordering alone, while the collections proposal's decision 9 keeps a retained entry's metadata too; a dictionary's `where` and `select` record none.

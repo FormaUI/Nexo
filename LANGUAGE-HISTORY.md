@@ -7,6 +7,19 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-11"></a>
+
+## `1.0.0-beta.11`
+
+*November 1, 2026 · definition format 38*
+
+**Runtime**
+
+- [Parameter declaration keys](spec/runtime/members.md#members-parameter-declaration-keys): a parameter may leave out `required`, which is then `true` unless it declares a `default`, and `nulls`, which is then `propagate`, as [null arguments](spec/language/members.md#nullability-a-null-argument-follows-the-parameter) describe a parameter its declaration says nothing of. Creating a module refused a parameter leaving out either (NEXO4536), which now refuses a value of them it doesn't take alone.
+- [Creating a module](spec/runtime/modules.md#modules-declarations): a module's copy of a parameter holds `required` and, but for a function parameter, `nulls`, as given or as their defaults give them.
+
+**Breaking:** nothing. A declaration refused before is taken now.
+
 <a id="v1-0-0-beta-10"></a>
 
 ## `1.0.0-beta.10`

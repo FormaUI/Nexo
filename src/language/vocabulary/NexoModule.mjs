@@ -833,7 +833,7 @@ export class NexoModule {
             fail(member.result === undefined ? 'NEXO4003' : 'NEXO4512', `${isInvokedByHost ? 'It declares the type of each value its host supplies, or none, where it supplies none' : 'It declares the type of its result'}${NexoModule.#notationFailureOf(member.result)}`, name, 'result');
         }
 
-        const parameters = Array.isArray(member.parameters) ? member.parameters.map(parameter => NexoModule.#withoutUndefinedValues(parameter)) : (member.parameters ?? []);
+        const parameters = Array.isArray(member.parameters) ? member.parameters.map(parameter => NexoModule.#withParameterDefaults(NexoModule.#withoutUndefinedValues(parameter))) : (member.parameters ?? []);
 
         if (!Array.isArray(parameters)) {
             fail('NEXO4526', 'Its parameters are a list', name, 'parameters');
@@ -900,9 +900,12 @@ export class NexoModule {
         }
     }
 
-    /** Creates the stored copy of a valid member: its updates' observations none where it names none, and its parameters each without its keys that hold undefined. */
+    /**
+     * Creates the stored copy of a valid member: its updates' observations none where it names none, and its parameters each without its keys that hold undefined, and with whether it is required and its null policy
+     * where it leaves them out.
+     */
     static #createMemberCopy(member) {
-        const parameters = (member.parameters ?? []).map(parameter => NexoModule.#withoutUndefinedValues(parameter));
+        const parameters = (member.parameters ?? []).map(parameter => NexoModule.#withParameterDefaults(NexoModule.#withoutUndefinedValues(parameter)));
         const updates = member.updates === undefined ? {} : { updates: { observations: [], ...NexoModule.#withoutUndefinedValues(member.updates) } };
         // A member that declares its own type parameters is named by its local name, and keeps them beside it.
         const named = member.name === undefined ? {} : NexoModule.#namedCopyOf(member.name);
@@ -1003,6 +1006,18 @@ export class NexoModule {
         }
     }
 
+    /**
+     * The parameter with what its declaration leaves implicit: required unless it declares a default, and, but for a function parameter, which is never null, propagating null, as a parameter does unless its
+     * declaration says otherwise. What it gives is kept, and validated as given.
+     */
+    static #withParameterDefaults(parameter) {
+        if (!ObjectUtils.isNonArrayObject(parameter)) {
+            return parameter;
+        }
+
+        return { required: !Object.hasOwn(parameter, 'default'), ...(parameter.kind === 'function' ? {} : { nulls: 'propagate' }), ...parameter };
+    }
+
     static #validateParameter(parameter, memberName, fail) {
         NexoModule.#validateKeys(parameter, PARAMETER_KEYS, 'A parameter', NexoModule.#failUnder(fail, 'parameters'), memberName);
 
@@ -1012,7 +1027,7 @@ export class NexoModule {
         const hasValidNullPolicy = parameter?.kind === 'function' ? parameter.nulls === undefined : NULL_POLICIES.includes(parameter?.nulls);
 
         if (!Names.isIdentifier(parameter.name) || !PARAMETER_KINDS.includes(parameter.kind) || !hasValidNullPolicy || typeof parameter.required !== 'boolean') {
-            fail(parameter.kind === 'function' && !hasValidNullPolicy ? 'NEXO4054' : 'NEXO4536', 'A parameter declares its name, its kind, whether it is required and how it handles null, which a function parameter leaves out', memberName, declarationKey);
+            fail(parameter.kind === 'function' && !hasValidNullPolicy ? 'NEXO4054' : 'NEXO4536', 'A parameter declares its name and its kind, and, where it says them, whether it is required, a Boolean, and how it handles null, propagate or accept, which a function parameter leaves out', memberName, declarationKey);
         }
 
         if (!NexoModule.#isTypeNotation(parameter.type)) {

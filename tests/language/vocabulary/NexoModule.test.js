@@ -209,6 +209,21 @@ describe('NexoModule', () => {
             refusal({ members: [functionDeclaration({ parameters: [...two].reverse() })] }, 'zoom', 'parameters', "The required parameter 'first' follows an optional one");
         });
 
+        it('take a parameter required unless it declares a default, and propagating null, where it leaves either out, its copy holding both', () => {
+            const declared = (overrides = {}) => new NexoModule('charts', {
+                members: [functionDeclaration({ parameters: [{ name: 'f', kind: 'function', type: 'Number', parameterTypes: [] }, { name: 'amount', kind: 'value', type: 'Number', ...overrides }] })],
+            }).members[0].parameters;
+
+            expect(declared()).toEqual([
+                { name: 'f', kind: 'function', type: 'Number', parameterTypes: [], required: true },
+                { name: 'amount', kind: 'value', type: 'Number', required: true, nulls: 'propagate' },
+            ]);
+            expect(declared({ default: 1 })[1]).toEqual({ name: 'amount', kind: 'value', type: 'Number', default: 1, required: false, nulls: 'propagate' });
+            expect(declared({ required: false, nulls: 'accept' })[1]).toEqual({ name: 'amount', kind: 'value', type: 'Number', required: false, nulls: 'accept' });
+            expect(declared({ required: undefined, nulls: undefined })[1]).toEqual({ name: 'amount', kind: 'value', type: 'Number', required: true, nulls: 'propagate' });
+            refusal({ members: [functionDeclaration({ parameters: [parameterDeclaration({ required: true, default: 1 })] })] }, 'zoom', 'parameters', "The required parameter 'amount' declares no default");
+        });
+
         it('take a function parameter in a function the evaluator invokes', () => {
             const callback = parameterDeclaration({ name: 'f', kind: 'function', parameterTypes: [], nulls: undefined });
 

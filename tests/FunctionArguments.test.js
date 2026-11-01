@@ -223,3 +223,18 @@ describe('a reference bound to its receiver', () => {
         });
     });
 });
+
+describe('a value parameter declaring neither whether it is required nor its null policy', () => {
+    const measures = () => nexo.createModule('measures', {
+        types: [extensionDeclaration('Numbers', 'Number', [
+            { name: 'scaled', kind: 'function', arguments: 'positional', result: 'Number', updates: constantUpdates, parameters: [{ name: 'by', kind: 'value', type: 'Number?' }], impl: ({ receiver, args }) => receiver * args.by },
+            { name: 'shifted', kind: 'function', arguments: 'positional', result: 'Number', updates: constantUpdates, parameters: [{ name: 'by', kind: 'value', type: 'Number', default: 1 }], impl: ({ receiver, args }) => receiver + args.by },
+        ])],
+    });
+    const evaluate = script => resolveWith([measures()], script).createEvaluator().evaluate().value;
+
+    it('is required, a null argument making the call answer null, and one declaring a default is optional', () => {
+        expect([evaluate('2:scaled(3)'), evaluate('2:scaled(null)'), evaluate('2:shifted()'), evaluate('2:shifted(3)')]).toEqual([6, null, 3, 5]);
+        expect(errorThrownBy(() => resolveWith([measures()], '2:scaled()'))).toMatchObject({ code: 'NEXO3080', location: { pointer: '/expression' } });
+    });
+});

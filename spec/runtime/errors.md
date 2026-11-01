@@ -214,7 +214,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4529` | A function whose parameter selects a type and whose `result` writes no `@selected` | A module error naming the parameter |
 | `NEXO4534` | `arguments` on a function without parameters | A module error naming the function |
 | `NEXO4535` | `arguments` that are neither `positional` nor `options` | A module error naming the function |
-| `NEXO4536` | A parameter without its name, its kind, its type, its `required` or its null policy, or with a value none of them takes | A module error naming the parameter |
+| `NEXO4536` | A parameter without its name, its kind or its type, or with a value one of them, its `required` or its null policy doesn't take | A module error naming the parameter |
 | `NEXO4537` | A function parameter whose `parameterTypes` are not a list | A module error naming the parameter |
 | `NEXO4538` | A required parameter with a default | A module error naming the parameter |
 | `NEXO4539` | An expression or a predicate parameter whose `context` is not `item` | A module error naming the parameter |

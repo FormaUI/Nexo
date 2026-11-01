@@ -276,7 +276,7 @@ describe('the module error codes', () => {
         const declaring = overrides => creating({ members: [functionDeclaration({ parameters: [parameterDeclaration(overrides)] })] });
         const declaringCallback = overrides => creating({ members: [functionDeclaration({ parameters: [callback(overrides)] })] });
 
-        it('NEXO4536: a parameter without its name, kind, type, required or null policy, or with one it does not take', () => {
+        it('NEXO4536: a parameter without its name, kind or type, or with one of them, a required or a null policy it does not take', () => {
             expectModuleCode(declaring({ kind: undefined }), 'NEXO4536');
             expectModuleCode(declaring({ nulls: 'drop' }), 'NEXO4536');
             expectModuleCode(declaring({ required: 'yes' }), 'NEXO4536');

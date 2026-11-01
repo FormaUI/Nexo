@@ -316,7 +316,9 @@ export interface NexoParameterDeclaration {
     type: string;
     /** The types its function is called with, in order, in Nexo's notation, which may write a type parameter its member's receiver binds; only a function parameter declares them, beside its member's `parameters`, which are declarations. */
     parameterTypes?: string[];
-    required: boolean;
+    /** Whether its argument must be given, `true` where it is left out unless it declares a default; a module's copy always holds it. */
+    required?: boolean;
+    /** The value a missing optional argument takes, which a required parameter declares none of. */
     default?: unknown;
     /** Whether the argument names something the vocabulary resolves before any evaluation; a fixed parameter is a value parameter of type `String`. */
     fixed?: boolean;
@@ -324,7 +326,7 @@ export interface NexoParameterDeclaration {
     selects?: 'type';
     /** The type selector a parameter that selects a type selects through. */
     selector?: string;
-    /** Whether a null argument makes the call answer null, or is accepted; a function parameter leaves it out, since a function is never null. */
+    /** Whether a null argument makes the call answer null, `'propagate'` where it is left out, or is accepted; a function parameter leaves it out, since a function is never null. */
     nulls?: 'propagate' | 'accept';
     /** What an expression or a predicate argument is evaluated against. */
     context?: 'item';

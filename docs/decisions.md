@@ -541,3 +541,19 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Refusing the call that leaves the argument out where the default doesn't fit its binding. A member would be valid for some calls and not for others, a deferred call would find out only as it is evaluated, and a default no call can take would still register.
   - A parameter of a type parameter taking no default at all. Null for `T?` and `[]` for `List<T>` fit every binding, and a module needs them.
+
+<a id="d38"></a>
+
+## D38 — A parameter is required and propagates null unless it says otherwise
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, closing a gap between the specification and the code.
+- **Decision:** A parameter may leave out `required` and `nulls`. Left out, `required` is `true` unless the parameter declares a `default`, and `nulls` is `propagate`, but for a function parameter, which takes none. The module's copy writes both. The language advances to `1.0.0-beta.11`.
+- **Why:**
+  - The language said a parameter is required unless its declaration marks it optional, and propagates null by default, while `createModule` refused a parameter that left either out. The two contracts described one parameter differently.
+  - A module's declarations already leave out what has a default, `internal`, `invokedBy`, `abstract` and `fixed` among them, and the copy writes what its contract leaves implicit. `required` and `nulls` were the exceptions.
+  - The declaration helpers already gave these defaults, `required` false where a default is given. One rule now serves both, so a declaration written by hand reads as one the helpers wrote.
+- **Declined:**
+  - Changing the language's words to require both keys: the language describes what a parameter means, and its default is what most parameters are.
+  - `required` always `true` where it is left out: a parameter declaring a default would then be refused as a required one with a default (NEXO4538), against the helpers' rule.

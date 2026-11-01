@@ -76,16 +76,16 @@ A parameter is a value, an expression, a predicate or a function. An expression 
 | `name` | The parameter's name, an [identifier](../language/lexical-structure.md#names-and-reserved-words), once among its member's parameters, which an options object's field gives |
 | `kind` | `value`, `expression`, `predicate` or `function` |
 | `type` | A value's type, the type an expression produces, `Boolean` for a predicate, the truthiness its implementation receives (NEXO4540), and a function's result's |
-| `required` | Whether its argument must be given, a Boolean |
+| `required` | Whether its argument must be given, a Boolean, `true` where it is left out unless the parameter declares a `default`, as [null arguments](../language/members.md#nullability-a-null-argument-follows-the-parameter) set out |
 | `default` | The value a missing optional argument takes; a required parameter declares none (NEXO4538). A parameter of a dictionary, a pair or a position type takes no default but null (NEXO4548), since no default holds one, and one whose type writes a [type parameter](../language/types.md#types-type-parameters) takes a default every type it may bind to admits, null where it is nullable or a list of none of its values, as `[]` (NEXO4548), since a call may bind it to any type |
-| `nulls` | Its [null policy](../language/members.md#nullability-a-null-argument-follows-the-parameter), `propagate` or `accept`; a function parameter leaves it out (NEXO4054) |
+| `nulls` | Its [null policy](../language/members.md#nullability-a-null-argument-follows-the-parameter), `propagate` or `accept`, `propagate` where it is left out; a function parameter leaves it out (NEXO4054) |
 | `fixed` | Whether its argument is [fixed](../language/members.md#arguments-fixed), a Boolean (NEXO4541), which a function parameter leaves out; a fixed parameter is a value parameter of type `String` (NEXO4545) |
 | `selects`, `selector` | What a fixed parameter selects, `type`, and the type selector it selects through, which a parameter that is not fixed declares neither of (NEXO4542) |
 | `context` | An expression's or a predicate's implicit parameter, `item`, which each declares (NEXO4539) and a function parameter refuses |
 | `parameterTypes` | A function parameter's callback contract, the types of the arguments its function is called with, in order, which a function parameter declares (NEXO4537) and any other refuses |
 | `omitted` | What the member does where an optional argument is left out, said in words for its documentation, which Nexo never reads |
 
-Creating the module refuses a parameter that leaves out its `name`, its `kind`, its `type` or its `required`, or, but for a function parameter, its `nulls` (NEXO4536), and one declaring a key the table does not name (NEXO4030).
+Creating the module refuses a parameter that leaves out its `name`, its `kind` or its `type`, or gives one of them, its `required` or its `nulls` a value it doesn't take (NEXO4536), and one declaring a key the table does not name (NEXO4030). The module's copy of a parameter holds `required` and, but for a function parameter, `nulls`, as given or as their defaults give them.
 
 Only a function the evaluator invokes declares a function parameter, which is required, has no null policy and is given to no observation; it declares the types of the arguments it is called with, `parameterTypes`, and its type is its result's. Those types may write a type parameter the type or the extension around the member declares, as `List`'s `T`, or that of an extension on any type `T`, which takes a receiver of any type and binds `T` to it, so a callback takes the receiver as its own type, as a test of any receiver a module declares does.
 
