@@ -557,3 +557,20 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Changing the language's words to require both keys: the language describes what a parameter means, and its default is what most parameters are.
   - `required` always `true` where it is left out: a parameter declaring a default would then be refused as a required one with a default (NEXO4538), against the helpers' rule.
+
+<a id="d39"></a>
+
+## D39 — A declaration helper writes every option it is given
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, closing gaps between the specification and the code.
+- **Decision:** Each declaration helper that takes options writes every key they give over the defaults it creates, and leaves none out, so `createModule` validates what a host wrote. `createPredicateParameterDeclaration` takes options, as `createExpressionParameterDeclaration` does. A value parameter declaring `context` is refused (NEXO4030), and a type's copy leaves out a key holding `undefined`, as every other declaration's does. The language advances to `1.0.0-beta.12`.
+- **Why:**
+  - A helper that drops an option hides a host's mistake: `internal` was dropped, so a member written internal was public, and `selects` without `fixed` was dropped, so a parameter meant to select a type silently selected none. Written, each is either kept, as `internal` now is, or refused where it is written, with a module error naming the key.
+  - One rule now serves every helper. `createValueParameterDeclaration` already wrote its options over its defaults, while the member helpers read five keys and dropped the rest, and wrote `invokedBy` for a property, which `createModule` then refused.
+  - `nexo.d.ts` declared options for `createPredicateParameterDeclaration`, which took none, and a predicate that accepts a null item, as `where(it == null)` would keep null items, is a parameter a module needs.
+  - A value parameter is evaluated once, where the call is written, so it has no implicit parameter; a `context` on one meant nothing and was never read.
+- **Declined:**
+  - Dropping every option a declaration doesn't take, the rule the member helpers half followed: a mistake would still pass silently, and the helper would repeat what `createModule` already checks.
+  - Refusing in the helper: `createModule` is where a declaration is validated, located at its module and its key, and a helper constructs a record and checks nothing.

@@ -58,6 +58,7 @@ describe('the module error codes', () => {
             expectModuleCode(creating({ members: [propertyDeclaration({ syntax: 'function-call' })] }), 'NEXO4030');
             expectModuleCode(creating({ members: [functionDeclaration({ syntax: 'indexer' })] }), 'NEXO4030');
             expectModuleCode(creating({ members: [functionDeclaration({ default: true })] }), 'NEXO4030');
+            expectModuleCode(creating({ members: [functionDeclaration({ parameters: [parameterDeclaration({ context: 'item' })] })] }), 'NEXO4030');
             expectModuleCode(creating({ members: [indexerDeclaration({ arguments: 'positional' })] }), 'NEXO4030');
             expectModuleCode(creating({ members: [propertyDeclaration({ updates: { ...constantUpdates, tolerence: 1 } })] }), 'NEXO4030');
             expectModuleCode(creating({ members: [functionDeclaration({ parameters: [parameterDeclaration({ fixd: true })] })] }), 'NEXO4030');

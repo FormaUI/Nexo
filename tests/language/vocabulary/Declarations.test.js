@@ -27,8 +27,22 @@ describe('Declarations', () => {
         expect(() => new NexoModule('shop', { members: [Declarations.createPropertyDeclaration('price', 'Number', { updates: constantUpdates, impl: () => 1 })] })).not.toThrow();
     });
 
-    it('writes no updates for a function the host invokes, whatever it is given', () => {
-        expect(Declarations.createFunctionDeclaration('dim', 'Number', { invokedBy: 'host', updates: constantUpdates })).toEqual({ name: 'dim', kind: 'function', invokedBy: 'host', result: 'Number', parameters: [] });
+    it('writes every option it is given over its defaults, leaving none out, so a module refuses one its declaration does not take', () => {
+        const key = Declarations.createValueParameterDeclaration('key', 'String');
+
+        expect(Declarations.createPropertyDeclaration('price', 'Number', { updates: constantUpdates, internal: true })).toEqual({ name: 'price', kind: 'property', result: 'Number', updates: constantUpdates, internal: true });
+        expect(Declarations.createFunctionDeclaration('pad', 'String', { updates: constantUpdates, parameters: [key], arguments: 'options', internal: false })).toEqual({ name: 'pad', kind: 'function', result: 'String', parameters: [key], arguments: 'options', updates: constantUpdates, internal: false });
+        expect(Declarations.createFunctionDeclaration('dim', 'Number', { invokedBy: 'host', updates: constantUpdates })).toEqual({ name: 'dim', kind: 'function', invokedBy: 'host', result: 'Number', parameters: [], updates: constantUpdates });
+        expect(refusalOf([Declarations.createFunctionDeclaration('dim', 'Number', { invokedBy: 'host', updates: constantUpdates })])).toEqual({ code: 'NEXO4030', location: { module: 'shop', declaration: 'dim', declarationKey: 'updates' } });
+        expect(refusalOf([Declarations.createPropertyDeclaration('price', 'Number', { updates: constantUpdates, invokedBy: 'host' })])).toEqual({ code: 'NEXO4030', location: { module: 'shop', declaration: 'price', declarationKey: 'invokedBy' } });
+        expect(refusalOf([Declarations.createPropertyDeclaration('price', 'Number', { updates: constantUpdates, parameters: [key] })])).toEqual({ code: 'NEXO4030', location: { module: 'shop', declaration: 'price', declarationKey: 'parameters' } });
+        expect(refusalOf([Declarations.createFunctionDeclaration('pad', 'String', { updates: constantUpdates, arguments: 'positional' })])).toEqual({ code: 'NEXO4534', location: { module: 'shop', declaration: 'pad', declarationKey: 'arguments' } });
+    });
+
+    it('keeps a member internal where it is given internal, as a module reads it', () => {
+        const module = new NexoModule('shop', { members: [Declarations.createPropertyDeclaration('cost', 'Number', { updates: constantUpdates, internal: true, impl: () => 1 })] });
+
+        expect(module.members[0].internal).toBe(true);
     });
 
     it('creates the parameters in their declaration shape, each with the defaults its contract gives it', () => {
@@ -36,6 +50,16 @@ describe('Declarations', () => {
         expect(Declarations.createExpressionParameterDeclaration('Number')).toEqual({ name: 'expression', kind: 'expression', type: 'Number', context: 'item', required: true, fixed: false, nulls: 'propagate' });
         expect(Declarations.createExpressionParameterDeclaration('U', { nulls: 'accept' })).toEqual({ name: 'expression', kind: 'expression', type: 'U', context: 'item', required: true, fixed: false, nulls: 'accept' });
         expect(Declarations.createPredicateParameterDeclaration()).toEqual({ name: 'expression', kind: 'predicate', type: 'Boolean', context: 'item', required: true, fixed: false, nulls: 'propagate' });
+        expect(Declarations.createPredicateParameterDeclaration({ nulls: 'accept' })).toEqual({ name: 'expression', kind: 'predicate', type: 'Boolean', context: 'item', required: true, fixed: false, nulls: 'accept' });
         expect(Declarations.createFunctionParameterDeclaration('test', 'Boolean', ['String'])).toEqual({ name: 'test', kind: 'function', type: 'Boolean', parameterTypes: ['String'], required: true });
+    });
+
+    it("writes a parameter's options over its defaults, a default left undefined leaving it required, and a selection without fixed for a module to refuse", () => {
+        expect(Declarations.createValueParameterDeclaration('width', 'Number', { default: undefined })).toEqual({ name: 'width', kind: 'value', type: 'Number', required: true, fixed: false, nulls: 'propagate', default: undefined });
+        expect(Declarations.createValueParameterDeclaration('kind', 'String', { selects: 'type', selector: 'event' })).toEqual({ name: 'kind', kind: 'value', type: 'String', required: true, fixed: false, nulls: 'propagate', selects: 'type', selector: 'event' });
+        expect(refusalOf([Declarations.createFunctionDeclaration('on', '@selected', { updates: constantUpdates, parameters: [Declarations.createValueParameterDeclaration('kind', 'String', { selects: 'type', selector: 'event' })] })])).toEqual({
+            code: 'NEXO4542',
+            location: { module: 'shop', declaration: 'on', declarationKey: 'parameters' },
+        });
     });
 });

@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.11` · definition format 38*
+*Unpublished · language `1.0.0-beta.12` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -25,3 +25,5 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A diagnostic writes Nexo's own type as `Nexo.Number` beside a module's type of its name, and a script's `Nexo.Number` is refused without suggesting `import Nexo`.
 - A default of a parameter whose type writes a type parameter is refused at registration, NEXO4548, unless every type it may bind to admits it: null where its type is nullable, or a list of none of its values.
 - A parameter may leave out `required`, `true` unless it declares a default, and `nulls`, `propagate`; a module's copy writes both. `NexoParameterDeclaration.required` is optional.
+- The declaration helpers write every option they are given, `internal` among them, so `createModule` refuses one its declaration doesn't take, where a helper dropped it. `createPredicateParameterDeclaration` takes options, `nulls` among them.
+- A value parameter declaring `context` is refused, NEXO4030, and a type's copy leaves out a key holding `undefined`.

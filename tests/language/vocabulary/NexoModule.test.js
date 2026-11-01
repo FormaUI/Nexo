@@ -115,6 +115,22 @@ describe('NexoModule', () => {
         expect(module.members[0].parameters[0]).not.toBe(option);
     });
 
+    it('leaves out of every declaration\'s copy a key holding undefined, a type\'s among them, as a key it does not write', () => {
+        const module = new NexoModule('charts', {
+            types: [
+                { name: 'Chart', kind: 'reference', isInstance: () => true, supertype: undefined, abstract: undefined, members: [propertyDeclaration({ internal: undefined })] },
+                { name: 'Point', kind: 'structured', import: undefined, members: dataPropertyDeclarations({ x: 'Number' }) },
+            ],
+        });
+
+        expect(module.types.map(type => Object.keys(type))).toEqual([['name', 'kind', 'isInstance', 'members'], ['name', 'kind', 'members']]);
+        expect(Object.keys(module.types[0].members[0])).not.toContain('internal');
+    });
+
+    it('refuses a context on a value parameter, which is evaluated once where the call is written, at its parameters', () => {
+        refusal({ members: [functionDeclaration({ parameters: [parameterDeclaration({ context: 'item' })] })] }, 'zoom', 'parameters', "The parameter 'amount' is a value, evaluated once where the call is written, so it declares no 'context'");
+    });
+
     it('keeps a member as it is declared, an indexer named or unnamed, filling no key its kind does not take', () => {
         const { members } = new NexoModule('charts', onStrings([functionDeclaration({ name: 'level' }), indexerDeclaration({ name: 'key' }), indexerDeclaration()])).types[0];
 

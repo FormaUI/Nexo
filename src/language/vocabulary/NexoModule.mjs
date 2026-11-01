@@ -506,9 +506,12 @@ export class NexoModule {
         type.members.forEach(member => NexoModule.#validateMember(NexoModule.#withoutUndefinedValues(member), failWithinType, type.kind, typeParameters));
     }
 
-    /** Creates the stored copy of a valid type: its data, named by its local name with the type parameters it declares beside it, and each of its own members as a member's stored copy is created. */
+    /**
+     * Creates the stored copy of a valid type: its data without its keys that hold undefined, named by its local name with the type parameters it declares beside it, and each of its own members as a member's stored
+     * copy is created.
+     */
     static #createTypeCopy(type) {
-        const copy = { ...NexoModule.#copyOf(type), ...NexoModule.#namedCopyOf(type.name) };
+        const copy = { ...NexoModule.#copyOf(NexoModule.#withoutUndefinedValues(type)), ...NexoModule.#namedCopyOf(type.name) };
 
         return type.members === undefined ? copy : { ...copy, members: type.members.map(member => NexoModule.#createMemberCopy(NexoModule.#withoutUndefinedValues(member))) };
     }
@@ -1053,6 +1056,11 @@ export class NexoModule {
             }
         } else if (parameter.parameterTypes !== undefined) {
             fail('NEXO4030', `The parameter '${parameter.name}' is no function, so it declares no parameterTypes`, memberName, declarationKey);
+        }
+
+        // A value is evaluated once, where the call is written, so it has no implicit parameter of its own.
+        if (parameter.kind === 'value' && parameter.context !== undefined) {
+            fail('NEXO4030', `The parameter '${parameter.name}' is a value, evaluated once where the call is written, so it declares no 'context'`, memberName, declarationKey);
         }
 
         if (parameter.required && 'default' in parameter) {

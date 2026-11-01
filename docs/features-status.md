@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.11` and definition version 38, the eleventh beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.12` and definition version 38, the twelfth beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.11` | `1.0.0-beta.11` |
+| Language | `1.0.0-beta.12` | `1.0.0-beta.12` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -74,8 +74,8 @@ Each feature, the contract that states it, its state in the implementation, and 
 | The lineage of projected items | [Provenance](../spec/runtime/evaluation.md#runtime-results-provenance) | Implemented, with a [gap](#open-decisions): a dictionary's metadata | [`alpha.35`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-35) |
 | Values in a host's forms | [A value in a host's form](../spec/runtime/evaluation.md#runtime-host-forms) | Implemented | [`alpha.35`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-35) |
 | Preparing host calls and projecting what their host supplies | [Host calls](../spec/runtime/host-calls.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
-| Modules: their declarations, operators, internal declarations, duplicates and registries | [Modules](../spec/runtime/modules.md) | Implemented, with a [gap](#open-decisions): a type's copy keeps a key holding `undefined` | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
-| Declaring members, their parameter keys and the declaration helpers | [Members](../spec/runtime/members.md) | Implemented, with a [gap](#open-decisions): options the helpers drop, and a value parameter's `context` left unchecked | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
+| Modules: their declarations, operators, internal declarations, duplicates and registries | [Modules](../spec/runtime/modules.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
+| Declaring members, their parameter keys and the declaration helpers | [Members](../spec/runtime/members.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Extensions a module declares | [Extensions](../spec/runtime/extensions.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | Observation types and targets | [Observations](../spec/runtime/observations.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Type selectors' keys as mappings | [Type selectors](../spec/runtime/type-selectors.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
@@ -148,7 +148,6 @@ These gaps between the specification and the code, found by audits and by the re
 - **Membership of other values.** `contains`, `indexOf`, `distinct` and `distinctBy` compare by [key equality](../spec/language/collections.md#collections-dictionaries-and-pairs), which defines none for an object, a list or a structured value, while the evaluator compares those by identity, so `[[1], [1]].distinct.count` is 2.
 - **A dictionary's metadata.** [Provenance](../spec/runtime/evaluation.md#runtime-results-provenance) gives a list's lineage through filtering and reordering alone, while the collections proposal's decision 9 keeps a retained entry's metadata too; a dictionary's `where` and `select` record none.
 - **Codes.** NEXO5012 is raised for an ambiguous deferred selection and for each argument a selected member can't take, and for a value of `Any` an extension access is given outside the extension's target, conditions its catalogue row doesn't name, against the rule that distinct conditions never share a code; NEXO3045, NEXO3065, NEXO4021 and NEXO4067 are catalogued and never raised.
-- **Declarations.** `createPredicateParameterDeclaration` takes no options, which `nexo.d.ts` declares; a member helper drops `internal` and passes `invokedBy` to a property, which `createModule` then refuses; a value parameter's `context` is never checked; and a type's copy keeps a key holding `undefined`, which [valid declarations](../spec/runtime/modules.md#modules-declarations) count as left out.
 - **Errors.** `NexoError` exposes `syntax` and `locate`, beside the four factories `nexo.d.ts` declares, and result paths are validated by `nexo.paths.validate` alone, never by `typeAt` and `valueAt`.
 
 Deferred items below require their stated trigger before design or implementation resumes.

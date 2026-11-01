@@ -1,31 +1,28 @@
 /**
- * Declarations — the helpers that write a vocabulary's declarations: its parameters and members, each in the declaration shape with the defaults its contract gives it, constructing a record and registering nothing
+ * Declarations — the helpers that write a vocabulary's declarations: its parameters and members, each in the declaration shape with the defaults its contract gives it, constructing a record and registering nothing.
+ * Each writes every option it is given over its defaults, leaving none out, so a module refuses an option its declaration doesn't take, where a helper that dropped it would hide the mistake.
  */
 
 export class Declarations {
     /** A value parameter, required unless it is given a default. */
     static createValueParameterDeclaration(name, type, options = {}) {
-        const parameter = { name, kind: 'value', type, required: !('default' in options), fixed: false, nulls: 'propagate', ...options };
-
-        if (parameter.fixed === false) {
-            delete parameter.selects;
-            delete parameter.selector;
-        }
-
-        return parameter;
+        return { name, kind: 'value', type, required: options.default === undefined, fixed: false, nulls: 'propagate', ...options };
     }
 
     /**
      * An expression parameter, evaluated against each item of the collection it follows, a list's item or a dictionary's value, and producing the type. Its null policy says how a body reads a null item: `propagate`, the
      * default, reads each item as a value that is not null, a null item answering null without the body being evaluated, and `accept` evaluates the body against every item, null included, its `it` of the item's type.
      */
-    static createExpressionParameterDeclaration(type, { nulls = 'propagate' } = {}) {
-        return { name: 'expression', kind: 'expression', type, context: 'item', required: true, fixed: false, nulls };
+    static createExpressionParameterDeclaration(type, options = {}) {
+        return { name: 'expression', kind: 'expression', type, context: 'item', required: true, fixed: false, nulls: 'propagate', ...options };
     }
 
-    /** A required predicate parameter, an expression evaluated against each item whose truthiness its implementation receives, a null item answering null, which is falsy, without the body being evaluated. */
-    static createPredicateParameterDeclaration() {
-        return { name: 'expression', kind: 'predicate', type: 'Boolean', context: 'item', required: true, fixed: false, nulls: 'propagate' };
+    /**
+     * A required predicate parameter, an expression evaluated against each item whose truthiness its implementation receives. Its null policy says how a body reads a null item, as an expression parameter's does:
+     * `propagate`, the default, answers null for it, which is falsy, without the body being evaluated, and `accept` evaluates the body against it.
+     */
+    static createPredicateParameterDeclaration(options = {}) {
+        return { name: 'expression', kind: 'predicate', type: 'Boolean', context: 'item', required: true, fixed: false, nulls: 'propagate', ...options };
     }
 
     /** A function parameter, always required: its callback contract, the types of the arguments the member calls the function with, in order, and the type of the result it takes from it. */
@@ -53,25 +50,13 @@ export class Declarations {
 
     /**
      * A member of the kind, named unless its name is null, with no receiver of its own: where it stands gives it one, the type or the extension it is declared within, and a module member, among a module's `members`,
-     * takes none. Its updates are those it is given, which every member the evaluator invokes declares; a function the host invokes, `invokedBy: 'host'`, has none.
+     * takes none. A function and an indexer take no parameters unless they are given some, and a function's arguments are positional where it has parameters and is given no argument form.
      */
-    static #createMemberDeclaration(kind, name, result, { impl, parameters = [], updates, arguments: argumentForm, invokedBy } = {}) {
-        const declaration = { ...(name === null ? {} : { name }), kind, ...(invokedBy === undefined ? {} : { invokedBy }), result };
+    static #createMemberDeclaration(kind, name, result, options = {}) {
+        const declaration = { ...(name === null ? {} : { name }), kind, result, ...(kind === 'property' ? {} : { parameters: [] }), ...options };
 
-        if (kind !== 'property') {
-            declaration.parameters = parameters;
-
-            if (kind === 'function' && parameters.length > 0) {
-                declaration.arguments = argumentForm ?? 'positional';
-            }
-        }
-
-        if (invokedBy !== 'host' && updates !== undefined) {
-            declaration.updates = updates;
-        }
-
-        if (impl !== undefined) {
-            declaration.impl = impl;
+        if (kind === 'function' && declaration.arguments === undefined && Array.isArray(declaration.parameters) && declaration.parameters.length > 0) {
+            declaration.arguments = 'positional';
         }
 
         return declaration;

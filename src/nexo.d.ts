@@ -633,7 +633,10 @@ export interface NexoRegistry {
     resolve(script: NexoScript, bindings?: NexoBindings | NexoBindingValues, options?: NexoScriptOptions): NexoResolution;
 }
 
-/** The declaration helpers, each creating a declaration as a module declares it, constructing a record and registering nothing; a member takes no receiver of its own, since where it stands gives it one. */
+/**
+ * The declaration helpers, each creating a declaration as a module declares it, constructing a record and registering nothing; each writes every option it is given over its defaults, leaving none out, so a module
+ * refuses one its declaration doesn't take. A member takes no receiver of its own, since where it stands gives it one.
+ */
 export interface NexoDeclarations {
     /** A property: with updates, one the evaluator invokes, or, without them, a property of a structured type's data where it stands directly in that type. */
     createPropertyDeclaration(name: string, result: string, options?: object): NexoMemberDeclaration;
@@ -641,10 +644,12 @@ export interface NexoDeclarations {
     createFunctionDeclaration(name: string, result: string | undefined, options?: object): NexoMemberDeclaration;
     /** An indexer, given its key in brackets: a named one, `x.name[key]`, or, where its name is null, the unnamed one of its receivers, `x[key]`. */
     createIndexerDeclaration(name: string | null, result: string, options?: object): NexoMemberDeclaration;
-    createValueParameterDeclaration(name: string, type: string, options?: object): NexoParameterDeclaration;
+    /** A value parameter, required unless its options give a default. */
+    createValueParameterDeclaration(name: string, type: string, options?: Partial<NexoParameterDeclaration>): NexoParameterDeclaration;
     /** An expression of each item, its `nulls` `'propagate'` by default, so a null item answers null without its body being evaluated, or `'accept'`, which evaluates its body against every item, its `it` of the item's type. */
-    createExpressionParameterDeclaration(type: string, options?: { nulls?: 'propagate' | 'accept' }): NexoParameterDeclaration;
-    createPredicateParameterDeclaration(options?: object): NexoParameterDeclaration;
+    createExpressionParameterDeclaration(type: string, options?: Partial<NexoParameterDeclaration>): NexoParameterDeclaration;
+    /** A predicate of each item, whose truthiness its implementation receives, its `nulls` `'propagate'` by default, so a null item answers null, which is falsy, or `'accept'`, which evaluates its body against it. */
+    createPredicateParameterDeclaration(options?: Partial<NexoParameterDeclaration>): NexoParameterDeclaration;
     /** A function parameter, always required: the types of the arguments the member calls its function with, in order, and the type of the result it takes from it. */
     createFunctionParameterDeclaration(name: string, type: string, parameterTypes: readonly string[]): NexoParameterDeclaration;
 }

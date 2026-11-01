@@ -7,6 +7,24 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-12"></a>
+
+## `1.0.0-beta.12`
+
+*November 1, 2026 · definition format 38*
+
+**Runtime**
+
+- [Declaration helpers](spec/runtime/members.md#members-declaration-helpers): a helper writes every option it is given over the defaults it creates, and leaves none out, so `createModule` refuses one its declaration doesn't take. A member helper dropped every option but `impl`, `parameters`, `updates`, `arguments` and `invokedBy`, `internal` among them, and `updates` for a function its host invokes; `createValueParameterDeclaration` dropped `selects` and `selector` from a parameter that is not fixed.
+- [Declaration helpers](spec/runtime/members.md#members-declaration-helpers): `createPredicateParameterDeclaration(options)` takes options, `nulls` among them, as `createExpressionParameterDeclaration` does, so a predicate may accept a null item.
+- [Parameter declaration keys](spec/runtime/members.md#members-parameter-declaration-keys): a value parameter declaring `context` is refused (NEXO4030), as a function parameter is; it was taken and never read.
+- [Creating a module](spec/runtime/modules.md#modules-declarations): a type's copy leaves out a key that held `undefined`, as every other declaration's does.
+
+**Breaking:**
+
+- A helper given an option its declaration doesn't take, as `parameters` or `invokedBy` for a property, `arguments` for a function without parameters, `updates` with `invokedBy: 'host'`, or `selects` without `fixed: true`, now writes it, and `createModule` refuses it (NEXO4030, NEXO4534, NEXO4542). Leave the option out, or give `fixed: true` where the parameter selects a type.
+- A value parameter declaring `context` is refused (NEXO4030). Leave it out: only an expression and a predicate parameter declare one.
+
 <a id="v1-0-0-beta-11"></a>
 
 ## `1.0.0-beta.11`

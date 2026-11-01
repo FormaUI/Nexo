@@ -81,7 +81,7 @@ A parameter is a value, an expression, a predicate or a function. An expression 
 | `nulls` | Its [null policy](../language/members.md#nullability-a-null-argument-follows-the-parameter), `propagate` or `accept`, `propagate` where it is left out; a function parameter leaves it out (NEXO4054) |
 | `fixed` | Whether its argument is [fixed](../language/members.md#arguments-fixed), a Boolean (NEXO4541), which a function parameter leaves out; a fixed parameter is a value parameter of type `String` (NEXO4545) |
 | `selects`, `selector` | What a fixed parameter selects, `type`, and the type selector it selects through, which a parameter that is not fixed declares neither of (NEXO4542) |
-| `context` | An expression's or a predicate's implicit parameter, `item`, which each declares (NEXO4539) and a function parameter refuses |
+| `context` | An expression's or a predicate's implicit parameter, `item`, which each declares (NEXO4539), and which a value parameter, evaluated once where the call is written, and a function parameter refuse (NEXO4030) |
 | `parameterTypes` | A function parameter's callback contract, the types of the arguments its function is called with, in order, which a function parameter declares (NEXO4537) and any other refuses |
 | `omitted` | What the member does where an optional argument is left out, said in words for its documentation, which Nexo never reads |
 
@@ -103,15 +103,16 @@ A type parameter must have a supported source from which it can be bound: the re
 
 | Helper | Creates |
 | --- | --- |
-| `createPropertyDeclaration(name, result, options)` | `{ name, kind: 'property', result }`, never writing the `parameters` or the `arguments` its options give |
-| `createFunctionDeclaration(name, result, options)` | `{ name, kind: 'function', result, parameters }`, its `parameters` its options' and none where they give none, and its `arguments` its options' where it has parameters, `positional` where they give none, and left out where it has none; its `result` may be `undefined`, for a function its host invokes that supplies nothing |
-| `createIndexerDeclaration(name, result, options)` | `{ name, kind: 'indexer', result, parameters }`, without a `name` where `name` is null, the type's unnamed indexer, its `parameters` its options', and never writing the `arguments` they give |
-| `createValueParameterDeclaration(name, type, options)` | `{ name, kind: 'value', type, required, fixed: false, nulls: 'propagate' }`, `required` false where its options give a `default` and true otherwise, every key its options give written over these, and `selects` and `selector` left out where the parameter is not fixed |
-| `createExpressionParameterDeclaration(type, options)` | `{ name: 'expression', kind: 'expression', type, context: 'item', required: true, fixed: false, nulls }`, `nulls` its options' `nulls` and `propagate` where they give none |
-| `createPredicateParameterDeclaration()` | `{ name: 'expression', kind: 'predicate', type: 'Boolean', context: 'item', required: true, fixed: false, nulls: 'propagate' }` |
+| `createPropertyDeclaration(name, result, options)` | `{ name, kind: 'property', result }` |
+| `createFunctionDeclaration(name, result, options)` | `{ name, kind: 'function', result, parameters: [] }`, and `arguments: 'positional'` where the `parameters` its options give are some and they give no `arguments`; its `result` may be `undefined`, for a function its host invokes that supplies nothing |
+| `createIndexerDeclaration(name, result, options)` | `{ name, kind: 'indexer', result, parameters: [] }`, without a `name` where `name` is null, the type's unnamed indexer |
+| `createValueParameterDeclaration(name, type, options)` | `{ name, kind: 'value', type, required, fixed: false, nulls: 'propagate' }`, `required` false where its options give a `default` and true otherwise |
+| `createExpressionParameterDeclaration(type, options)` | `{ name: 'expression', kind: 'expression', type, context: 'item', required: true, fixed: false, nulls: 'propagate' }` |
+| `createPredicateParameterDeclaration(options)` | `{ name: 'expression', kind: 'predicate', type: 'Boolean', context: 'item', required: true, fixed: false, nulls: 'propagate' }` |
 | `createFunctionParameterDeclaration(name, type, parameterTypes)` | `{ name, kind: 'function', type, parameterTypes, required: true }` |
 
-A member helper takes no receiver, since where its declaration stands gives it one, and reads `impl`, `parameters`, `updates`, `arguments` and `invokedBy` from its options and nothing else: it writes `invokedBy`, `updates` and `impl` where they are given, `updates` never for `invokedBy: 'host'`, and leaves every other option out, `internal` among them.
+- **Options are written whole.** A helper that takes options writes every key they give over what it creates, and leaves none out, `internal` and `nulls` among them, so `createModule` refuses an option its declaration doesn't take, as `invokedBy` on a property, `updates` on a function its host invokes, or `selects` on a parameter that is not fixed, where a helper that dropped it would hide the mistake.
+- **No receiver.** A member helper takes no receiver, since where its declaration stands gives it one.
 
 <a id="what-a-member-declares-evaluation-contract"></a>
 <a id="members-updates"></a>

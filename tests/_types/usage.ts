@@ -24,7 +24,12 @@ const contents: NexoModuleContents = {
         name: 'Strings',
         kind: 'extension',
         target: 'String',
-        members: [{ name: 'shout', kind: 'function', result: 'String', updates: { changes: 'constant', reads: 'fresh' }, impl: ({ receiver }) => `${receiver as string}!` }],
+        members: [
+            { name: 'shout', kind: 'function', result: 'String', updates: { changes: 'constant', reads: 'fresh' }, impl: ({ receiver }) => `${receiver as string}!` },
+            // A parameter declares its name, its kind and its type; whether it is required and its null policy have defaults, which the helpers' options write over.
+            { name: 'pad', kind: 'function', result: 'String', arguments: 'positional', parameters: [{ name: 'width', kind: 'value', type: 'Number' }], updates: { changes: 'constant', reads: 'fresh' } },
+            { name: 'keep', kind: 'function', result: 'List<String>', arguments: 'positional', parameters: [nexo.declarations.createPredicateParameterDeclaration({ nulls: 'accept' })], updates: { changes: 'derived', reads: 'derived' } },
+        ],
     }],
 };
 const operator: NexoOperatorDeclaration = { kind: 'operator', name: 'cast', result: 'Shelf' };
