@@ -265,6 +265,23 @@ describe('a host of plain data', () => {
         expect(nexo.paths.valueAt({ total: { amount: 3 } }, ['total', 'amount'])).toBe(3);
         expect(errorThrownBy(() => nexo.paths.validate(['total', -1]))).toMatchObject({ kind: 'structure' });
     });
+
+    it('refuses a path of another shape wherever one is given, typeAt and valueAt among them, before it reads anything', () => {
+        const resolution = nexo.createRegistry([]).resolve('{ rows = [1, 2] }');
+        const refused = { code: 'NEXO2646', kind: 'structure', location: {} };
+
+        for (const path of [['rows', -1], ['rows', 1.5], ['floor-area'], 'rows', null]) {
+            expect(errorThrownBy(() => nexo.paths.validate(path)), JSON.stringify(path)).toMatchObject(refused);
+            expect(errorThrownBy(() => resolution.typeAt(path)), JSON.stringify(path)).toMatchObject(refused);
+            expect(errorThrownBy(() => nexo.paths.valueAt({ rows: [1, 2] }, path)), JSON.stringify(path)).toMatchObject(refused);
+        }
+    });
+
+    it("reads an object field a value holds and a list's item alone, never what its host language reaches through it", () => {
+        const result = { rows: [{ name: 'tea' }], total: 'oat' };
+
+        expect([['rows', 0, 'name'], ['rows', 1], ['rows', 'length'], ['constructor'], ['total', 'length'], ['rows', 0, 0], ['missing', 'name']].map(path => nexo.paths.valueAt(result, path))).toEqual(['tea', null, null, null, null, null, null]);
+    });
 });
 
 describe('the declaration shape', () => {

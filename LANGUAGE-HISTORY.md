@@ -7,6 +7,20 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-15"></a>
+
+## `1.0.0-beta.15`
+
+*November 1, 2026 · definition format 38*
+
+**Runtime**
+
+- [Result paths](spec/runtime/resolution.md#runtime-result-paths): `resolution.typeAt` and `nexo.paths.valueAt` refuse a path of another shape, as `nexo.paths.validate` does (NEXO2646), where they read it as given: `typeAt` read a negative or a fractional number as an index, and `valueAt` answered null for both.
+- [Result paths](spec/runtime/resolution.md#runtime-result-paths): a path is a list, and one that is none, as a string, is refused (NEXO2646); `nexo.paths.validate('rooms')` read a string's characters as its steps.
+- [Result paths](spec/runtime/resolution.md#runtime-result-paths): `nexo.paths.valueAt` steps to an object field a value holds and a list's item alone, null for anything else, so `['rows', 'length']` and `['constructor']` reach null, never a list's length or an object's constructor.
+
+**Breaking:** a host giving `typeAt` or `valueAt` a path of another shape is refused with NEXO2646 where it got an answer. Build paths of field names and whole indices that are not negative, or check one with `nexo.paths.validate` first. A host that read a list's `length` or another property its host language gives through `valueAt` reads it from the value it got.
+
 <a id="v1-0-0-beta-14"></a>
 
 ## `1.0.0-beta.14`

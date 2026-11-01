@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.14` and definition version 38, the fourteenth beta.** What remains is the [open decisions](#open-decisions), [tooling](#tooling) and [the release](#release); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.15` and definition version 38, the fifteenth beta.** What remains is [tooling](#tooling) and [the release](#release), and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.14` | `1.0.0-beta.14` |
+| Language | `1.0.0-beta.15` | `1.0.0-beta.15` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -67,7 +67,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Feature | Contract | State | Since |
 | --- | --- | --- | --- |
 | Bindings, recognition and declared types | [Bindings](../spec/runtime/bindings.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
-| Resolution, its reports, result paths and locations | [Resolution](../spec/runtime/resolution.md) | Implemented, with a [gap](#open-decisions): a path validated by `nexo.paths.validate` alone | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
+| Resolution, its reports, result paths and locations | [Resolution](../spec/runtime/resolution.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Resolutions that stay current across registrations | [Reusing a resolution](../spec/runtime/resolution.md#runtime-reuse) | Implemented | [`alpha.36`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-36) |
 | Evaluation, its hooks, and results with their metadata | [Evaluation](../spec/runtime/evaluation.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Data shared with a host, read-only once it passes | [Data shared with a host](../spec/runtime/evaluation.md#runtime-shared-data) | Implemented: Nexo changes no data it shares, a host keeps its own part, which Nexo doesn't check, and Nexo's own members rely on their answers, and their list members on the check of the data items they give their functions | [`alpha.42`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-42) |
@@ -132,19 +132,13 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 **Beta.** Nexo entered the beta at `1.0.0-beta.1`, as [decisions](decisions.md#d27) records:
 
 - The documents and the module API were audited, and the behavior of a cast inside an optional enclosed access was settled.
-- No breaking redesign is planned. The [open decisions](#open-decisions) and the [deferred work](#deferred) document the remaining limitations.
+- No breaking redesign is planned. The [deferred work](#deferred) documents the remaining limitations, and [no decision is open](#open-decisions).
 
 <a id="open-decisions"></a>
 
 ## Open decisions
 
-The decisions taken while implementing were reviewed together, and the outcome of each is in [decisions](decisions.md#implementation-decisions-reviewed): the rules they settled are stated in the specification, and the questions they left open are below.
-
-No open decision remains. [Decisions](decisions.md#d26) settles who may change data Nexo and its host share, [D36](decisions.md#d36) how a module that declares a type spelled as one of Nexo's own names Nexo's, and [D37](decisions.md#d37) which default a parameter of a type parameter takes.
-
-These gaps between the specification and the code, found by audits and by the review above, are each open until decided:
-
-- **Result paths.** Result paths are validated by `nexo.paths.validate` alone, never by `typeAt` and `valueAt`.
+None, and no gap between the specification and the code. The [decisions](decisions.md) record each one taken without stopping to ask, for review: the implementation decisions [reviewed together](decisions.md#implementation-decisions-reviewed), who may change shared data ([D26](decisions.md#d26)), Nexo's own types named qualified ([D36](decisions.md#d36)), a type parameter's default ([D37](decisions.md#d37)), a parameter's defaults ([D38](decisions.md#d38)), what the declaration helpers write ([D39](decisions.md#d39)), what key equality compares ([D40](decisions.md#d40)), a dictionary's record ([D41](decisions.md#d41)), a code for each condition ([D42](decisions.md#d42)), the error class's factories ([D43](decisions.md#d43)) and where a result path is checked ([D44](decisions.md#d44)).
 
 Deferred items below require their stated trigger before design or implementation resumes.
 

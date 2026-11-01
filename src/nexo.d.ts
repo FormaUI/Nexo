@@ -579,7 +579,7 @@ export interface NexoResolution {
     readonly deferredAccesses: readonly NexoDeferredAccess[];
     /** Every declaration an evaluation could select: the used declarations, and each deferred access's candidates, an overestimate while a deferred access remains. */
     getCandidateDeclarations(): NexoCandidateDeclarations;
-    /** The type a result path reaches, in type notation, refusing a path the type does not hold. */
+    /** The type a result path reaches, in type notation, refusing a path of another shape (NEXO2646), as `nexo.paths.validate` does, and a path the type does not hold. */
     typeAt(path: readonly (string | number)[]): string;
     /** Where a pointer stands in the source the definition was read from, as `nexo.getLocation` answers given the resolution's definition. */
     getLocation(pointer: string): NexoLocation;
@@ -656,7 +656,9 @@ export interface NexoDeclarations {
 
 /** Result paths: a path's shape validated, and the value it reaches in a result. */
 export interface NexoPaths {
+    /** Refuses a path that is no list of field names and list indices, whole numbers that are not negative (NEXO2646). */
     validate(path: readonly (string | number)[]): void;
+    /** The value the path reaches, an object field the value holds or a list's item at each step, null where a step holds nothing; a path of another shape is refused as `validate` refuses it. */
     valueAt(value: unknown, path: readonly (string | number)[]): unknown;
 }
 

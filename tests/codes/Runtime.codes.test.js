@@ -269,6 +269,8 @@ describe('the runtime codes', () => {
         it('NEXO2646: a path item that is neither a name nor a list index', () => {
             expectNexoError(errorThrownBy(() => nexo.paths.validate(['total', -1])), 'NEXO2646', 'structure');
             expectNexoError(errorThrownBy(() => nexo.paths.validate(['total', 'floor-area'])), 'NEXO2646', 'structure');
+            expectNexoError(errorThrownBy(() => registry.resolve('{ total = 1 }').typeAt(['total', -1])), 'NEXO2646', 'structure');
+            expectNexoError(errorThrownBy(() => nexo.paths.valueAt({ total: 1 }, 'total')), 'NEXO2646', 'structure');
         });
 
         it('NEXO3600: a path into the result of a host call that supplies nothing', () => {

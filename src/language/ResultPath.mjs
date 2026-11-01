@@ -7,8 +7,12 @@ import { Names } from './Names.mjs';
 import { Type } from './Type.mjs';
 
 export class ResultPath {
-    /** Validates a path's structure before anything is resolved: each of its items is a name or a list index, a whole number that is not negative, and any other is refused. */
+    /** Validates a path's shape before anything reads it: a list, each of its items a name or a list index, a whole number that is not negative, and any other is refused. */
     static validateShape(path) {
+        if (!Array.isArray(path)) {
+            throw NexoErrors.structure('NEXO2646', `A path is a list of the names of fields and of list indices, and ${JSON.stringify(path) ?? String(path)} is none`, {});
+        }
+
         for (const item of path) {
             const isIndex = Number.isInteger(item) && item >= 0;
 
@@ -20,7 +24,8 @@ export class ResultPath {
     }
 
     /**
-     * The type the path reaches in the result's type, nullable where a step it passes is; a type that says nothing of its value takes any path, which is checked once its type is known.
+     * The type the path reaches in the result's type, nullable where a step it passes is; a type that says nothing of its value takes any path, which is checked once its type is known. The path's shape is its
+     * caller's to validate first.
      * @param {Type} resultType The result's type.
      * @param {(string | number)[]} path
      * @param {import('./vocabulary/NexoRegistry.mjs').NexoRegistry} registry Where a structured type's fields are declared.
@@ -61,12 +66,17 @@ export class ResultPath {
         return isNullable ? type.toNullable() : type;
     }
 
-    /** The value the path reaches in the result: null where a step it passes is null, and where an index is out of range. */
+    /**
+     * The value the path reaches in the result: a name steps to an object field the value holds, and an index to a list's item; null where a step it passes is null or holds nothing at the step, an object field it
+     * lacks, an index out of range, and a name of a list or an index of an object among them. The path's shape is its caller's to validate first.
+     */
     static valueAt(value, path) {
         let current = value;
 
         for (const item of path) {
-            if (current === null || current === undefined) {
+            const holds = typeof item === 'number' ? Array.isArray(current) && item < current.length : current !== null && typeof current === 'object' && !Array.isArray(current) && Object.hasOwn(current, item);
+
+            if (!holds) {
                 return null;
             }
 

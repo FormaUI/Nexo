@@ -115,7 +115,7 @@ An evaluation error fails the entire result and is delivered to the host in its 
 | `NEXO2643` | A location asked for by a pointer that is not a JSON Pointer | A structure error |
 | `NEXO2644` | A location asked for at a pointer the definition holds nothing at | A structure error naming the pointer |
 | `NEXO2645` | Reading what is not a script's source | A structure error |
-| `NEXO2646` | A result path holding an item that is neither a name nor a whole number that is not negative | A structure error naming the item |
+| `NEXO2646` | A result path that is no list, or holds an item that is neither a name nor a whole number that is not negative, given to `nexo.paths.validate`, `resolution.typeAt` or `nexo.paths.valueAt` | A structure error naming the item or the path |
 
 <a id="module-errors"></a>
 

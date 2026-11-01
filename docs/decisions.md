@@ -268,13 +268,13 @@ Forty decisions were taken while implementing the declarations, member selection
 | I27 | `import` as a keyword | Specified: [names and reserved words](../spec/language/lexical-structure.md#names-and-reserved-words) |
 | I28 | The order and conflicts of imports | Specified: [the definition](../spec/runtime/definition.md#definition) |
 | I29 | What an import makes available | Specified: [imports](../spec/language/modules.md#scripts-imports) |
-| I30 | Extension access | Now specified: [NEXO3026 and used declarations](../spec/runtime/resolution.md#runtime-bindings-and-resolution); two questions [open](features-status.md#open-decisions) |
+| I30 | Extension access | Now specified: [NEXO3026 and used declarations](../spec/runtime/resolution.md#runtime-bindings-and-resolution); two questions [open](features-status.md#open-decisions) then, since settled |
 | I31 | Line structure's refusals | Now specified: [where a line breaks](../spec/language/lexical-structure.md#line-structure-where-a-line-breaks) |
 | I32 | Compact text's layout | Now specified: [canonical text](../spec/runtime/definition.md#definition-canonical-text) |
 | I33 | The order a message lists types in | Now specified: [type name lookup](../spec/language/types.md#types-type-name-lookup) |
 | I34 | Lineage | Specified: [provenance](../spec/runtime/evaluation.md#runtime-results-provenance) |
-| I35 | The collection foundation | Now specified: [parameter defaults](../spec/runtime/members.md#members-parameter-declaration-keys); one question [open](features-status.md#open-decisions) |
-| I36 | Collection expressions | Now specified: [one-line constructs](../spec/language/lexical-structure.md#line-structure-where-a-line-breaks); one question [open](features-status.md#open-decisions) |
+| I35 | The collection foundation | Now specified: [parameter defaults](../spec/runtime/members.md#members-parameter-declaration-keys); one question [open](features-status.md#open-decisions) then, settled by [D38](#d38) |
+| I36 | Collection expressions | Now specified: [one-line constructs](../spec/language/lexical-structure.md#line-structure-where-a-line-breaks); one question [open](features-status.md#open-decisions) then, since settled |
 | I37 | The members of collections | Specified: [list members](../spec/language/collections.md#collections-list-members) |
 | I38 | Indexer signatures | Now specified: [unnamed indexers](../spec/language/members.md#property-access-calls-and-indexers-unnamed-indexers) |
 | I39 | Ordering | Specified: [ordering](../spec/language/collections.md#collections-list-ordering) |
@@ -634,3 +634,16 @@ Forty decisions were taken while implementing the declarations, member selection
   - Locating an offset is a text's concern, which `TextLocations` already relies on, never an error's.
 - **Declined:** Declaring them for hosts, as D29 declined: a host raises its own failures as structure, validation, module or evaluation errors.
 
+<a id="d44"></a>
+
+## D44 — A result path is checked wherever it is given
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, closing a gap between the specification and the code.
+- **Decision:** `resolution.typeAt` and `nexo.paths.valueAt` refuse a path of another shape before they read it, as `nexo.paths.validate` does (NEXO2646), a path that is no list among it. `nexo.paths.valueAt` steps to an object field a value holds and a list's item alone, null for anything else. `nexo.paths.validate` stays, for a host checking a path before a resolution or a result is at hand. The language advances to `1.0.0-beta.15`.
+- **Why:**
+  - Every public operation of an implementation is strict, throwing its first diagnostic as an error, as [errors](../spec/runtime/errors.md#diagnostics-and-errors) set out. `typeAt` read a negative or a fractional number as an index and answered a type for a path no result has, and `valueAt` answered null for the same mistake, which a host can't tell from a path that reached null.
+  - A path names a part of a script's result, an object field or a list's item. `valueAt` read whatever its host language reached through a value, a list's `length` and an object's `constructor` among them, which name no part of a result.
+  - A string's characters iterate as steps, so `validate('rooms')` passed: a path is a list, and one that is none is of another shape.
+- **Declined:** Leaving the check to `validate` alone, as the specification said: a host that forgets it gets an answer for a path that names nothing, and the check costs a pass over a few steps.

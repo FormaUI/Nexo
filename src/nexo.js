@@ -184,8 +184,10 @@ const resolutionOf = (registry, definition, parameterBindings) => {
 
     const { hostCall } = resolved;
 
-    // A host call that supplies nothing gives no result, so no path reaches into one.
+    // A path of another shape is refused whatever the script; a host call that supplies nothing gives no result, so no path reaches into one.
     const typeAt = path => {
+        ResultPath.validateShape(path);
+
         if (resolved.type === null) {
             throw NexoErrors.validation('NEXO3600', `The script ends in the host call '${hostCall.name}', whose host supplies no values, so it has no result for a path to reach`, locate(definition, '/expression'));
         }
@@ -250,10 +252,10 @@ const declarations = Object.freeze({
     createFunctionParameterDeclaration: Declarations.createFunctionParameterDeclaration,
 });
 
-/** Result paths: a path's shape validated, and the value it reaches in a result. */
+/** Result paths: a path's shape validated, and the value it reaches in a result, a path of another shape refused there too. */
 const paths = Object.freeze({
     validate: path => ResultPath.validateShape(path),
-    valueAt: (value, path) => ResultPath.valueAt(value, path),
+    valueAt: (value, path) => (ResultPath.validateShape(path), ResultPath.valueAt(value, path)),
 });
 
 /** Nexo: reads, checks and writes source and definitions, declares and registers vocabulary, binds values, resolves and evaluates, and says which build it is and which specification it follows. */
