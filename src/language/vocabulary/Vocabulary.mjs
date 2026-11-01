@@ -100,6 +100,19 @@ export class Vocabulary {
         return Vocabulary.#itemGivingMembers.has(declaration);
     }
 
+    /** @type {ReadonlyMap<object, string> | undefined} */
+    static #keyComparingMembers;
+
+    /**
+     * The type parameter whose values the member compares by key equality, where it is one of Nexo's own lists' that does: `T`, the items, for `contains`, `indexOf` and `distinct`, and `K`, the key its expression
+     * gives, for `distinctBy`; null for any other member. A dictionary `toDictionary` and `groupBy` answer is keyed by its own key type, which a call answering a dictionary is checked for.
+     */
+    static getKeyTypeParameter(declaration) {
+        Vocabulary.#keyComparingMembers ??= new Map(Vocabulary.getTypeDeclaration('List').members.filter(member => ['contains', 'indexOf', 'distinct', 'distinctBy'].includes(member.name)).map(member => [member, member.name === 'distinctBy' ? 'K' : 'T']));
+
+        return Vocabulary.#keyComparingMembers.get(declaration) ?? null;
+    }
+
     /** The members of Nexo's own lists of the names, by identity. */
     static #listMembersNamed(names) {
         return new Set(Vocabulary.getTypeDeclaration('List').members.filter(member => names.includes(member.name)));

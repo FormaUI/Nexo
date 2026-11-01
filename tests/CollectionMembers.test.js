@@ -107,6 +107,22 @@ describe('the members of collections', () => {
             expect(evaluate('xs.indexOf(1)').type).toBe('Number?');
         });
 
+        it('refuses to compare by key equality items or keys of no key type, an object, a list and a value of Any among them, where the call is resolved', () => {
+            const refusals = [
+                ['people.contains(people.first)', "'List.contains' compares the items of a List<{ name: String, team: String }> by key equality, which compares numbers, strings, Booleans, references and null alone: compare them by a key, as any(it.id == value.id) does"],
+                ['nested.indexOf(none)', "'List.indexOf' compares the items of a List<List<Number>> by key equality"],
+                ['nested.distinct', "'List.distinct' compares the items of a List<List<Number>> by key equality"],
+                ['xs.distinctBy({ a = it })', "'List.distinctBy' compares the keys its expression gives, of { a: Number }, by key equality, which compares numbers, strings, Booleans, references and null alone: give a key of one of those"],
+            ];
+
+            for (const [text, message] of refusals) {
+                expect(failureOf(text), text).toMatchObject({ code: 'NEXO3083', kind: 'validation', location: { pointer: '/expression' }, message: expect.stringContaining(message) });
+            }
+
+            expect(valueOf('people.distinctBy(it.team).count')).toBe(2);
+            expect(valueOf('people.any(it.name == "bob")')).toBe(true);
+        });
+
         it('answers the position of the first item a predicate is truthy for, evaluating it against none after, a null item falsy to a body, and null where none is', () => {
             expect(valueOf('xs.indexWhere(it:seen < 3)')).toBe(1);
             expect(seen).toEqual([3, 1]);

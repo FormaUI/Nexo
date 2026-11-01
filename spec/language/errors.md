@@ -208,7 +208,7 @@ In this document:
 | `NEXO3079` | An argument of the wrong kind, and a call of a local whose possible functions read its arguments differently | A validation error naming the argument and the kind it takes, or the functions and where their contracts part |
 | `NEXO3080` | A missing required argument | A validation error naming the argument |
 | `NEXO3081` | A collection expression whose items, or whose dictionary's values, share no type | A validation error naming the types |
-| `NEXO3083` | A dictionary a call answers keyed by a type no key is of, as `toDictionary` and `groupBy` given a key expression of an object type | A validation error at the call, naming the key type |
+| `NEXO3083` | Values key equality compares of a type no key is of: a dictionary a call answers keyed by one, as `toDictionary` and `groupBy` given a key expression of an object type, a key `distinctBy` gives, and the items `contains`, `indexOf` and `distinct` compare, as those of a list of objects | A validation error at the call, naming the type |
 | `NEXO3084` | An indexer's key no signature takes, or one of `Any` where several signatures stand | A validation error naming the indexer and its signatures' key types |
 | `NEXO3085` | An index's offset that isn't a `Number`, or a range's boundary that is neither a `Number` nor an `Index`, either nullable among them | A validation error naming the boundary and its type |
 | `NEXO3086` | An object expression constructing a structure that writes an object field the structure's data shape lacks | A validation error at the object field, naming the structure and its properties |
@@ -262,6 +262,7 @@ In this document:
 | `NEXO5038` | A value of `Any` an object expression gives a structure's property that is found, when it is evaluated, not to be of the property's type | An evaluation error at the object expression, naming the property, its type and the value |
 | `NEXO5028` | A result holding a value of `Any` that is found, when it is evaluated, to be no data, a reference or a function | An evaluation error at the result |
 | `NEXO5013` | A deferred access whose selection would be a host call | An evaluation error, before anything is invoked, saying to make the receiver known or to select its extension explicitly |
+| `NEXO5042` | `contains`, `indexOf` or `distinct` selected as it is evaluated on a list whose items' actual type is no key type, as a list of objects or of values of `Any` | An evaluation error at the access, before anything is invoked, naming the member and the type |
 | `NEXO5504` | A function or a body given to a member that answers, when it is evaluated, a value its callback contract's result type does not admit, as an answer of `Any` can be | An evaluation error naming the function, the member and the value |
 
 A script is validated before any evaluation, as [what resolution checks](../runtime/resolution.md#validation-vocabulary-and-types) sets out, so an evaluation error is one only evaluation finds.

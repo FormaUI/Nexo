@@ -312,6 +312,8 @@ describe('the codes of resolution', () => {
             expectResolutionCode('lamp', 'NEXO3043', 'validation', { ...values, lamp: new Light('lamp') });
         });
         it('NEXO3043, a field that would contain a reference value', () => expectResolutionCode('{ a = s:device }', 'NEXO3043'));
+        it('NEXO3083, a key distinctBy gives of no key type', () => expectResolutionCode('xs.distinctBy({ a = it })', 'NEXO3083'));
+        it('NEXO3083, the items distinct compares of no key type', () => expectResolutionCode('[xs, ys].distinct', 'NEXO3083'));
         it('NEXO3044, a field read through root that is not completed there', () => expectResolutionCode('{ a = root.b, b = 1 }', 'NEXO3044'));
         it('NEXO3047, a field that would hold root', () => expectResolutionCode('{ a = 1, b = root }', 'NEXO3047'));
     });

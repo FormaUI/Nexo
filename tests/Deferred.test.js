@@ -174,6 +174,17 @@ describe('values of Any', () => {
             expect(failure('shelf.item("light").tune({ speed = 2 })')).toMatchObject({ code: 'NEXO5012', message: expect.stringContaining("has no parameter 'speed'") });
         });
 
+        it('compares by key equality the items of a list whose actual item type is a key type alone, failing one of objects or of values of Any', () => {
+            expect([evaluate('shelf.item("numbers").contains(2)'), evaluate('shelf.item("numbers").indexOf(2)'), evaluate('shelf.item("numbers").distinct')]).toEqual([true, 1, [1, 2]]);
+            expect(failure('shelf.wrap([shelf.item("record")]).distinct')).toMatchObject({
+                code: 'NEXO5042',
+                kind: 'evaluation',
+                location: { pointer: '/expression' },
+                message: expect.stringContaining("'distinct' compares the items of List<{ size: Number, name: String }>, the type its receiver's value is of, by key equality"),
+            });
+            expect(failure('shelf.item("mixed").contains(1)')).toMatchObject({ code: 'NEXO5042', message: expect.stringContaining("'contains' compares the items of List<Any>") });
+        });
+
         it('fails a member its receiver\'s actual type lacks, a value of no type the vocabulary knows, and a host call, which resolution alone selects, before invoking anything', () => {
             expect(failure('shelf.item("word").glow')).toMatchObject({ code: 'NEXO5012', location: { pointer: '/expression' }, message: expect.stringContaining("'glow' is not available on String") });
             expect(failure('shelf.item("func").power')).toMatchObject({ code: 'NEXO5012' });

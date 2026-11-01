@@ -140,7 +140,14 @@ Each signature of the unnamed indexer and of `entry` is one of an [indexer's sig
 
 A number generates numbers apart from any range, as [number members](vocabulary.md#vocabulary-number-members) set out.
 
-`where`, `first`, `last` and the unnamed indexer preserve `T` from a `List<T>`, the type parameter `List` declares, so `rooms.first` is a `Room?` for a `List<Room>`. A key `toDictionary`, `groupBy` or `distinctBy` gives is of a key type, `K` its expression's type, so keys of another type are refused where they are resolved (NEXO3083).
+`where`, `first`, `last` and the unnamed indexer preserve `T` from a `List<T>`, the type parameter `List` declares, so `rooms.first` is a `Room?` for a `List<Room>`.
+
+Key equality compares values of a key type alone, so whatever a member compares by it is of one:
+
+- **A key** `toDictionary`, `groupBy` or `distinctBy` gives, `K` its expression's type.
+- **The items** `contains`, `indexOf` and `distinct` compare, `T` the list's item type.
+
+Anything else is refused where it is resolved (NEXO3083), and, for a call selected as it is evaluated, where its receiver's actual type is found (NEXO5042). A list of objects, of lists, of structured values or of values of `Any` is compared by a key of its items instead, as `distinctBy(it.id)`, `any(it.id == value.id)` and `indexWhere(it.id == value.id)` do, or, for values of `Any`, by an equality, as `any(it == value)` does, which checks its operands as they are evaluated.
 
 An item's body reads the item as a value that is not null, as an object projection reads it, so a null item answers null and the body is never evaluated against it: `where`, `takeWhile`, `dropWhile`, `any`, `all` and `indexWhere` find null falsy, the aggregates skip it, and `toDictionary` and `groupBy` key it by null. `select` alone evaluates its body against every item, its `it` the item's type, null included. A function of the item is called with each item as it is, whichever member it is given to.
 

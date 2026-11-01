@@ -574,3 +574,20 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Dropping every option a declaration doesn't take, the rule the member helpers half followed: a mistake would still pass silently, and the helper would repeat what `createModule` already checks.
   - Refusing in the helper: `createModule` is where a declaration is validated, located at its module and its key, and a helper constructs a record and checks nothing.
+
+<a id="d40"></a>
+
+## D40 — Membership and distinctness compare values of a key type alone
+
+*November 1, 2026*
+
+- **Kind:** Language contract, closing gaps between the specification and the code.
+- **Decision:** `contains`, `indexOf` and `distinct` compare the items of a list whose item type is a key type alone, and `distinctBy` keys of one; anything else is refused where it is resolved (NEXO3083), whose condition now covers every value key equality compares, and, for a call selected as it is evaluated, where its receiver's actual type is found (NEXO5042). The language advances to `1.0.0-beta.13`.
+- **Why:**
+  - The specification says these members compare by key equality, which defines no equality of an object, a list, a structured value or a value of `Any`. The evaluator compared them by identity instead, so two equal lists were distinct, an answer no rule of the language gives.
+  - The equality of those values is [deferred](features-status.md#deferred): it needs its hashing, its type identity and its capture designed together. A current restriction is refused explicitly, never answered by an accident of the host language.
+  - A dictionary's keys already followed the rule: `toDictionary` and `groupBy` refuse a key of another type. `distinctBy`, which keys its items the same way, was the exception.
+- **Declined:**
+  - Defining structural equality for these members now, which would decide alone what the deferred design decides for every key.
+  - Checking values of `Any` as they are evaluated and taking scalars among them, as an equality does: a dictionary's key of `Any` is refused where it is resolved, and one rule serves every value key equality compares. An equality still compares them, `any(it == value)`.
+  - A code of its own for `distinctBy`: a key of no key type is one condition, whichever member compares it.

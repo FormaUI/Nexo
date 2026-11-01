@@ -7,6 +7,19 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-13"></a>
+
+## `1.0.0-beta.13`
+
+*November 1, 2026 · definition format 38*
+
+**Language**
+
+- [List members](spec/language/collections.md#collections-list-members): key equality compares values of a key type alone. `contains`, `indexOf` and `distinct` compare items of one, and `distinctBy` keys of one, and anything else is refused where it is resolved (NEXO3083), as `toDictionary` and `groupBy` already refused a key of another type. The evaluator compared objects, lists and structured values by identity, which key equality defines for none of them, so `[[1], [1]].distinct.count` was 2.
+- [List members](spec/language/collections.md#collections-list-members): `contains`, `indexOf` and `distinct` selected as they are evaluated, on a value of `Any` whose actual item type is no key type, fail before anything is invoked (NEXO5042).
+
+**Breaking:** a script calling `contains`, `indexOf` or `distinct` on a list of objects, of lists, of structured values or of values of `Any`, or `distinctBy` with a key of one, is refused. Compare by a key of the items: `distinctBy(it.id)` for `distinct`, `any(it.id == value.id)` for `contains` and `indexWhere(it.id == value.id)` for `indexOf`; over a list of values of `Any`, `any(it == value)` and `indexWhere(it == value)` compare each item as an equality does.
+
 <a id="v1-0-0-beta-12"></a>
 
 ## `1.0.0-beta.12`

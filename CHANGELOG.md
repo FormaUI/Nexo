@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.12` · definition format 38*
+*Unpublished · language `1.0.0-beta.13` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -27,3 +27,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A parameter may leave out `required`, `true` unless it declares a default, and `nulls`, `propagate`; a module's copy writes both. `NexoParameterDeclaration.required` is optional.
 - The declaration helpers write every option they are given, `internal` among them, so `createModule` refuses one its declaration doesn't take, where a helper dropped it. `createPredicateParameterDeclaration` takes options, `nulls` among them.
 - A value parameter declaring `context` is refused, NEXO4030, and a type's copy leaves out a key holding `undefined`.
+- `contains`, `indexOf` and `distinct` refuse a list whose items are of no key type, and `distinctBy` a key of none, NEXO3083 as they resolve and NEXO5042 as a call on a value of `Any` is evaluated, where they compared objects, lists and structured values by identity.

@@ -1257,7 +1257,8 @@ export class Evaluator {
     /**
      * The selection a deferred access makes on a receiver of the type, through the selector, as an access its receiver's type selects during resolution: a property of a structured type's data, by its name; a member to
      * invoke, with the type arguments its receiver binds, each parameter's declared type, the check of each a type parameter of its own leaves unwritten, and its invocation where it declares none; or the failure of a type
-     * that has no applicable candidate, or several none is more specific than, NEXO5012, and of a host call, NEXO5013, which resolution alone selects.
+     * that has no applicable candidate, or several none is more specific than, NEXO5012, of a host call, NEXO5013, which resolution alone selects, and of a member comparing items of no key type by key equality,
+     * NEXO5042.
      */
     #selectDeferred(node, candidates, receiverType) {
         const written = Evaluator.#writtenNameOf(node);
@@ -1285,6 +1286,19 @@ export class Evaluator {
 
         if (this.#registry.isDataProperty(declaration)) {
             return { kind: 'dataProperty', name: declaration.name };
+        }
+
+        // A member comparing the receiver's items by key equality takes items of a key type alone, as resolution checks a receiver whose type it knows.
+        if (Vocabulary.getKeyTypeParameter(declaration) === 'T') {
+            const itemType = this.#registry.typeChecker.inferReceiverTypeArguments(declaration, receiverType)?.get('T');
+
+            if (itemType !== undefined && !this.#registry.isKeyType(itemType)) {
+                return {
+                    kind: 'failure',
+                    code: 'NEXO5042',
+                    message: `'${written}' compares the items of ${receiverType}, the type its receiver's value is of, by key equality, which compares numbers, strings, Booleans, references and null alone: compare them by a key`,
+                };
+            }
         }
 
         const signatures = this.#registry.getIndexerSignatures(declaration);

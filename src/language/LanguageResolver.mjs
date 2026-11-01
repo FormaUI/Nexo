@@ -2605,7 +2605,28 @@ export class LanguageResolver {
             this.#fail('NEXO3083', `'${name}' answers a dictionary keyed by ${declared.typeArguments[0]}, and a dictionary's keys are scalars, references or null`, pointer);
         }
 
+        this.#requireKeyType(declaration, typeArguments, name, pointer);
+
         return { result: { type, kind: LanguageResolver.#getResultKind(declaration), isFixed: false, ...(declaration.result === undefined ? { suppliesNothing: true } : {}) }, resolution, use: { declaration, qualifiedName: name, pointer } };
+    }
+
+    /**
+     * Refuses a member of Nexo's own that compares values by key equality, its items or the keys its expression gives, where the call binds them to a type no key is of, an object, a list, a structured value or a value of
+     * Any, which key equality compares none of (NEXO3083); a receiver of unknown type binds none, and is checked once its type is known.
+     */
+    #requireKeyType(declaration, typeArguments, name, pointer) {
+        const typeParameter = Vocabulary.getKeyTypeParameter(declaration);
+        const compared = typeParameter === null ? undefined : typeArguments.get(typeParameter);
+
+        if (compared === undefined || this.#registry.isKeyType(compared)) {
+            return;
+        }
+
+        const written = name ?? declaration.name;
+        const what = typeParameter === 'K' ? `the keys its expression gives, of ${compared},` : `the items of a List<${compared}>`;
+        const instead = typeParameter === 'K' ? 'give a key of one of those' : declaration.name === 'distinct' ? 'compare them by a key, as distinctBy(it.id) does' : `compare them by a key, as ${declaration.name === 'contains' ? 'any' : 'indexWhere'}(it.id == value.id) does`;
+
+        this.#fail('NEXO3083', `'${written}' compares ${what} by key equality, which compares numbers, strings, Booleans, references and null alone: ${instead}`, pointer);
     }
 
     /**

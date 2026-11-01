@@ -460,6 +460,10 @@ describe('the runtime codes', () => {
             expectNexoError(holding('oat', '{ count = (word:held):order(1) }'), 'NEXO5013', 'evaluation');
         });
 
+        it('NEXO5042: contains, indexOf or distinct on a list whose actual item type is no key type', () => {
+            expectNexoError(holding([{ size: 1 }], '(word:held).distinct'), 'NEXO5042', 'evaluation');
+        });
+
         it('NEXO5021: a value of Any its parameter does not admit', () => {
             expectNexoError(holding('twice', 'word:repeat(word:held)'), 'NEXO5021', 'evaluation');
         });
