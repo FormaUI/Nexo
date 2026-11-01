@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-3"></a>
+
+## `1.0.0-beta.3`
+
+*November 1, 2026 · definition format 38*
+
+**Runtime**
+
+- [Host calls](spec/runtime/host-calls.md#runtime-host-calls): a resolution's host call answers its `pointer`, where it stands, and its `candidates`: its declaration alone, or, while its receiver's type is unknown, every declaration that takes the call as it is written. A host that tells its host calls apart by keys of its own reads what a call on a null receiver requests there, as DOMQL tells a subscription from an execution, instead of repeating the language's lookup.
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-2"></a>
 
 ## `1.0.0-beta.2`

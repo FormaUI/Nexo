@@ -177,7 +177,10 @@ export class LanguageResolver {
         }
     }
 
-    /** The host call the script ends in, found along its terminal position through bodies, `do` blocks, result projections and its optional chain: its node, where it stands, its name and its declaration, null on a receiver of unknown type. */
+    /**
+     * The host call the script ends in, found along its terminal position through bodies, `do` blocks, result projections and its optional chain: its node, where it stands, its name, its declaration, null on a receiver of
+     * unknown type, and its candidates, the declaration alone or, on a receiver of unknown type, every one that takes the call as it is written.
+     */
     #hostCallOf(node, pointer) {
         switch (node.kind) {
             case 'body':
@@ -188,8 +191,11 @@ export class LanguageResolver {
                 return this.#hostCallOf(node.context, `${pointer}/context`);
             case 'optionalChain':
                 return this.#hostCallOf(node.chain, `${pointer}/chain`);
-            default:
-                return { node, pointer, name: LanguageResolver.#accessOf(node).name, declaration: this.#resolutions.get(pointer).declaration ?? null };
+            default: {
+                const { declaration = null, candidates } = this.#resolutions.get(pointer);
+
+                return { node, pointer, name: LanguageResolver.#accessOf(node).name, declaration, candidates: Object.freeze(declaration === null ? [...candidates] : [declaration]) };
+            }
         }
     }
 

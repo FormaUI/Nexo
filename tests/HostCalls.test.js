@@ -45,13 +45,16 @@ const bindings = { light: 'hall', thermostat: 'hall', sensor: 'porch', lit: true
 const resolve = (text, values = bindings, modules = [createHome()]) => resolveWith(modules, text, values);
 
 describe('host calls', () => {
-    it('end a script, whose resolution answers the call by its name and the declaration it resolved to', () => {
+    it('end a script, whose resolution answers the call by its name, where it stands, the declaration it resolved to and that declaration alone as its candidates', () => {
         const home = createHome();
         const registry = createImportingRegistry([home]);
         const resolution = registry.resolve('light:dim({ to = 40 })', bindings);
 
-        expect(resolution.hostCall).toEqual({ name: 'dim', declaration: home.types[2].members[0] });
+        expect(resolution.hostCall).toEqual({ name: 'dim', pointer: '/expression', declaration: home.types[2].members[0], candidates: [home.types[2].members[0]] });
+        expect(resolution.hostCall.candidates[0]).toBe(resolution.hostCall.declaration);
         expect(Object.isFrozen(resolution.hostCall)).toBe(true);
+        expect(Object.isFrozen(resolution.hostCall.candidates)).toBe(true);
+        expect(resolve('light?:dim({ to = 40 })').hostCall.pointer).toBe('/expression/chain');
         expect(registry.getDeclaringModuleName(resolution.hostCall.declaration)).toBe('home');
         expect(resolution.usedDeclarations.map(({ qualifiedName, pointer }) => [qualifiedName, pointer])).toEqual([['String.dim', '/expression']]);
         expect(resolve('light:room').hostCall).toBeNull();
@@ -111,13 +114,43 @@ describe('host calls', () => {
             types: [extensionDeclaration('NumberExtensions', 'Number', [createFunctionDeclaration('dim', 'Number', { updates: { changes: 'constant', reads: 'fresh' }, arguments: 'options', parameters: [createValueParameterDeclaration('to', 'Number')], impl: ({ args }) => args.to })])],
         });
 
-        expect(resolve('thing?:dim({ to = 40 })', { thing: null })).toMatchObject({ type: 'Number?', hostCall: { name: 'dim', declaration: null } });
+        expect(resolve('thing?:dim({ to = 40 })', { thing: null })).toMatchObject({ type: 'Number?', hostCall: { name: 'dim', pointer: '/expression/chain', declaration: null } });
         expect(resolve('thing?:hold({ target = 21 })', { thing: null }).type).toBeNull();
 
         const refused = errorThrownBy(() => resolve('thing?:dim({ to = 40 })', { thing: null }, [createHome(), dimmer]));
 
         expect(refused).toMatchObject({ kind: 'validation', location: { pointer: '/expression/chain' } });
         expect(refused.message).toContain("'dim' follows a value whose type is unknown, and its declarations disagree on who invokes it, the evaluator or the host, so whether the script ends in a host call is ambiguous");
+    });
+
+    it('on a receiver of unknown type, answer as candidates every declaration that takes the call as it is written, among those the script reaches alone', () => {
+        const dim = () => hostFunctionDeclaration('dim', 'Number', { arguments: 'options', parameters: [createValueParameterDeclaration('to', 'Number')] });
+        const home = createHome();
+        const garage = nexo.createModule('garage', {
+            types: [
+                extensionDeclaration('NumberExtensions', 'Number', [dim()]),
+                extensionDeclaration('BooleanExtensions', 'Boolean', [dim()]),
+                { ...extensionDeclaration('ListExtensions', 'List<Number>', [dim()]), internal: true },
+            ],
+        });
+        const registry = nexo.createRegistry([home, garage]);
+        const [homeDim, numberDim, booleanDim] = [home.types[2].members[0], ...garage.types.map(type => type.members[0])];
+
+        // Declarations of one shape are told apart by their identity alone.
+        const expectCandidates = (text, imports, expected) => {
+            const { candidates } = registry.resolve(text, { thing: null }, { imports }).hostCall;
+
+            expect(Object.isFrozen(candidates)).toBe(true);
+            expect(candidates).toHaveLength(expected.length);
+            expected.forEach((declaration, index) => expect(candidates[index]).toBe(declaration));
+        };
+
+        // An internal extension takes no part.
+        expectCandidates('thing?:dim({ to = 40 })', ['home', 'garage'], [homeDim, numberDim, booleanDim]);
+        // A module the script does not import takes no part, nor a type of a module it imports another type of, and naming an extension takes its members alone.
+        expectCandidates('thing?:dim({ to = 40 })', ['home'], [homeDim]);
+        expectCandidates('thing?:dim({ to = 40 })', [{ module: 'garage', type: 'BooleanExtensions' }], [booleanDim]);
+        expectCandidates('thing?:NumberExtensions.dim({ to = 40 })', ['home', 'garage'], [numberDim]);
     });
 
     it('supply values of the type a fixed argument selects through a type selector, a bound parameter settling it as a literal does', () => {

@@ -594,10 +594,14 @@ export interface NexoResolution {
     createEvaluator(bindings: NexoBindings | NexoBindingValues, env?: unknown): NexoEvaluator;
 }
 
-/** The host call a script ends in: its name, and the declaration it resolved to, null while its receiver's type is unknown. */
+/** The host call a script ends in: its name, where it stands, the declaration it resolved to, null while its receiver's type is unknown, and its candidates. */
 export interface NexoHostCall {
     readonly name: string;
+    /** The JSON Pointer of the call in the definition. */
+    readonly pointer: string;
     readonly declaration: NexoMemberDeclaration | null;
+    /** The declaration alone, or, while the receiver's type is unknown, every declaration that takes the call as it is written, which agree that the host invokes it. */
+    readonly candidates: readonly NexoMemberDeclaration[];
 }
 
 /** A registry a host resolves scripts against: Nexo's own module and the modules the host registers. It reads no text of its own, since a script's imports alone decide how its text reads, which `nexo.parse`, `format` and `quote` read and write for every registry. No registry is shared. */

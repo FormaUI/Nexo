@@ -19,7 +19,7 @@ export class ResolvedDefinition {
     /**
      * @param {object} definition The request's definition, whose every node is an object of its own.
      * @param {import('./Type.mjs').Type | null} type The type of its result, null for a host call that supplies nothing.
-     * @param {{ node: object, pointer: string, name: string, declaration: object | null } | null} hostCall The host call the script ends in, null for one that gives a value.
+     * @param {{ node: object, pointer: string, name: string, declaration: object | null, candidates: readonly object[] } | null} hostCall The host call the script ends in, null for one that gives a value.
      * @param {Map<string, object>} resolutions What each member node, by its JSON Pointer, resolved to.
      * @param {WeakMap<object, string>} pointers The JSON Pointer each node resolution reached stands at, by the node.
      * @param {object[]} usedDeclarations The declarations the request uses, each with the pointer that used it, a call's copy of a function's body among them, and its qualified name, the name a message gives it, qualified
@@ -152,7 +152,10 @@ export class ResolvedDefinition {
         return this.#type;
     }
 
-    /** The host call the script ends in: its node, where it stands, its name and its declaration, null on a receiver of unknown type; null for a script that gives a value. */
+    /**
+     * The host call the script ends in: its node, where it stands, its name, its declaration, null on a receiver of unknown type, and its candidates, the declaration alone or, on a receiver of unknown type, every one
+     * that takes the call as it is written; null for a script that gives a value.
+     */
     get hostCall() {
         return this.#hostCall;
     }

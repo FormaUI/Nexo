@@ -3,7 +3,13 @@
 <a id="runtime-host-calls"></a>
 <a id="runtime-requests"></a>
 
-A script that ends in a [host call](../language/members.md#members-host-calls) is resolved as any other, and its resolution answers the call: `resolution.hostCall`, its `name` and the `declaration` it resolved to, null while its receiver's type is unknown. The runtime prepares the call and projects each value its host supplies; invoking it, when and how often, and for how long what it starts runs, are the host's. Such a script is prepared, never evaluated: `evaluate` refuses a script that ends in a host call, and `prepareHostCall` one that gives a value, each with an [evaluation error](errors.md#runtime-evaluation-errors).
+A script that ends in a [host call](../language/members.md#members-host-calls) is resolved as any other, and its resolution answers the call, `resolution.hostCall`:
+
+- **`name`**, the name it calls, and **`pointer`**, where it stands in the definition.
+- **`declaration`**, the declaration it resolved to, null while its receiver's type is unknown.
+- **`candidates`**, the declarations a binding could give it: its declaration alone, or, while its receiver's type is unknown, every declaration that [takes the call as it is written](../language/types.md#receivers-of-unknown-type-the-call-keeps-who-invokes-it), each invoked by the host. A host that tells its host calls apart by keys of its own, as DOMQL tells a subscription from an execution, reads them there before a binding gives the receiver a type.
+
+The runtime prepares the call and projects each value its host supplies; invoking it, when and how often, and for how long what it starts runs, are the host's. Such a script is prepared, never evaluated: `evaluate` refuses a script that ends in a host call, and `prepareHostCall` one that gives a value, each with an [evaluation error](errors.md#runtime-evaluation-errors).
 
 ```js
 const call = evaluator.prepareHostCall();

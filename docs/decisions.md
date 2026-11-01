@@ -423,3 +423,19 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Building DOMQL's refusals as structure errors, which keeps the contract and splits one kind of mistake in two.
   - Declaring `syntax` and `locate` for hosts as well: a host reads no text of its own, so they stay the gap the status records.
+
+<a id="d30"></a>
+
+## D30 — A host call answers its candidates
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, decided while reviewing DOMQL's migration.
+- **Decision:** `resolution.hostCall` answers its `pointer` and its `candidates`: its declaration alone, or, while its receiver's type is unknown, every declaration that takes the call as it is written. The language advances to `1.0.0-beta.3` for it.
+- **Why:**
+  - DOMQL tells a subscription from an execution by keys of its own, so it must know what a call on a null receiver requests before a binding gives the receiver a type. Nexo already found the declarations that take the call, and checked that they agree on who invokes it, but answered the call's name alone.
+  - A host that repeats the lookup misses what the language decides: an import of one type, an extension the call names, internal declarations and arguments a declaration does not take. DOMQL's copy counted host calls its queries could not reach, and refused requests Nexo resolved.
+  - A host locates a refusal of the call where the call stands, as Nexo locates its own.
+- **Declined:**
+  - Adding them to `getCandidateDeclarations()`, whose declarations are those evaluation may select: a call on a null receiver is skipped, so evaluation selects none of them.
+  - Leaving each host to filter the declarations by imports and access form, which repeats the language's rules and drifts from them.

@@ -195,7 +195,7 @@ const resolutionOf = (registry, definition, parameterBindings) => {
 
     return Object.freeze({
         definition,
-        hostCall: hostCall === null ? null : Object.freeze({ name: hostCall.name, declaration: hostCall.declaration }),
+        hostCall: hostCall === null ? null : Object.freeze({ name: hostCall.name, pointer: hostCall.pointer, declaration: hostCall.declaration, candidates: hostCall.candidates }),
         type: resolved.type === null ? null : String(resolved.type),
         usedDeclarations,
         deferredAccesses,

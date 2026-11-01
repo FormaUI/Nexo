@@ -42,4 +42,9 @@ const refused: NexoError = NexoError.module('PANTRY4001', 'A shelf declares its 
 const failed: NexoError = NexoError.evaluation('PANTRY5001', 'The pantry is closed', {}, { cause: refused });
 const kinds: string[] = [NexoError.structure('PANTRY2001', 'No pantry', {}), NexoError.validation('PANTRY3001', 'No shelf', {}), refused, failed].map(error => `${error.kind} ${error.code}`);
 
-export { operator, member, registry, misnamed, misdeclared, kinds };
+// A host tells its host calls apart by keys of its own, reading them in a call's candidates while its receiver's type is unknown, and locates a refusal where the call stands.
+const hostCall = registry.resolve('nothing', { nothing: null }).hostCall;
+const candidates: readonly NexoMemberDeclaration[] = hostCall === null ? [] : hostCall.candidates;
+const callPointer: string | undefined = hostCall?.pointer;
+
+export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer };
