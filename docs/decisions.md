@@ -591,3 +591,17 @@ Forty decisions were taken while implementing the declarations, member selection
   - Defining structural equality for these members now, which would decide alone what the deferred design decides for every key.
   - Checking values of `Any` as they are evaluated and taking scalars among them, as an equality does: a dictionary's key of `Any` is refused where it is resolved, and one rule serves every value key equality compares. An equality still compares them, `any(it == value)`.
   - A code of its own for `distinctBy`: a key of no key type is one condition, whichever member compares it.
+
+<a id="d41"></a>
+
+## D41 — A dictionary records no lineage of its entries
+
+*November 1, 2026*
+
+- **Kind:** Runtime contract, stated where the specification was silent, closing a gap between it and the collections proposal.
+- **Decision:** A dictionary's record is its origin and its tolerance alone, whichever member answered it, its `where` and `select` among them. [Provenance](../spec/runtime/evaluation.md#runtime-results-provenance) now says so. The language version stays `1.0.0-beta.13`: every implementation of it already answers so, and no host can tell the statement from its absence.
+- **Why:**
+  - The collections proposal's decision 9 kept a retained item's metadata through filtering. The specification states that rule for a list's members, and a dictionary has nothing for it to keep: no projection builds one, `toDictionary` and `groupBy` record no lineage, and a collection expression and a binding record none, so no dictionary's entries carry records, sources or provenance.
+  - A list's `select` describes its items by its own record, so a dictionary's `select` describing its values by its own record is the rule the list follows.
+  - A result exports a dictionary as its entries' data, and a host matches by what a list's lineage gives, which a script reaching a dictionary's entries can project, `prices.entries { name = it.key }`.
+- **Declined:** Records of a dictionary's entries, kept through `toDictionary`, `groupBy` and `where`: it would design a lineage for keys and values the language deferred with dictionary sources, for no host that needs one.

@@ -71,7 +71,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Resolutions that stay current across registrations | [Reusing a resolution](../spec/runtime/resolution.md#runtime-reuse) | Implemented | [`alpha.36`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-36) |
 | Evaluation, its hooks, and results with their metadata | [Evaluation](../spec/runtime/evaluation.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Data shared with a host, read-only once it passes | [Data shared with a host](../spec/runtime/evaluation.md#runtime-shared-data) | Implemented: Nexo changes no data it shares, a host keeps its own part, which Nexo doesn't check, and Nexo's own members rely on their answers, and their list members on the check of the data items they give their functions | [`alpha.42`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-42) |
-| The lineage of projected items | [Provenance](../spec/runtime/evaluation.md#runtime-results-provenance) | Implemented, with a [gap](#open-decisions): a dictionary's metadata | [`alpha.35`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-35) |
+| The lineage of projected items | [Provenance](../spec/runtime/evaluation.md#runtime-results-provenance) | Implemented | [`alpha.35`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-35) |
 | Values in a host's forms | [A value in a host's form](../spec/runtime/evaluation.md#runtime-host-forms) | Implemented | [`alpha.35`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-35) |
 | Preparing host calls and projecting what their host supplies | [Host calls](../spec/runtime/host-calls.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Modules: their declarations, operators, internal declarations, duplicates and registries | [Modules](../spec/runtime/modules.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
@@ -144,7 +144,6 @@ No open decision remains. [Decisions](decisions.md#d26) settles who may change d
 
 These gaps between the specification and the code, found by audits and by the review above, are each open until decided:
 
-- **A dictionary's metadata.** [Provenance](../spec/runtime/evaluation.md#runtime-results-provenance) gives a list's lineage through filtering and reordering alone, while the collections proposal's decision 9 keeps a retained entry's metadata too; a dictionary's `where` and `select` record none.
 - **Codes.** NEXO5012 is raised for an ambiguous deferred selection and for each argument a selected member can't take, and for a value of `Any` an extension access is given outside the extension's target, conditions its catalogue row doesn't name, against the rule that distinct conditions never share a code; NEXO3045, NEXO3065, NEXO4021 and NEXO4067 are catalogued and never raised.
 - **Errors.** `NexoError` exposes `syntax` and `locate`, beside the four factories `nexo.d.ts` declares, and result paths are validated by `nexo.paths.validate` alone, never by `typeAt` and `valueAt`.
 

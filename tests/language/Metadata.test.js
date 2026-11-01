@@ -315,5 +315,18 @@ describe('result metadata', () => {
 
             expect([Object.hasOwn(unprojected, 'sources'), Object.hasOwn(unprojected, 'provenance')]).toEqual([false, false]);
         });
+
+        it("describes a dictionary by its origin and tolerance alone, whichever member answered it, a filter and a selection of its values among them, and a projection of its entries by their lineage", () => {
+            const keyed = 'name:crowd { name = it.label }.groupBy(it.name)';
+
+            for (const text of [keyed, `${keyed}.where(it.count > 1)`, `${keyed}.select(it.count)`, '["a" = name:size].select(it.width)']) {
+                expect(metadataOf(`{ table = ${text} }`).objectFields.table, text).toEqual({ origin: expect.any(Object), tolerance: null });
+            }
+
+            const entries = metadataOf('["a" = 1, "b" = 2].entries { key = it.key }');
+
+            expect(entries.sources.map(source => source.kind)).toEqual(['data', 'data']);
+            expect(entries.provenance).toEqual(entries.sources);
+        });
     });
 });
