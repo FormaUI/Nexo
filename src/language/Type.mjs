@@ -371,8 +371,6 @@ class TypeReader {
             type = Type.any;
         } else if (TYPE_PARAMETER.test(match[0])) {
             type = Type.createTypeParameter(match[0]);
-        } else if (Object.hasOwn(GENERIC_TYPE_ARITIES, match[0])) {
-            return null;
         } else {
             type = Type.createNamedType(match[0]);
         }

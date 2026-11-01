@@ -104,6 +104,10 @@ An unqualified type name is looked up through the tiers its position sets out, n
 
 A module's own type comes before Nexo's own of its name in its declarations, so where `Home` declares `Number`, `Number` in `Home`'s declarations names `Home.Number`. Nexo's own types have no qualified spelling, so `Home`'s declarations can't name Nexo's `Number` then, a limitation the language leaves open.
 
+- **`Any` and `Never`** are looked up alike: where `Home` declares `Any`, `Any` in `Home`'s declarations names `Home.Any`.
+- **A generic type's name written alone** is looked up alike: where `Home` declares `Pair`, `Pair` in `Home`'s declarations names `Home.Pair`. A module's types take no type arguments, so `Pair<K, V>`, written with them, is always Nexo's.
+- **Nexo's generic types are written with their type arguments.** Written alone where no nearer tier declares a type of its name, `List`, `Dictionary` and `Pair` are refused (NEXO4070), as is a declared binding's type so written (NEXO2044).
+
 A diagnostic that gives several types of one name lists their qualified names in the order their modules registered.
 
 <a id="types-type-parameters"></a>

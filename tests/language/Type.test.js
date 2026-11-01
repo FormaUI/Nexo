@@ -36,7 +36,12 @@ describe('Type', () => {
             expect(Type.parse('List<List<Element?>>').itemType.itemType.isNullable).toBe(true);
         });
 
-        it.each(['', 'List', 'List<>', 'List<Number', 'Number<Number>', 'Event<Number>', '1number', 'a-b', 'List<Number>>', 'Number?!', null, 5])('refuses %s', text => {
+        it("reads a generic type's name written alone as a name, which a declaration's tiers settle, a module's own type of it first", () => {
+            expect(Type.parse('Pair')).toMatchObject({ kind: 'named', name: 'Pair', moduleName: null, typeArguments: [] });
+            expect(Type.parse('List?')).toMatchObject({ kind: 'named', name: 'List', isNullable: true, typeArguments: [] });
+        });
+
+        it.each(['', 'List<>', 'List<Number', 'Number<Number>', 'Event<Number>', '1number', 'a-b', 'List<Number>>', 'Number?!', null, 5])('refuses %s', text => {
             expect(Type.parse(text)).toBeNull();
         });
 

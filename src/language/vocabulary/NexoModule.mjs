@@ -319,6 +319,11 @@ export class NexoModule {
         return Type.parse(notation) !== null;
     }
 
+    /** What is wrong with a notation that writes no type, for a message about it: none where it is left out, which a message of its own refuses, and otherwise that it is no type's notation. */
+    static #notationFailureOf(notation) {
+        return notation === undefined ? '' : `, and ${typeof notation === 'string' ? `'${notation}'` : 'a value no string'} is no type's notation`;
+    }
+
     /** Whether the type notation writes `@selected`, where the type a fixed argument selects stands. */
     static #writesSelected(notation) {
         const writes = type => {
@@ -456,7 +461,7 @@ export class NexoModule {
         }
 
         if (!NexoModule.#isTypeNotation(extension.target)) {
-            fail('NEXO4512', 'An extension names its target as a type', name, 'target');
+            fail('NEXO4512', `An extension names its target as a type${NexoModule.#notationFailureOf(extension.target)}`, name, 'target');
         }
 
         const target = Type.parse(extension.target);
@@ -477,7 +482,7 @@ export class NexoModule {
         }
 
         if (type.supertype !== undefined && !NexoModule.#isTypeNotation(type.supertype)) {
-            fail('NEXO4512', 'A reference type names its supertype as a type', type.name, 'supertype');
+            fail('NEXO4512', `A reference type names its supertype as a type${NexoModule.#notationFailureOf(type.supertype)}`, type.name, 'supertype');
         }
 
         if (type.abstract !== undefined && typeof type.abstract !== 'boolean') {
@@ -565,7 +570,7 @@ export class NexoModule {
         }
 
         if (!NexoModule.#isTypeNotation(mapping.type)) {
-            fail(mapping.type === undefined ? 'NEXO4008' : 'NEXO4512', 'A mapping declares the type its key maps to', mapping.key, 'type');
+            fail(mapping.type === undefined ? 'NEXO4008' : 'NEXO4512', `A mapping declares the type its key maps to${NexoModule.#notationFailureOf(mapping.type)}`, mapping.key, 'type');
         }
     }
 
@@ -825,7 +830,7 @@ export class NexoModule {
 
         // A host call's result is the type of each value its host supplies, and one that supplies none declares none.
         if (!(isInvokedByHost && member.result === undefined) && !NexoModule.#isTypeNotation(member.result)) {
-            fail(member.result === undefined ? 'NEXO4003' : 'NEXO4512', isInvokedByHost ? 'It declares the type of each value its host supplies, or none, where it supplies none' : 'It declares the type of its result', name, 'result');
+            fail(member.result === undefined ? 'NEXO4003' : 'NEXO4512', `${isInvokedByHost ? 'It declares the type of each value its host supplies, or none, where it supplies none' : 'It declares the type of its result'}${NexoModule.#notationFailureOf(member.result)}`, name, 'result');
         }
 
         const parameters = Array.isArray(member.parameters) ? member.parameters.map(parameter => NexoModule.#withoutUndefinedValues(parameter)) : (member.parameters ?? []);
@@ -1011,7 +1016,7 @@ export class NexoModule {
         }
 
         if (!NexoModule.#isTypeNotation(parameter.type)) {
-            fail(parameter.type === undefined ? 'NEXO4536' : 'NEXO4512', `The parameter '${parameter.name}' declares a type`, memberName, declarationKey);
+            fail(parameter.type === undefined ? 'NEXO4536' : 'NEXO4512', `The parameter '${parameter.name}' declares a type${NexoModule.#notationFailureOf(parameter.type)}`, memberName, declarationKey);
         }
 
         // A function parameter's contract declares the type of each argument the member calls the function with, in order, and, as its type, the type of the result it takes from it.

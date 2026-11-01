@@ -7,6 +7,25 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-5"></a>
+
+## `1.0.0-beta.5`
+
+*November 1, 2026 · definition format 38*
+
+**Language**
+
+- [Type name lookup](spec/language/types.md#types-type-name-lookup): a module's own type named as one of Nexo's generic types, `Any` or `Never` is named by that name alone in the module's declarations, as one named `Number` already was. A generic type's name written alone was refused before the lookup ran, and `Any` and `Never` always named Nexo's own.
+
+**Runtime**
+
+- [Module errors](spec/runtime/errors.md#module-errors): a declaration naming `List`, `Dictionary` or `Pair` alone, where no nearer tier declares a type of the name, is refused at registration (NEXO4070), giving the type with its type arguments. It was refused when its module was created (NEXO4512), a code whose message now names the notation that does not parse.
+
+**Breaking:**
+
+- In a module declaring a type named `Any` or `Never`, that name alone now names the module's type in its declarations. Rename the module's type to keep naming Nexo's.
+- A generic type's name written alone is refused at registration with NEXO4070, where it was refused at creation with NEXO4512. A host matching that code for it matches NEXO4070.
+
 <a id="v1-0-0-beta-4"></a>
 
 ## `1.0.0-beta.4`

@@ -38,7 +38,7 @@ describe('Type of collections', () => {
         expect(String(Type.parse('Dictionary<String, List<Number?>>?'))).toBe('Dictionary<String, List<Number?>>?');
         expect(Type.parse('Pair<K, V>').isPair).toBe(true);
         expect(Type.parse('Dictionary<String, Number>').isDictionary).toBe(true);
-        expect([Type.parse('Dictionary<String>'), Type.parse('Dictionary<String,Number>'), Type.parse('List<A, B>'), Type.parse('Dictionary'), Type.parse('Box<T>')]).toEqual([null, null, null, null, null]);
+        expect([Type.parse('Dictionary<String>'), Type.parse('Dictionary<String,Number>'), Type.parse('List<A, B>'), Type.parse('Box<T>')]).toEqual([null, null, null, null]);
         expect(String(Type.createDictionaryType(Type.never, Type.never))).toBe('Dictionary<Never, Never>');
         expect(String(Type.createPairType(Type.createNamedType('Number'), Type.null, true))).toBe('Pair<Number, null>?');
     });

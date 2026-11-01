@@ -455,3 +455,19 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Resolving it as a host call with its candidates, as a call on a null receiver is: a value of `Any` holds a value, and a host could not prepare the call without the declaration evaluation alone would select.
   - Leaving host calls out of a deferred access's candidates: a receiver whose actual type declares one would then read as lacking the member (NEXO5012), hiding why.
+
+<a id="d32"></a>
+
+## D32 — A module's own types are named first, whatever their names
+
+*November 1, 2026*
+
+- **Kind:** Language contract, decided after DOMQL's migration.
+- **Decision:** In a module's declarations, every unqualified type name follows the lookup's tiers, the module's own types first, the names of Nexo's generic types, `Any` and `Never` included. A generic type's name written alone that reaches Nexo's own is refused at registration (NEXO4070). NEXO4512 names the notation that does not parse. The language advances to `1.0.0-beta.5`.
+- **Why:**
+  - The specification lets a module declare a type spelled as one of Nexo's own, and names the module's first. The type reader refused `Pair` alone before the lookup ran, and read `Any` and `Never` as Nexo's whatever the module declared.
+  - DOMQL met it naming a type `Pair`: "It declares the type of its result" said neither which notation failed nor why.
+  - Registration resolves every type reference, so it is where a name is found to reach a generic type without its arguments.
+- **Declined:**
+  - Refusing a module's type spelled as one of Nexo's own: a name is not invalid because something elsewhere has the same name, and a qualified name reaches any module's type.
+  - Reading a generic type's name alone as Nexo's type with no arguments: its members are declared over its type parameters, which nothing would bind.

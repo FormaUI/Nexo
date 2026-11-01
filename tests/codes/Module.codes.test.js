@@ -191,6 +191,7 @@ describe('the module error codes', () => {
         it('NEXO4512: a type notation that does not parse', () => {
             expectModuleCode(creating({ mappings: [{ key: 'click', selector: 'report', type: 'List<' }] }), 'NEXO4512');
             expectModuleCode(creating({ members: [propertyDeclaration({ result: 'List<' })] }), 'NEXO4512');
+            expect(errorThrownBy(creating({ members: [propertyDeclaration({ result: 'List<' })] })).message).toContain("'List<' is no type's notation");
             expectModuleCode(creating({ members: [functionDeclaration({ parameters: [parameterDeclaration({ type: 'List<' })] })] }), 'NEXO4512');
             expectModuleCode(creating({ members: [functionDeclaration({ parameters: [callback({ parameterTypes: ['List<'] })] })] }), 'NEXO4512');
             expectModuleCode(creating({ types: [{ name: 'Lamp', kind: 'reference', isInstance: () => true, supertype: 'List<' }] }), 'NEXO4512');
@@ -646,6 +647,11 @@ describe('the module error codes', () => {
             const axis = { name: 'Axis', kind: 'structured', members: dataPropertyDeclarations({ length: 'Number' }) };
 
             expectModuleCode(registering(module('axes', { types: [axis] }), module('scales', { types: [axis] }), module('charts', { types: [{ name: 'Chart', kind: 'structured', members: dataPropertyDeclarations({ axis: 'Axis' }), import: ['axes', 'scales'] }] })), 'NEXO4048');
+        });
+
+        it("NEXO4070: one of Nexo's generic types named without its type arguments, where no nearer tier declares a type of its name", () => {
+            expect(errorThrownBy(registering(module('charts', { members: [propertyDeclaration({ result: 'Pair' })] })))).toMatchObject({ code: 'NEXO4070', message: expect.stringContaining("'Pair' names Nexo's generic type Pair<K, V>, which is written with its type arguments") });
+            expectModuleCode(registering(module('charts', { members: [propertyDeclaration({ result: 'List?' })] })), 'NEXO4070');
         });
 
         it('NEXO4049: a foreign type named unqualified outside its import', () => {

@@ -740,6 +740,13 @@ export class NexoRegistry {
 
                     return new Type('named', { name: type.name, typeArguments, isNullable: type.isNullable });
                 }
+                // The declaring module's own type of the name comes before Nexo's own, `Any` and `Never` among them.
+                case 'any':
+                case 'never': {
+                    const name = type.kind === 'any' ? 'Any' : 'Never';
+
+                    return this.#declaresType(context.moduleName, name) ? Type.createNamedType(name, type.isNullable, context.moduleName) : type;
+                }
                 default:
                     return type;
             }
@@ -788,6 +795,8 @@ export class NexoRegistry {
                         fail('NEXO2037', `${notation} names ${type.name}, which is several types' name, so it is named qualified: ${types.map(found => found.toString(true)).join(' or ')}`);
                     }
 
+                    this.#refuseBareGeneric(types[0], notation, fail, 'NEXO2044');
+
                     return type.isNullable ? types[0].toNullable() : types[0];
                 }
                 default:
@@ -796,6 +805,21 @@ export class NexoRegistry {
         };
 
         return resolve(parsed);
+    }
+
+    /**
+     * Refuses a name that resolved to one of Nexo's own generic types written without its type arguments, as `Pair` alone: a generic type is written with them, `Pair<K, V>`, and its bare name names a type only where
+     * a nearer tier declares one of that name, as a module's own `Pair` does in its declarations; another module's is named qualified.
+     */
+    #refuseBareGeneric(type, notation, fail, code) {
+        const arity = type.moduleName === null && type.typeArguments.length === 0 && Object.hasOwn(Type.genericTypeArities, type.name) ? Type.genericTypeArities[type.name] : 0;
+
+        if (arity > 0) {
+            const foreign = this.getModuleNamesDeclaringType(type.name).map(moduleName => `${moduleName}.${type.name}`);
+            const written = `${type.name}<${arity === 1 ? 'T' : 'K, V'}>`;
+
+            fail(code, `'${notation}' names Nexo's generic type ${written}, which is written with its type arguments${foreign.length === 0 ? '' : `, and another module's ${type.name} qualified: ${foreign.join(' or ')}`}`);
+        }
     }
 
     /** The name of the module that declares the named type, null for one of Nexo's own types, as its declaration's scope resolves it. */
@@ -821,6 +845,8 @@ export class NexoRegistry {
         }
 
         if (types.length === 1) {
+            this.#refuseBareGeneric(types[0], notation, fail, 'NEXO4070');
+
             return types[0].moduleName;
         }
 

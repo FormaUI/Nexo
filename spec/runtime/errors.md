@@ -187,6 +187,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4029` | Two members of one name on one receiver type of one module, two indexers among them only where their key types overlap, as signatures of one indexer never do | A module error naming both |
 | `NEXO4068` | Two unnamed indexers for one receiver type of one module whose key types overlap, as signatures of one indexer never do | A module error naming both |
 | `NEXO4069` | Two operators of one name and destination on one receiver type of one module | A module error naming both |
+| `NEXO4070` | One of Nexo's generic types, `List`, `Dictionary` or `Pair`, named without its type arguments where no nearer tier declares a type of its name | A module error naming the declaration, giving the type with its type arguments and another module's type of the name qualified |
 | `NEXO4500` | A module whose name is not an identifier | A module error naming the module |
 | `NEXO4501` | A module's contents that are not an object | A module error naming what a module declares |
 | `NEXO4502` | A module's contents declaring what a module does not declare | A module error naming what a module declares |
@@ -195,7 +196,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4505` | An `impl` that is not a function | A module error naming the declaration |
 | `NEXO4507` | A type's `import` that is not a list of modules' names | A module error naming the type |
 | `NEXO4508` | A type importing one module twice | A module error naming the module |
-| `NEXO4512` | A type that does not parse where a declaration names one, a result, a parameter's, a callback's, a mapping's or a supertype | A module error naming the declaration |
+| `NEXO4512` | A type that does not parse where a declaration names one, a result, a parameter's, a callback's, a mapping's or a supertype | A module error naming the declaration and the notation |
 | `NEXO4514` | `updates` whose `changes` or `reads` is none of its values | A module error giving the values |
 | `NEXO4515` | A `tolerance` that is not a number, or is negative | A module error naming the member |
 | `NEXO4516` | `observations` that are not a list | A module error naming the member |

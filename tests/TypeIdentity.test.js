@@ -55,6 +55,17 @@ describe('type identity', () => {
             expect(evaluateWith([measures], '"12" to Number')).toBe(12);
             expect(evaluateWith([measures], '("12" to measures.Number).amount')).toBe('12');
         });
+
+        it("names the module's own type in its declarations by a name one of Nexo's generic types, Any or Never spells, written alone", () => {
+            const shapes = ['Pair', 'List', 'Dictionary', 'Any'].map(name => ({ name, kind: 'structured', members: dataPropertyDeclarations({ [`${name.toLowerCase()}Mark`]: 'Number' }) }));
+            const garage = nexo.createModule('garage', {
+                types: shapes,
+                members: shapes.map(({ name }) => createPropertyDeclaration(name.toLowerCase(), `${name}?`, { updates: constantUpdates, impl: () => ({ [`${name.toLowerCase()}Mark`]: 1 }) })),
+            });
+
+            expect(['pair', 'list', 'dictionary', 'any'].map(name => evaluateWith([garage], `garage.${name}?.${name}Mark`))).toEqual([1, 1, 1, 1]);
+            expect(createImportingRegistry([garage]).resolve('import garage\ngarage.pair?.pairMark').type).toBe('Number?');
+        });
     });
 
     describe('of a reference in a declaration', () => {
