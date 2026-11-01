@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.8` · definition format 38*
+*Unpublished · language `1.0.0-beta.9` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -21,3 +21,5 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A namespace standing where a value does is refused giving `~` for the script parameter of its name, NEXO2520.
 - An origin in a result's metadata is comparable across every resolution of one definition that selects the same declaration, so a result after a renewal keeps comparing within its tolerance.
 - A member a value of `Any` selects as it is evaluated gives its value the tolerance it declares in the result's metadata.
+- A module's declarations and a declared binding type name Nexo's own types qualified, `Nexo.Number`, `Nexo.Any` and `Nexo.Never`, where a module's own type of the name would hide Nexo's or make it ambiguous.
+- A diagnostic writes Nexo's own type as `Nexo.Number` beside a module's type of its name, and a script's `Nexo.Number` is refused without suggesting `import Nexo`.

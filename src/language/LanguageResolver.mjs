@@ -783,9 +783,10 @@ export class LanguageResolver {
             const qualifier = name.slice(0, dot);
 
             if (moduleName === undefined) {
-                const isRegistered = this.#registry.getModule(qualifier) !== undefined;
+                // Nexo's own module is never imported, and a script names its types unqualified.
+                const hint = qualifier === Names.nexoModuleName ? `: a script names Nexo's own types unqualified, as ${name.slice(dot + 1)}` : this.#registry.getModule(qualifier) !== undefined ? `: write 'import ${qualifier}' at the script's start` : '';
 
-                this.#fail('NEXO3004', `'${name}' is qualified by '${qualifier}', which no import of the script gives a module${isRegistered ? `: write 'import ${qualifier}' at the script's start` : ''}`, pointer);
+                this.#fail('NEXO3004', `'${name}' is qualified by '${qualifier}', which no import of the script gives a module${hint}`, pointer);
             }
 
             if (types.length === 0) {

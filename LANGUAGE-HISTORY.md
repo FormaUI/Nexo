@@ -7,6 +7,24 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-9"></a>
+
+## `1.0.0-beta.9`
+
+*November 1, 2026 · definition format 38*
+
+**Language**
+
+- [Type name lookup](spec/language/types.md#types-type-name-lookup): a module's declarations name Nexo's own types qualified by Nexo's module, `Nexo.Number`, as they name any registered module's type, so a module declaring a type spelled as one of Nexo's own still names Nexo's. `Nexo.Any` and `Nexo.Never` name the reserved types. A qualified name takes no type arguments, so a generic type stays written unqualified with them, and `Nexo.List` alone is refused as `List` alone is (NEXO4070).
+- [Type identity](spec/language/types.md#types-type-identity): a script names Nexo's own types unqualified, and `Nexo.Number` stays refused where no import gives the local name `Nexo` (NEXO3004), its message no longer giving `import Nexo`, which is refused.
+- [Type identity](spec/language/types.md#types-type-identity): a diagnostic writing a type of Nexo's own beside a module's type of its name writes `Nexo.Number`, and one listing several types of one name lists Nexo's first.
+
+**Runtime**
+
+- [Bindings](spec/runtime/bindings.md#runtime-bindings): a declared binding type names Nexo's own qualified too, `{ count: 'Nexo.Number' }`, where a module's public type of the name makes `Number` alone ambiguous (NEXO2037).
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-8"></a>
 
 ## `1.0.0-beta.8`

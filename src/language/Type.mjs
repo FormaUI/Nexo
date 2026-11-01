@@ -3,6 +3,8 @@
  * a value alone, whose relations to another type `TypeChecker` answers
  */
 
+import { Names } from './Names.mjs';
+
 const NAME = /^@?[A-Za-z][A-Za-z0-9]*$/;
 const TYPE_PARAMETER = /^(?:[A-Z]|@[A-Za-z][A-Za-z0-9]*)$/;
 
@@ -225,7 +227,10 @@ export class Type {
         return true;
     }
 
-    /** The notation of the type, each named type in it by its local name, or by its identity where it is written qualified. */
+    /**
+     * The notation of the type, each named type in it by its local name, or, where it is written qualified, by its module and its local name, as a declaration names it: one of Nexo's own written alone, and `Any` and
+     * `Never`, qualified by Nexo's module, as `Nexo.Number`, and a generic one, which a qualified name never writes, by its local name with its type arguments.
+     */
     toString(isQualified = false) {
         let text;
 
@@ -242,12 +247,12 @@ export class Type {
             case 'null':
                 return 'null';
             case 'never':
-                return 'Never';
+                return isQualified ? `${Names.nexoModuleName}.Never` : 'Never';
             case 'any':
-                text = 'Any';
+                text = isQualified ? `${Names.nexoModuleName}.Any` : 'Any';
                 break;
             case 'named':
-                text = isQualified ? this.identity : this.name;
+                text = isQualified && (this.moduleName !== null || this.typeArguments.length === 0) ? `${this.moduleName ?? Names.nexoModuleName}.${this.name}` : this.name;
 
                 if (this.typeArguments.length > 0) {
                     text = `${text}<${this.typeArguments.map(typeArgument => typeArgument.toString(isQualified)).join(', ')}>`;

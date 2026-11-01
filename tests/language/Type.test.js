@@ -86,6 +86,13 @@ describe('Type', () => {
             expect(Type.namesOf(Type.parse('home.Sensor'), Type.parse('Number'))).toEqual(['Sensor', 'Number']);
             expect(Type.namesOf(Type.parse('home.Sensor'), Type.parse('home.Sensor?'))).toEqual(['Sensor', 'Sensor?']);
         });
+
+        it("writes one of Nexo's own qualified by Nexo's module where it reads alike with a module's, a generic one by its type arguments alone", () => {
+            expect(Type.namesOf(Type.parse('Number?'), Type.parse('home.Number?'))).toEqual(['Nexo.Number?', 'home.Number?']);
+            expect(Type.namesOf(Type.parse('Any'), Type.parse('home.Any'))).toEqual(['Nexo.Any', 'home.Any']);
+            expect(Type.namesOf(Type.parse('List<Number>'), Type.parse('List<home.Number>'))).toEqual(['List<Nexo.Number>', 'List<home.Number>']);
+            expect(Type.parse('Never').toString(true)).toBe('Nexo.Never');
+        });
     });
 
     describe('toString', () => {

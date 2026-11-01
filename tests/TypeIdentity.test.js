@@ -66,6 +66,49 @@ describe('type identity', () => {
             expect(['pair', 'list', 'dictionary', 'any'].map(name => evaluateWith([garage], `garage.${name}?.${name}Mark`))).toEqual([1, 1, 1, 1]);
             expect(createImportingRegistry([garage]).resolve('import garage\ngarage.pair?.pairMark').type).toBe('Number?');
         });
+
+        it("names Nexo's own type of the name in the module's declarations qualified by Nexo's module, Any and Never among them", () => {
+            const units = nexo.createModule('units', {
+                types: ['Number', 'Any', 'Never'].map(name => ({ name, kind: 'structured', members: dataPropertyDeclarations({ mark: 'String' }) })),
+                members: [
+                    createPropertyDeclaration('count', 'Nexo.Number', { updates: constantUpdates, impl: () => 3 }),
+                    createPropertyDeclaration('counts', 'List<Nexo.Number?>', { updates: constantUpdates, impl: () => [1, null] }),
+                    createPropertyDeclaration('anything', 'Nexo.Any', { updates: constantUpdates, impl: () => 'text' }),
+                    createFunctionDeclaration('scaled', 'Nexo.Number', { updates: constantUpdates, parameters: [createValueParameterDeclaration('by', 'Nexo.Number', { default: 1 })], impl: ({ args }) => 3 * args.by }),
+                ],
+            });
+            const registry = createImportingRegistry([units]);
+
+            expect(evaluateWith([units], '{ count = units.count + 1, counts = units.counts, anything = units.anything, scaled = units.scaled(2) }')).toEqual({ count: 4, counts: [1, null], anything: 'text', scaled: 6 });
+            expect(['units.count', 'units.counts', 'units.anything'].map(text => registry.resolve(text).type)).toEqual(['Number', 'List<Number?>', 'Any']);
+        });
+
+        it("refuses Nexo's qualified generic type written alone, a qualified name with type arguments, and a name Nexo declares no type of", () => {
+            const declaring = result => () => nexo.createRegistry([nexo.createModule('units', { members: [createPropertyDeclaration('value', result, { updates: constantUpdates, impl: () => null })] })]);
+
+            expect(errorThrownBy(declaring('Nexo.List'))).toMatchObject({ code: 'NEXO4070', location: { module: 'units', declaration: 'value' } });
+            expect(errorThrownBy(declaring('Nexo.List<Number>'))).toMatchObject({ code: 'NEXO4512', location: { module: 'units', declaration: 'value', declarationKey: 'result' } });
+            expect(errorThrownBy(declaring('Nexo.Gauge'))).toMatchObject({ code: 'NEXO4047', message: expect.stringContaining("names the type 'Nexo.Gauge', which the module 'Nexo' does not declare") });
+        });
+
+        it("binds a declared type qualified by Nexo's module, which an ambiguity among a module's type of the name gives", () => {
+            const units = nexo.createModule('units', { types: [{ name: 'Number', kind: 'structured', members: dataPropertyDeclarations({ mark: 'String' }) }] });
+            const registry = nexo.createRegistry([units]);
+
+            expect(registry.resolve('count + 1', registry.createBindings({ count: 2 }, { types: { count: 'Nexo.Number' } })).type).toBe('Number');
+            expect(errorThrownBy(() => registry.createBindings({ count: 2 }, { types: { count: 'Number' } }))).toMatchObject({ code: 'NEXO2037', location: { binding: 'count' }, message: expect.stringContaining('named qualified: Nexo.Number or units.Number') });
+            expect(errorThrownBy(() => registry.createBindings({ count: 2 }, { types: { count: 'Nexo.Any' } }))).toMatchObject({ code: 'NEXO2044', location: { binding: 'count' } });
+        });
+
+        it("refuses a script's type qualified by Nexo's module, whose types a script names unqualified", () => {
+            const units = nexo.createModule('units', { types: [{ name: 'Number', kind: 'structured', members: dataPropertyDeclarations({ mark: 'String' }) }] });
+
+            expect(errorThrownBy(() => createImportingRegistry([units]).resolve('"12" to Nexo.Number'))).toMatchObject({
+                code: 'NEXO3004',
+                location: { pointer: '/expression' },
+                message: expect.stringContaining("which no import of the script gives a module: a script names Nexo's own types unqualified, as Number"),
+            });
+        });
     });
 
     describe('of a reference in a declaration', () => {

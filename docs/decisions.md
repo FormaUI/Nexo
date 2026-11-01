@@ -508,3 +508,20 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Decision:** An evaluation records the declaration each deferred access selects, as it records a bracket's selected name, and the value's record takes that declaration's tolerance and an origin of its own for it. The language advances to `1.0.0-beta.8`.
 - **Why:** A value's tolerance is the one its producing member declares. A deferred access knew its member only as it was evaluated, so its value's record had no tolerance, and DOMQL reported a change within it as a change.
 - **Declined:** Taking a tolerance the candidates share: candidates may declare different ones, and the value is produced by one of them alone.
+
+<a id="d36"></a>
+
+## D36 — Nexo's own types are named `Nexo.Number` where a registry's names are read
+
+*November 1, 2026*
+
+- **Kind:** Language contract, closing an open decision.
+- **Decision:** A module's declarations and a declared binding type name Nexo's own types qualified by Nexo's module, `Nexo.Number`, `Nexo.Any` and `Nexo.Never`, as they name any registered module's type. A qualified name takes no type arguments, so a generic type stays written unqualified with them. A script names Nexo's own types unqualified, and `Nexo` in a script is a local name an import gives, as before. The language advances to `1.0.0-beta.9`.
+- **Why:**
+  - Type name lookup puts a module's own types before Nexo's in its declarations, and a declared binding puts Nexo's and every module's in one tier. A module declaring `Number` could not name Nexo's in its own declarations, and a binding declared `Number` beside it was refused as ambiguous with no spelling that selected Nexo's.
+  - Both read names against the registry, where a qualified name names a registered module by its own name. Nexo's own module is registered as `Nexo` in every registry, and no other module can take that name, so `Nexo.Number` adds no rule and no namespace: it is the qualified name every type already has.
+  - A script needs none. Only the types it imports by name come before Nexo's own, under local names the script chooses, so it can always name Nexo's unqualified.
+- **Declined:**
+  - A permanent namespace for Nexo in scripts, which an alias may spell, `import Nexo = Home`, and which the language declined before.
+  - Reading `Nexo.Number` in a script where no import gives `Nexo`: a script's qualifiers are the local names its imports give, and the name would mean two things by whether an import gives it.
+  - `Nexo.List<T>`: a qualified name never takes type arguments, and a generic type written with them is always Nexo's.

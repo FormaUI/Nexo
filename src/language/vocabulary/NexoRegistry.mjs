@@ -5,6 +5,7 @@
 import { ArrayUtils } from '../../common/ArrayUtils.mjs';
 import { ObjectUtils } from '../../common/ObjectUtils.mjs';
 import { Imports } from '../Imports.mjs';
+import { Names } from '../Names.mjs';
 import { NexoErrors } from '../NexoError.mjs';
 import { MemberSelector } from '../MemberSelector.mjs';
 import { Type } from '../Type.mjs';
@@ -554,10 +555,10 @@ export class NexoRegistry {
 
     /**
      * The types a type name names in its scope, a declaration's, a declared binding's or a script's, the one path each reads, its own refusals its caller's. A qualified name, `Q.Name`, names the type of its local name
-     * the module `Q` names declares, `Q` the local name an import of the scope gives a module or, in a scope naming modules by their own names, a registered module's, and its answer holds that module, undefined where
-     * `Q` names none. An unqualified name names the types of the first of the scope's tiers that holds any: a type import's of that local name, then the declaring module's own type, then Nexo's own, then those the
-     * modules the scope imports declare, in the order they were registered; in a scope reaching every module, Nexo's own and every module's alike. Internal types are among them, and an extension, which no type name
-     * names, is none.
+     * the module `Q` names declares, `Q` the local name an import of the scope gives a module or, in a scope naming modules by their own names, a registered module's, Nexo's own among them, whose types `Nexo.Number`,
+     * `Nexo.Any` and `Nexo.Never` name, and its answer holds that module, undefined where `Q` names none. An unqualified name names the types of the first of the scope's tiers that holds any: a type import's of that
+     * local name, then the declaring module's own type, then Nexo's own, then those the modules the scope imports declare, in the order they were registered; in a scope reaching every module, Nexo's own and every
+     * module's alike. Internal types are among them, and an extension, which no type name names, is none.
      * @param {string} name
      * @param {import('./TypeNameScope.mjs').TypeNameScope} scope
      * @returns {{ moduleName?: string, types: Type[] }}
@@ -568,6 +569,10 @@ export class NexoRegistry {
         if (dot !== -1) {
             const localName = name.slice(dot + 1);
             const moduleName = this.#moduleQualifiedBy(name.slice(0, dot), scope);
+
+            if (moduleName === Names.nexoModuleName) {
+                return { moduleName, types: NexoRegistry.#ownTypesNamed(localName) };
+            }
 
             return { moduleName, types: moduleName !== undefined && this.#declaresType(moduleName, localName) ? [Type.createNamedType(localName, false, moduleName)] : [] };
         }
@@ -584,6 +589,15 @@ export class NexoRegistry {
         }
 
         return scope.namesModulesByOwnName && (this.#modules.has(qualifier) || this.#pending?.module.name === qualifier) ? qualifier : undefined;
+    }
+
+    /** The one of Nexo's own types of the local name, as its module's name qualifies it: a value type, or `Any` or `Never`, the reserved types; none for any other name. */
+    static #ownTypesNamed(localName) {
+        if (localName === 'Any' || localName === 'Never') {
+            return [localName === 'Any' ? Type.any : Type.never];
+        }
+
+        return Vocabulary.builtInTypeNames.includes(localName) ? [Type.createNamedType(localName)] : [];
     }
 
     /** The types an unqualified name names in the scope, its first tier that holds any. */
@@ -716,10 +730,11 @@ export class NexoRegistry {
         const scope = context.typeParameters;
         const resolve = type => {
             if (type.kind === 'typeParameter' && type.name !== '@selected' && !scope.has(type.name)) {
-                return Type.createNamedType(type.name, type.isNullable, this.#moduleOfType(type, notation, context, fail));
+                return this.#typeOfName(type, notation, context, fail);
             }
 
-            if (scope.has(type.name) && type.kind === 'named' && type.typeArguments.length === 0) {
+            // A qualified name is a type's, whatever its local name, never a parameter's.
+            if (scope.has(type.name) && type.kind === 'named' && type.moduleName === null && type.typeArguments.length === 0) {
                 return Type.createTypeParameter(type.name, type.isNullable);
             }
 
@@ -729,7 +744,7 @@ export class NexoRegistry {
                 // A generic value type is Nexo's own, and its type arguments are resolved in turn, a dictionary's key one of a key type.
                 case 'named': {
                     if (type.typeArguments.length === 0) {
-                        return Type.createNamedType(type.name, type.isNullable, this.#moduleOfType(type, notation, context, fail));
+                        return this.#typeOfName(type, notation, context, fail);
                     }
 
                     const typeArguments = type.typeArguments.map(resolve);
@@ -822,10 +837,14 @@ export class NexoRegistry {
         }
     }
 
-    /** The name of the module that declares the named type, null for one of Nexo's own types, as its declaration's scope resolves it. */
-    #moduleOfType(type, notation, context, fail) {
+    /**
+     * The type a name without type arguments names, nullable where it is written so, as its declaration's scope resolves it: a qualified one the type its module declares, Nexo's own as `Nexo.Number`, and an
+     * unqualified one the type of its scope's nearest tier.
+     */
+    #typeOfName(type, notation, context, fail) {
         const { name } = type;
         const { moduleName, types } = this.resolveTypeName(type.moduleName === null ? name : `${type.moduleName}.${name}`, TypeNameScope.createDeclarationScope(context.moduleName, context.imports));
+        const written = found => (type.isNullable ? found.toNullable() : found);
 
         if (type.moduleName !== null) {
             if (moduleName === undefined) {
@@ -836,7 +855,9 @@ export class NexoRegistry {
                 fail('NEXO4047', `'${notation}' names the type '${type.identity}', which the module '${type.moduleName}' does not declare`);
             }
 
-            return type.moduleName;
+            this.#refuseBareGeneric(types[0], notation, fail, 'NEXO4070');
+
+            return written(types[0]);
         }
 
         // Only the imported modules' tier holds several types, Nexo's own and the declaring module's one each.
@@ -847,7 +868,7 @@ export class NexoRegistry {
         if (types.length === 1) {
             this.#refuseBareGeneric(types[0], notation, fail, 'NEXO4070');
 
-            return types[0].moduleName;
+            return written(types[0]);
         }
 
         const foreign = this.getModuleNamesDeclaringType(name);
