@@ -32,3 +32,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - NEXO3045, NEXO3065, NEXO4021 and NEXO4067, catalogued and never raised, are retired.
 - `NexoError` exposes the four factories it declares alone; `NexoError.syntax` and `NexoError.locate`, never declared, are gone.
 - `resolution.typeAt` and `nexo.paths.valueAt` refuse a path of another shape, NEXO2646, as `nexo.paths.validate` does, a path that is no list among it; `valueAt` steps to an object field a value holds and a list's item alone.
+- A text that ends inside a collection, as `[10,`, is refused with NEXO1000, where a `TypeError` escaped `nexo.parse`.

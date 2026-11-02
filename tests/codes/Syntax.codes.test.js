@@ -15,6 +15,12 @@ const expectSyntaxCode = (code, texts, parse = nexo.parse) => {
 
 describe('the codes of syntax errors', () => {
     describe('the parser', () => {
+        it('gives NEXO1000 to a collection the source ends in, awaiting its next item or entry', () => {
+            expectSyntaxCode('NEXO1000', ['[', '[10,', '[10, ', '["a" = 1,']);
+            expect(errorThrownBy(() => nexo.parse('[10,'))).toMatchObject({ code: 'NEXO1000', location: { line: 1, column: 5 }, message: expect.stringContaining('Expected a value, found the end of the source') });
+            expect(errorThrownBy(() => nexo.parse('["a" = 1,'))).toMatchObject({ code: 'NEXO1000', message: expect.stringContaining('Expected a key, found the end of the source') });
+        });
+
         it('gives NEXO1000 to text that does not follow the syntax', () => {
             expectSyntaxCode('NEXO1000', [
                 'let f = function(1) 1 end return f',

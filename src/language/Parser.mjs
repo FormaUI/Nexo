@@ -817,7 +817,7 @@ export class Parser {
             return;
         }
 
-        if (this.#tokens[this.#index + 1].type === '=') {
+        if (this.#nextToken.type === '=') {
             throw this.#createUnexpectedTokenError('NEXO1000', "',' before the next object field");
         }
 
@@ -825,7 +825,7 @@ export class Parser {
         const kind = Parser.#syntaxKindOf(value);
         const receiver = kind === 'cast' || kind === 'conversion' ? `(${written})` : written;
         // A name an argument or an options object follows is a call written without its dot, and any other a property access.
-        const next = this.#tokens[this.#index + 1];
+        const next = this.#nextToken;
         const arguments_ = next.type === '(' || next.type === '{' || ARGUMENT_STARTS.has(next.type) ? '(…)' : '';
 
         throw this.#createSyntaxError('NEXO1011', `A member follows its receiver after a dot: write '${receiver}.${this.#token.value}${arguments_}'`, this.#token.start);
@@ -833,7 +833,7 @@ export class Parser {
 
     /** Whether the keyword `to` and a type's name stand here, which only a conversion writes, after the value it converts, or a string written in the name's place. */
     #startsConversion() {
-        const next = this.#tokens[this.#index + 1];
+        const next = this.#nextToken;
 
         return this.#isKeyword('to') && (this.#isWord(next) || (next.type === 'literal' && typeof next.value === 'string'));
     }
@@ -1103,7 +1103,7 @@ export class Parser {
      */
     #parseInput() {
         const token = this.#token;
-        const next = this.#tokens[this.#index + 1];
+        const next = this.#nextToken;
 
         if (this.#startsConversion()) {
             throw this.#createSyntaxError('NEXO1010', `'to' converts the value written before it: write 'it to ${this.#text.slice(next.start, next.end)}' to convert the implicit parameter`, token.start);
@@ -1276,8 +1276,8 @@ export class Parser {
         const colon = this.#token;
         const written = this.#text.slice(start, colon.start);
 
-        if (!this.#isWord(this.#tokens[this.#index + 1])) {
-            const next = this.#tokens[this.#index + 1];
+        if (!this.#isWord(this.#nextToken)) {
+            const next = this.#nextToken;
             const isOptional = colon.type === '?:';
             const message = next.type === '[' || next.type === '?['
                 ? `write '${written}${isOptional ? '?[' : '['}…]' for the unnamed indexer, or '${written}${isOptional ? '?.' : '.'}[…]' for a property read by a computed name`
@@ -1290,8 +1290,8 @@ export class Parser {
         const names = [children[1]];
 
         // The text alone decides where the names end: every dot a word follows continues them.
-        while (this.#token.type === '.' && this.#isWord(this.#tokens[this.#index + 1])) {
-            const name = this.#tokens[this.#index + 1];
+        while (this.#token.type === '.' && this.#isWord(this.#nextToken)) {
+            const name = this.#nextToken;
 
             children.push(this.#take(), this.#take());
             names.push(name);
@@ -1352,12 +1352,12 @@ export class Parser {
 
     /** Whether a word and `=` begin what stands here, as a field, a local's name or a conditional binding's does, whatever the word, a reserved word among them. */
     #startsEntry() {
-        return this.#isWord(this.#token) && this.#tokens[this.#index + 1]?.type === '=';
+        return this.#isWord(this.#token) && this.#nextToken.type === '=';
     }
 
     /** Whether a word and a colon begin what stands here, where a field, a local or a conditional binding is named, which writes its value after `=`, whatever follows the colon and however it is spaced. */
     #startsColonEntry() {
-        return this.#isWord(this.#token) && this.#tokens[this.#index + 1]?.type === ':';
+        return this.#isWord(this.#token) && this.#nextToken.type === ':';
     }
 
     /** Whether the token writes a word: a name, a keyword, `it`, or the word of a literal, which a declaration, a member's name and a type's take as they are, whatever the word means where an expression stands. */
@@ -1449,7 +1449,7 @@ export class Parser {
             return Parser.#node('list-expression', children);
         }
 
-        if (this.#token.type === '=' && this.#tokens[this.#index + 1].type === ']') {
+        if (this.#token.type === '=' && this.#nextToken.type === ']') {
             children.push(this.#take(), this.#take());
 
             return Parser.#node('dictionary-expression', children);
@@ -1460,6 +1460,11 @@ export class Parser {
         while (this.#token.type !== ']') {
             if (this.#token.type === ',') {
                 throw this.#createSyntaxError('NEXO1068', 'A collection expression holds an item between each two commas: write one there, or remove the comma', this.#token.start);
+            }
+
+            // A collection the source ends in awaits its next item or entry, whichever kind it is.
+            if (this.#token.type === 'end') {
+                throw this.#createUnexpectedTokenError('NEXO1000', isDictionary ? 'a key' : 'a value');
             }
 
             if (isDictionary !== this.#startsDictionaryEntry()) {
@@ -1484,7 +1489,7 @@ export class Parser {
 
     /** Whether a dictionary's entry starts here: a key, one token, and the `=` after it, a key no string writes among them, which its entry refuses. */
     #startsDictionaryEntry() {
-        return this.#tokens[this.#index + 1].type === '=' && this.#token.type !== ',' && this.#token.type !== ']';
+        return this.#nextToken.type === '=' && this.#token.type !== ',' && this.#token.type !== ']';
     }
 
     /** Reads a list's item: an expression, never an arrow function, since a collection holds data (NEXO1057); one an `=` follows is a dictionary's key no single token writes, which is refused (NEXO1066). */
@@ -1580,10 +1585,10 @@ export class Parser {
         }
 
         if (this.#startsColonEntry()) {
-            throw this.#createSyntaxError('NEXO1003', `${colonMessage}: write '${prefix}${SyntaxTree.wordOf(token, this.#text)} = …'`, this.#tokens[this.#index + 1].start);
+            throw this.#createSyntaxError('NEXO1003', `${colonMessage}: write '${prefix}${SyntaxTree.wordOf(token, this.#text)} = …'`, this.#nextToken.start);
         }
 
-        if (token.type === 'literal' && (this.#tokens[this.#index + 1]?.type === '=' || this.#tokens[this.#index + 1]?.type === ':')) {
+        if (token.type === 'literal' && (this.#nextToken.type === '=' || this.#nextToken.type === ':')) {
             throw this.#createSyntaxError(code, `${Parser.#quote(SyntaxTree.wordOf(token, this.#text))} is a literal, and names nothing`, token.start);
         }
 
@@ -1594,9 +1599,14 @@ export class Parser {
         return this.#tokens[this.#index];
     }
 
+    /** The token after the current one, the end of the source where the current one is that end, so a lookahead at the source's end reads the end again. */
+    get #nextToken() {
+        return this.#tokens[Math.min(this.#index + 1, this.#tokens.length - 1)];
+    }
+
     /** Whether a local starts here: `let`, which `=` or a colon after it would make a field's name instead. */
     #startsLocal() {
-        const next = this.#tokens[this.#index + 1]?.type;
+        const next = this.#nextToken.type;
 
         return this.#isKeyword('let') && next !== '=' && next !== ':';
     }
@@ -1641,7 +1651,7 @@ export class Parser {
         // `=` gives a field, a local or a conditional binding its value, so one anywhere else is an equality written with one sign, or the second half of a comparison operator written apart.
         if (token.type === '=') {
             const previous = this.#tokens[this.#index - 1];
-            const next = this.#tokens[this.#index + 1];
+            const next = this.#nextToken;
 
             if (previous?.type === '<' || previous?.type === '>') {
                 return this.#createSyntaxError('NEXO1001', `'${previous.type}=' is one operator, written with nothing between its signs`, previous.start);
