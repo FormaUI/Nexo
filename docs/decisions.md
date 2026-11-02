@@ -656,6 +656,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 - **Kind:** Process.
 - **Decision:** The tooling built in languages `1.0.0-beta.16` to `1.0.0-beta.18`, tolerant reading, diagnostics, source-preserving formatting, completion and hover, is withdrawn from `main` until the owner designs it. Its commits are reverted, and the work is kept on the `tooling-draft` branch as a draft for that design. The language advances to `1.0.0-beta.19`, so no version names two contracts.
+- **Its decisions:** D45 to D47, which the tooling settled, are withdrawn with it. They stay on the `tooling-draft` branch, and their numbers are not reused.
 - **Why:** The status listed tooling as next, in a few bullets, and it was built from them without a design the owner had made. Its contract, a public API and a specification document, is the owner's to shape.
 - **Declined:**
   - Keeping it on `main` as a draft, which would leave an undesigned contract in the specification.
