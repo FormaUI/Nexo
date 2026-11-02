@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.16` and definition version 38, the sixteenth beta.** What remains is [tooling](#tooling) and [the release](#release), and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.17` and definition version 38, the seventeenth beta.** What remains is [tooling](#tooling) and [the release](#release), and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.16` | `1.0.0-beta.16` |
+| Language | `1.0.0-beta.17` | `1.0.0-beta.17` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -20,7 +20,7 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 | Work | State |
 | --- | --- |
 | [DOMQL's migration](#domqls-migration) | Done: DOMQL migrated at `1.0.0-beta.3` |
-| [Tooling](#tooling) | In progress: a tolerant reading and its diagnostics are implemented, and formatting that keeps a text's source form and editor tooling remain |
+| [Tooling](#tooling) | In progress: a tolerant reading, its diagnostics and formatting that keeps a text's source form are implemented, and editor tooling remains |
 | [Release](#release) | The beta is declared; publishing remains |
 
 - **A change is a commit,** each passing the gate, and moving each aspect once: a declaration, a test or a document takes its final form the first time the aspect changes.
@@ -83,7 +83,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | The error object, its factories and locations | [Errors](../spec/runtime/errors.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | The host API named for Nexo | [Hosting Nexo](../spec/runtime/hosting.md) | Implemented | [`alpha.39`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-39) |
 | A tolerant reading that collects diagnostics without throwing | [Tooling](../spec/runtime/tooling.md) | Implemented | [`beta.16`](../LANGUAGE-HISTORY.md#v1-0-0-beta-16) |
-| Formatting that keeps a text's source form | [Tooling](#tooling) | Planned | — |
+| Formatting that keeps a text's source form | [Formatting](../spec/runtime/tooling.md#tooling-formatting) | Implemented | [`beta.17`](../LANGUAGE-HISTORY.md#v1-0-0-beta-17) |
 | Editor diagnostics and completion | [Tooling](#tooling) | Planned | — |
 | The beta, its promise and the changelog | [Language history](../LANGUAGE-HISTORY.md#v1-0-0-beta-1), [changelog](../CHANGELOG.md) | Implemented | [`beta.1`](../LANGUAGE-HISTORY.md#v1-0-0-beta-1) |
 | Published packages | [Release](#release) | Planned | — |
@@ -111,7 +111,7 @@ Built once, on the final syntax and visibility rules, as [tooling](../spec/runti
 | Work | State |
 | --- | --- |
 | Error recovery, and a public tooling API that collects diagnostics without throwing, `nexo.tooling`: tokens, the syntax tree and every diagnostic of syntax, structure and resolution | Implemented, as [decisions](decisions.md#d45) records |
-| Formatting that preserves a text's source form; tokens already keep each string's form | Planned |
+| Formatting that preserves a text's source form, `nexo.tooling.format`: each token as written, every comment and every line break kept | Implemented, as [decisions](decisions.md#d46) records |
 | Editor tooling: completion through the syntax tree, offering only the declarations a script can reach | Planned |
 
 References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design.md#tooling).
@@ -140,7 +140,7 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 
 ## Open decisions
 
-None, and no gap between the specification and the code. The [decisions](decisions.md) record each one taken without stopping to ask, for review: the implementation decisions [reviewed together](decisions.md#implementation-decisions-reviewed), who may change shared data ([D26](decisions.md#d26)), Nexo's own types named qualified ([D36](decisions.md#d36)), a type parameter's default ([D37](decisions.md#d37)), a parameter's defaults ([D38](decisions.md#d38)), what the declaration helpers write ([D39](decisions.md#d39)), what key equality compares ([D40](decisions.md#d40)), a dictionary's record ([D41](decisions.md#d41)), a code for each condition ([D42](decisions.md#d42)), the error class's factories ([D43](decisions.md#d43)) and where a result path is checked ([D44](decisions.md#d44)) and what a tolerant reading reports ([D45](decisions.md#d45)).
+None, and no gap between the specification and the code. The [decisions](decisions.md) record each one taken without stopping to ask, for review: the implementation decisions [reviewed together](decisions.md#implementation-decisions-reviewed), who may change shared data ([D26](decisions.md#d26)), Nexo's own types named qualified ([D36](decisions.md#d36)), a type parameter's default ([D37](decisions.md#d37)), a parameter's defaults ([D38](decisions.md#d38)), what the declaration helpers write ([D39](decisions.md#d39)), what key equality compares ([D40](decisions.md#d40)), a dictionary's record ([D41](decisions.md#d41)), a code for each condition ([D42](decisions.md#d42)), the error class's factories ([D43](decisions.md#d43)) and where a result path is checked ([D44](decisions.md#d44)), what a tolerant reading reports ([D45](decisions.md#d45)) and what formatting keeps ([D46](decisions.md#d46)).
 
 Deferred items below require their stated trigger before design or implementation resumes.
 

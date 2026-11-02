@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-17"></a>
+
+## `1.0.0-beta.17`
+
+*November 2, 2026 · definition format 38*
+
+**Runtime**
+
+- [Formatting](spec/runtime/tooling.md#tooling-formatting): `nexo.tooling.format` lays a text out as it was written, beside `nexo.format`'s canonical text. It keeps each token as the text spells it, each string's written form among them, every comment and every line break, a run of blank lines as one. It indents each line by the constructs open at its start and spaces the tokens of a line as canonical text does. The text it gives reads back as the same definition, and a text that breaks the grammar is answered as it is.
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-16"></a>
 
 ## `1.0.0-beta.16`

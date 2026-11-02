@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { nexo } from '#nexo/nexo.js';
@@ -36,7 +36,7 @@ const textOf = (node, text) => {
 };
 
 /** The `nexo` blocks of the specification's documents, each a script as it is written. */
-const examples = () => ['spec/language/expressions.md', 'spec/language/collections.md', 'spec/language/scripts.md', 'spec/language/functions.md', 'spec/language/members.md'].flatMap(file => readFileSync(resolve(repositoryRoot, file), 'utf8').split('```nexo\n').slice(1).map(block => block.split('\n```')[0]));
+const examples = () => readdirSync(resolve(repositoryRoot, 'spec/language')).flatMap(file => readFileSync(resolve(repositoryRoot, 'spec/language', file), 'utf8').split('```nexo\n').slice(1).map(block => block.split('\n```')[0]));
 
 describe('nexo.tooling', () => {
     it('lists the token types and the node kinds tooling reads, frozen', () => {
@@ -212,6 +212,47 @@ describe('nexo.tooling', () => {
         });
     });
 
+    describe('format', () => {
+        it('lays a text out as it was written, its comments, its strings and its line breaks kept, its lines indented and its tokens spaced as canonical text does', () => {
+            const text = "import Shop\n\n{\n  // the items' names\n  names = order.items\n  .select(it.name),   // in order\n  label = 'it''s'\n}\n";
+
+            expect(nexo.tooling.format(text)).toBe("import Shop\n\n{\n    // the items' names\n    names = order.items\n        .select(it.name), // in order\n    label = 'it''s'\n}\n");
+            expect(nexo.format(text)).toBe('import Shop\n\n{\n    names = order.items.select(it.name),\n    label = "it\'s"\n}');
+        });
+
+        it("formats each of the specification's examples, and each with its lines indented otherwise, as canonical text, which reads back as the same definition, and formats its own text as it is", () => {
+            const read = { imports: ['Home', 'Energy'] };
+            let formatted = 0;
+
+            for (const example of examples()) {
+                const strict = nexo.tooling.getDiagnostics(example, read);
+
+                // An example the specification gives as an error has no canonical text.
+                if (strict.some(diagnostic => diagnostic.kind === 'syntax' || diagnostic.kind === 'structure')) {
+                    continue;
+                }
+
+                const canonical = nexo.format(example, read);
+
+                const reindented = canonical.split('\n').map((line, index) => line.replace(/^ */, ['', '\t', ' '][index % 3])).join('\n');
+                const kept = nexo.tooling.format(example, read);
+
+                expect(nexo.tooling.format(canonical, read)).toBe(canonical);
+                expect(nexo.tooling.format(reindented, read)).toBe(canonical);
+                expect(nexo.parse(kept, read), example).toEqual(nexo.parse(example, read));
+                expect(nexo.tooling.format(kept, read)).toBe(kept);
+                formatted++;
+            }
+
+            expect(formatted).toBeGreaterThan(20);
+        });
+
+        it('answers a text that breaks the grammar as it is, and refuses what is no text (NEXO2645)', () => {
+            expect(nexo.tooling.format('{ a = room.,\n    b = 1 }')).toBe('{ a = room.,\n    b = 1 }');
+            expectNexoError(errorThrownBy(() => nexo.tooling.format(5)), 'NEXO2645', 'structure');
+        });
+    });
+
     it('never throws for any text, and its tree holds every character of it: each prefix of the specification\'s examples, and each with a token removed or a stray one written in', () => {
         const { home, values, types } = createExamplesFixtures();
         const examplesRegistry = nexo.createRegistry([createExamplesHome(home), createExamplesEnergy()]);
@@ -227,11 +268,12 @@ describe('nexo.tooling', () => {
 
                     expect(textOf(tree, text), text).toBe(text);
                     expect(nexo.tooling.getDiagnostics(text, read).slice(0, diagnostics.length), text).toEqual(diagnostics);
+                    expect(typeof nexo.tooling.format(text, read)).toBe('string');
                     texts++;
                 }
             }
         }
 
         expect(texts).toBeGreaterThan(1000);
-    });
+    }, 60000);
 });

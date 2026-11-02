@@ -142,7 +142,16 @@ nexo.tooling.getDiagnostics(text, { registry, types: { product: 'String', code: 
 - **One diagnostic for one mistake.** A part the text lacks, and a node that fails, reads as a value of `Any` from then on, so nothing that holds it is reported again.
 - **No host code runs.** A binding is declared by its type alone, as `createBindings` declares one, and holds no value.
 
-`nexo.tooling.scan` answers the tokens a highlighter colors, and `nexo.tooling.parse` the syntax tree, which holds every character of the text. [Tooling](../spec/runtime/tooling.md) sets out what each answers.
+`nexo.tooling.scan` answers the tokens a highlighter colors, and `nexo.tooling.parse` the syntax tree, which holds every character of the text. `nexo.tooling.format` lays a text out as it was written, keeping its comments, its strings and its line breaks, where `nexo.format` writes canonical text:
+
+```js
+const written = "{\n  label = 'it''s',   // shown as written\n  cut=product:discount(code)\n}";
+
+nexo.tooling.format(written); // "{\n    label = 'it''s', // shown as written\n    cut = product:discount(code)\n}"
+nexo.format(written);         // '{\n    label = "it\'s",\n    cut = product:discount(code)\n}'
+```
+
+[Tooling](../spec/runtime/tooling.md) sets out what each answers.
 
 ## Handle errors
 

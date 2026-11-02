@@ -670,3 +670,20 @@ Forty decisions were taken while implementing the declarations, member selection
   - Resolving again for each diagnostic, a hole at each failure found, which costs a resolution for each diagnostic; resolution recovers in one pass instead.
   - Taking bindings' values: a fixed argument or a computed name a binding's value would settle is refused as one no value settles, which the specification states.
   - Reading options a host misuses: a registry no `createRegistry` created, types that are no plain object and supplied imports that break their rules are refused, as every operation refuses its misuse. Any text is read.
+
+<a id="d46"></a>
+
+## D46 — Formatting keeps a text's tokens, comments and line breaks
+
+*November 2, 2026*
+
+- **Kind:** Runtime contract.
+- **Decision:** `nexo.tooling.format` keeps each token as the text spells it, every comment, and every line break where the text puts one, a run of blank lines kept as one. It lays out what stands between tokens alone: each line indented by the constructs open at its start, a line that continues a value a level more, and the tokens of a line spaced as canonical text spaces them. A text that breaks the grammar is answered as it is. The language advances to `1.0.0-beta.17`.
+- **Why:**
+  - The status planned formatting that keeps a text's source form, each string's form among it, which canonical text can't: it writes from the definition, which records no comment and no spelling.
+  - Line structure gives a line break meaning: where one may stand, where one must and where none may. A layout that keeps the text's line breaks satisfies it by construction, and its text reads back as the same definition, which no change to a line break promises.
+  - The layout's rules are canonical text's own, so canonical text is formatted as it is, and a text formatted once is formatted as it is again.
+- **Declined:**
+  - Laying the text out as canonical text does and placing its comments back in it: that joins and breaks lines the author chose, leaves a comment no place where a construct it stood in is written on one line, and must satisfy line structure anew.
+  - Normalizing what the tokens spell, a raw string to a string or a redundant parenthesis away: canonical text does that, and this formatting is the one that keeps them.
+  - Formatting a text that breaks the grammar, whose constructs' extents a tolerant reading guesses, so its indentation would be a guess too.

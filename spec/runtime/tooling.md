@@ -15,6 +15,7 @@ In this document:
 1. [Tokens](#tooling-tokens)
 2. [The syntax tree](#tooling-syntax-tree)
 3. [Diagnostics](#tooling-diagnostics)
+4. [Formatting](#tooling-formatting)
 
 <a id="tooling-tokens"></a>
 
@@ -83,3 +84,20 @@ What each stage reads:
 - **A text that breaks the grammar** is read as far as it can be: its holes stand where the text lacks a part, and the diagnostics of every part that reads are given.
 
 It refuses options a host misuses, each a structure error with an empty location: a registry `nexo.createRegistry` did not create (NEXO2647), types that are no plain object (NEXO2020) and supplied imports that break their rules (NEXO2008).
+
+<a id="tooling-formatting"></a>
+
+## Formatting
+
+`nexo.tooling.format(text, options)` lays a text out as it was written. [Canonical text](definition.md#definition-canonical-text), which `nexo.format` writes, keeps no comment and no layout; this formatting keeps the text's own form:
+
+- **Each token as the text spells it:** each string's quote, delimiter and escapes, a number's spelling, a name's `@` or `~`, and every parenthesis.
+- **Every comment,** after the code on its line or on a line of its own, where the text puts it.
+- **Every line break** where the text puts one. A run of blank lines is kept as one, none is kept at the text's start or end, and a text that ends with a line break keeps one. Each line break it writes outside a token is the one the text writes first.
+
+What stands between two tokens is laid out:
+
+- **Indentation.** A line is indented four spaces for each construct open at its start whose opener ends its line: a bracket, `then`, `else`, `do` or a function's head. A line that closes a construct is indented as the line its opener stands on. A line that continues a value is indented a level more: one that begins with a member's `.`, `?.`, `:` or `?:`, or with a binary operator, and one after an `=` or a `=>` that ends its line.
+- **Spacing.** Two tokens on one line are spaced as canonical text spaces them. A comment after code is one space after it.
+
+The text it gives reads back as the same definition, since its tokens and its line breaks are the text's. Canonical text, and a text it formatted, it formats as it is. A text that breaks the grammar it answers as it is, since where the text's constructs begin and end is not known.

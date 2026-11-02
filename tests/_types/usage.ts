@@ -57,5 +57,6 @@ const tokens: readonly NexoToken[] = nexo.tooling.scan('shelf.count');
 const tree: NexoSyntaxNode = nexo.tooling.parse('shelf.', { imports: ['Pantry'] }).tree;
 const diagnostics: readonly NexoDiagnostic[] = nexo.tooling.getDiagnostics('shelf.cuont', { registry, types: { shelf: 'Pantry.Shelf' } });
 const squiggles: number[] = diagnostics.flatMap(diagnostic => (diagnostic.range === undefined ? [] : [diagnostic.range.start, diagnostic.range.end]));
+const laidOut: string = nexo.tooling.format('shelf.count // kept', { imports: ['Pantry'] });
 
-export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer, tokens, tree, squiggles };
+export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer, tokens, tree, squiggles, laidOut };

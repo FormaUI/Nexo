@@ -12,6 +12,7 @@ import { NexoError, NexoErrors } from './language/NexoError.mjs';
 import { ParameterBindings } from './language/ParameterBindings.mjs';
 import { ParsedTexts } from './language/ParsedTexts.mjs';
 import { ResultPath } from './language/ResultPath.mjs';
+import { SourceFormatter } from './language/SourceFormatter.mjs';
 import { SYNTAX_NODE_KINDS, SyntaxTree } from './language/SyntaxTree.mjs';
 import { TextReading } from './language/TextReading.mjs';
 import { TOKEN_TYPES, Tokenizer } from './language/Tokenizer.mjs';
@@ -283,7 +284,7 @@ const toolingVocabularyOf = options => {
 
 /**
  * Tooling: text being written read tolerantly, never throwing for any text, as an editor reads it: its tokens, its syntax tree and every diagnostic of its syntax, its structure and, against a registry and the types
- * of its bindings, its resolution, each the code, the kind, the message and the location a strict operation's error would have.
+ * of its bindings, its resolution, each the code, the kind, the message and the location a strict operation's error would have; and the text laid out as it was written.
  */
 const tooling = Object.freeze({
     tokenTypes: TOKEN_TYPES,
@@ -305,6 +306,7 @@ const tooling = Object.freeze({
 
         return Object.freeze(new TextReading(source, supplied).getDiagnostics(registry, types));
     },
+    format: (text, options) => SourceFormatter.format(toolingTextOf(text), suppliedImportsOf(options)),
 });
 
 /** The declaration helpers, each creating a declaration as a module declares it, a member with no receiver of its own, since where it stands gives it one. */

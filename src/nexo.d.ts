@@ -754,6 +754,11 @@ export interface NexoTooling {
      * object (NEXO2020) and supplied imports that break their rules (NEXO2008).
      */
     getDiagnostics(text: string, options?: NexoToolingOptions): readonly NexoDiagnostic[];
+    /**
+     * The text laid out as it was written, which `nexo.format`'s canonical text is not: each token as the text spells it, every comment and every line break where the text puts one, a run of blank lines kept as one;
+     * each line indented and each token spaced as canonical text does. It reads back as the same definition; a text that breaks the grammar is answered as it is.
+     */
+    format(text: string, options?: NexoScriptOptions): string;
 }
 
 /** The versions an implementation of Nexo reports, which change apart. */
