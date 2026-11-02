@@ -37,12 +37,12 @@ Each member takes the declaration keys it needs alone; every one takes `kind` an
 | A property with `updates` | Refused | Refused | Refused | Required | Required | Optional |
 | A function the evaluator invokes | `evaluator`, or left out | Required where it has parameters, refused where it has none | Any kind; a function parameter only here | Required | Required | Optional |
 | An indexer, named or unnamed | `evaluator`, or left out; `host` refused (NEXO4053) | Refused, since its arguments are positional | One required value parameter, its key, alone | Required | Required | Optional |
-| A function the host invokes | `host` | As a function's | Value parameters, of which a fixed one may select a type | Refused | Optional | Refused |
+| A function the host invokes | `host` | As a function's | Value parameters, of which a fixed one may select a type, and function parameters, whose functions its host keeps | Refused | Optional | Refused |
 | An operator | Refused | Refused | Refused | Refused | Required | Optional |
 
 `target`, `syntax` and `default` are taken by no member: a member's place gives its receiver, and its kind and its name, or an indexer's lack of one, how it is written.
 
-A function the host invokes takes value parameters alone, a deliberate restriction, which a design giving such arguments an evaluation context and a lifetime could lift: its arguments are prepared as values its host keeps, while an expression, a predicate or a function argument is evaluated by the evaluator as its member calls it, which for a host call would come after preparation ends and need an evaluation context and a lifetime no function the host invokes declares. A value parameter's type holds data and reference values, and a function is never given to one, as [functions as values](../language/functions.md#functions-as-values) sets out, so a prepared argument does not hold a function at any depth, in an object or a list among them.
+A function the host invokes takes value parameters and function parameters. Its arguments are prepared as values its host keeps, and a function argument as a function its host keeps and calls later, for as long as it keeps the prepared call, each call evaluated in the context preparation found, as [kept functions](host-calls.md#runtime-host-calls-kept-functions) set out. An expression and a predicate parameter stay refused (NEXO4056): each is a body of each item of the list its member follows, which a host call, reading no list's items, would keep neither as a value nor as a function of a contract it declares. A value parameter's type holds data and reference values, and a function is never given to one, as [functions as values](../language/functions.md#functions-as-values) sets out, so a prepared argument holds a function only where its parameter is a function parameter, never within an object or a list.
 
 A module member is a property or a function, and refuses what only a receiver gives: an indexer, and an observation of the receiver or of a target found from it, in its own `updates` and in any observation it names.
 
@@ -87,7 +87,7 @@ A parameter is a value, an expression, a predicate or a function. An expression 
 
 Creating the module refuses a parameter that leaves out its `name`, its `kind` or its `type`, or gives one of them, its `required` or its `nulls` a value it doesn't take (NEXO4536), and one declaring a key the table does not name (NEXO4030). The module's copy of a parameter holds `required` and, but for a function parameter, `nulls`, as given or as their defaults give them.
 
-Only a function the evaluator invokes declares a function parameter, which is required, has no null policy and is given to no observation; it declares the types of the arguments it is called with, `parameterTypes`, and its type is its result's. Those types may write a type parameter the type or the extension around the member declares, as `List`'s `T`, or that of an extension on any type `T`, which takes a receiver of any type and binds `T` to it, so a callback takes the receiver as its own type, as a test of any receiver a module declares does.
+A function, whether the evaluator or the host invokes it, declares a function parameter, which is required, has no null policy and is given to no observation; it declares the types of the arguments it is called with, `parameterTypes`, and its type is its result's. Those types may write a type parameter the type or the extension around the member declares, as `List`'s `T`, or that of an extension on any type `T`, which takes a receiver of any type and binds `T` to it, so a callback takes the receiver as its own type, as a test of any receiver a module declares does.
 
 <a id="types-type-parameters-registration"></a>
 

@@ -309,7 +309,7 @@ export interface NexoParameterDeclaration {
     /**
      * A value; an expression, a body of each item, written as an expression evaluated against it or as a function of it; a predicate, an expression of any value whose truthiness the implementation receives; or a function: an arrow function, a function a name holds, a module's function
      * by reference or an implicit body, which only a member of kind `function` takes. The implementation receives an expression, a predicate and a function as a function it calls only while its own invocation lasts, with the
-     * arguments its contract declares: one item for an expression and a predicate.
+     * arguments its contract declares: one item for an expression and a predicate. A function the host invokes takes value and function parameters, its host keeping a function argument until it disposes the prepared call.
      */
     kind: 'value' | 'expression' | 'predicate' | 'function';
     /** The parameter's type, in Nexo's notation; a predicate's is `Boolean`, what the implementation receives, and a function parameter's the type of its function's result. */
@@ -353,7 +353,7 @@ export interface NexoMemberDeclaration {
     name?: string;
     /** A property, read by its name; a function, called; or an indexer, given its one key in brackets, after its name, `it.setting["mode"]`, or, unnamed, after its receiver, `rooms[0]`. */
     kind: 'property' | 'function' | 'indexer';
-    /** Who invokes a function: the evaluator, the default, or the host, which a script ending in a call of it is prepared for; a function the host invokes takes value parameters alone, and neither updates nor an implementation. */
+    /** Who invokes a function: the evaluator, the default, or the host, which a script ending in a call of it is prepared for; a function the host invokes takes value and function parameters, and neither updates nor an implementation. */
     invokedBy?: 'evaluator' | 'host';
     /** The form its arguments take where it has parameters, an optional one included: one for each parameter, in order, the required ones before the optional ones, or one options object whose fields supply them; a function alone takes it, since an indexer's one key is positional. */
     arguments?: 'positional' | 'options';
@@ -520,6 +520,11 @@ export interface NexoPreparedCall extends NexoInvocationRequest {
      * the host's hooks as `evaluate` does. It refuses a value the declared result does not admit (NEXO5015), a resolution no longer current (NEXO2040), and a projection while its evaluator is evaluating (NEXO5010).
      */
     readonly project?: (value: unknown, hooks?: NexoEvaluationHooks | null) => NexoEvaluation;
+    /**
+     * Ends the kept functions its function arguments gave the host, each called later in the context preparation found, as an evaluation of its own without hooks, checked against its contract; a call of one after it fails
+     * (NEXO5051). A call that keeps none needs no disposal, and disposing again does nothing.
+     */
+    readonly dispose: () => void;
 }
 
 /** A host call there is nothing to invoke for: its receiver, or an argument whose parameter propagates null, is null, or it has no declaration yet. */

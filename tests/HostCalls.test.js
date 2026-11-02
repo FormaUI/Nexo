@@ -430,3 +430,104 @@ describe('values a host supplies', () => {
         expect(prepared('desk:maybe()').project({ x: 1 }).value).toEqual({ x: 1, label: null });
     });
 });
+
+describe('kept functions', () => {
+    const { createFunctionParameterDeclaration } = nexo.declarations;
+
+    /**
+     * A home's module whose `follow` is a host call taking a test of a room and an optional label, the test kept by its host; `track`, taking two tests; `warm`, a module member a script names by reference; and
+     * `occupied` and `temperature`, which read the environment as they are read.
+     */
+    const createKeeping = () => nexo.createModule('home', {
+        types: [
+            extensionDeclaration('StringExtensions', 'String', [
+                hostFunctionDeclaration('follow', undefined, { arguments: 'options', parameters: [createFunctionParameterDeclaration('when', 'Boolean', ['String']), createValueParameterDeclaration('label', 'String', { default: 'all' })] }),
+                hostFunctionDeclaration('track', 'Number', { arguments: 'positional', parameters: [createFunctionParameterDeclaration('first', 'Boolean', ['String']), createFunctionParameterDeclaration('second', 'Number', ['String', 'Number'])] }),
+                createPropertyDeclaration('occupied', 'Boolean', { updates: { changes: 'unobserved', reads: 'fresh' }, impl: ({ receiver, env }) => env.occupied.includes(receiver) }),
+                createPropertyDeclaration('temperature', 'Number', { updates: { changes: 'observable', reads: 'maintained', observations: [{ type: 'reading', of: 'receiver' }] }, impl: ({ samples: [value] }) => value }),
+            ]),
+        ],
+        members: [createFunctionDeclaration('warm', 'Boolean', { updates: { changes: 'constant', reads: 'fresh' }, parameters: [createValueParameterDeclaration('room', 'String')], impl: ({ args }) => args.room.startsWith('sun') })],
+        observationTypes: [{ name: 'reading', contract: 'maintained', impl: () => ({ stop: () => {}, sample: () => ({ pending: false, value: 20 }) }) }],
+    });
+
+    /** An evaluator of the text against a registry holding the module, with the bindings and the rooms occupied given. */
+    const evaluatorOf = (text, values = { light: 'hall', limit: 'sun' }, occupied = ['hall']) => createImportingRegistry([createKeeping()]).resolve(text, values).createEvaluator(values, { occupied });
+
+    it('are function arguments a host call takes, which its host keeps and calls later with its contract\'s arguments, each answering its contract\'s result', () => {
+        const call = evaluatorOf('let test = room => room:occupied\nreturn light:follow({ when = test })').prepareHostCall();
+        const { when } = call.args;
+
+        expect(call.args.label).toBe('all');
+        expect(typeof when).toBe('function');
+        expect([when('hall'), when('porch')]).toEqual([true, false]);
+    });
+
+    it('take every form a function argument takes: an arrow function, an implicit body, a function a local holds and a module\'s function by reference', () => {
+        const formsOf = text => evaluatorOf(text).prepareHostCall().args.when;
+
+        expect(evaluatorOf('light:track(room => room:occupied, (room, degrees) => degrees)').prepareHostCall().args.first('hall')).toBe(true);
+        expect(formsOf('light:follow({ when = it:occupied })')('hall')).toBe(true);
+        expect(formsOf('let test = (room) => room == limit\nreturn light:follow({ when = test })')('sun')).toBe(true);
+        expect(formsOf('light:follow({ when = home.warm })')('sunroom')).toBe(true);
+        expect(formsOf('light:follow({ when = home.warm })')('cellar')).toBe(false);
+    });
+
+    it('read the locals before the call as preparing it found them, the bindings, and what their own members read as each call reads it', () => {
+        const occupied = ['hall'];
+        const call = createImportingRegistry([createKeeping()]).resolve('let first = light:occupied\nlet test = room => room:occupied != first\nreturn light:follow({ when = test })', { light: 'hall' }).createEvaluator({ light: 'hall' }, { occupied }).prepareHostCall();
+
+        expect(call.args.when('porch')).toBe(true);
+
+        occupied.push('porch');
+
+        expect(call.args.when('porch')).toBe(false);
+    });
+
+    it('are kept together where a call takes two, and each checks what it is called with against its contract', () => {
+        const call = evaluatorOf('light:track(room => room:occupied, (room, degrees) => degrees + 1)').prepareHostCall();
+
+        expect(call.args.first('hall')).toBe(true);
+        expect(call.args.second('hall', 20)).toBe(21);
+        expect(errorThrownBy(() => call.args.first(7))).toMatchObject({ kind: 'evaluation', code: 'NEXO5503' });
+        expect(errorThrownBy(() => call.args.second('hall'))).toMatchObject({ kind: 'evaluation', code: 'NEXO5503' });
+    });
+
+    it('fail once their host disposes the call, at the argument that gave them, and live on in a call it keeps', () => {
+        const evaluator = evaluatorOf('light:follow({ when = it:occupied })');
+        const disposed = evaluator.prepareHostCall();
+        const kept = evaluator.prepareHostCall();
+
+        disposed.dispose();
+        disposed.dispose();
+
+        expect(errorThrownBy(() => disposed.args.when('hall'))).toMatchObject({
+            kind: 'evaluation',
+            code: 'NEXO5051',
+            message: expect.stringContaining("The function given as 'when' of 'follow' is called after its host disposed the call"),
+            location: { pointer: '/expression/arguments/0/objectFields/0/value', line: 1, column: 23 },
+        });
+        expect(kept.args.when('hall')).toBe(true);
+    });
+
+    it('are evaluated without hooks, so a maintained member fails them, and alone, so one called while their evaluator evaluates is refused', () => {
+        const maintained = evaluatorOf('light:follow({ when = it:temperature > 10 })').prepareHostCall();
+
+        expect(errorThrownBy(() => maintained.args.when('hall'))).toMatchObject({ kind: 'evaluation', code: 'NEXO5011' });
+
+        const evaluator = evaluatorOf('light:track(room => room:occupied, (room, degrees) => degrees) { busy = light:occupied }');
+        const call = evaluator.prepareHostCall();
+        const refusal = errorThrownBy(() => call.project(1, { beforeInvoke: () => call.args.first('hall') }));
+
+        expect(refusal).toMatchObject({ kind: 'evaluation', code: 'NEXO5010' });
+    });
+
+    it('leave a prepared call that keeps none a dispose that does nothing, and a skipped call none', () => {
+        const dimmed = createImportingRegistry([createHome()]).resolve('light:dim({ to = 40 })', bindings).createEvaluator(bindings).prepareHostCall();
+
+        dimmed.dispose();
+
+        expect(dimmed.project(35).value).toBe(35);
+        expect(evaluatorOf('light?:follow({ when = it:occupied })', { light: null, limit: 'sun' }).prepareHostCall()).toEqual({ kind: 'skipped', pointer: '/expression/chain' });
+    });
+});

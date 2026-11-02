@@ -22,7 +22,7 @@ let kept = null;
 
 /**
  * A pantry's module on words: a word's size, the device it names, a value it answers as the test says, a value of Any the test gives, a word repeated a number of times, a maintained quote, a check that calls the test it is given, a member
- * that keeps it and one that calls it later, and a cup a word converts to, through the conversion the test gives.
+ * that keeps it and one that calls it later, a host call that gives its host the test it is given to keep, and a cup a word converts to, through the conversion the test gives.
  */
 const createPantry = () => nexo.createModule('pantry', withHome({
     types: [
@@ -38,6 +38,7 @@ const createPantry = () => nexo.createModule('pantry', withHome({
             createFunctionDeclaration('callKept', 'Boolean', { updates: constantUpdates, impl: ({ receiver }) => kept(receiver) }),
             createFunctionDeclaration('order', 'Number', { invokedBy: 'host', parameters: [createValueParameterDeclaration('count', 'Number')] }),
             createFunctionDeclaration('drop', undefined, { invokedBy: 'host' }),
+            createFunctionDeclaration('serve', undefined, { invokedBy: 'host', arguments: 'positional', parameters: [createFunctionParameterDeclaration('test', 'Boolean', ['String'])] }),
             operatorDeclaration('convert', 'Cup', input => behaviors.convert(input)),
         ]),
         // A number's order is the script's to call, so an order on a value of Any selects a member as it is evaluated.
@@ -383,6 +384,14 @@ describe('the runtime codes', () => {
 
         it('NEXO5008: a function given to a member called after that member\'s invocation has ended', () => {
             expectNexoError(failureOf('{ kept = word:keep(w => w:size > 2), called = word:callKept() }'), 'NEXO5008', 'evaluation');
+        });
+
+        it('NEXO5051: a function a host call gave its host, called after the host disposed the call', () => {
+            const call = evaluatorOf('word:serve(w => w:size > 2)').prepareHostCall();
+
+            call.dispose();
+
+            expectNexoError(errorThrownBy(() => call.args.test('oat')), 'NEXO5051', 'evaluation');
         });
 
         it('NEXO5503: a member calling a function it was given with arguments its callback contract does not declare', () => {

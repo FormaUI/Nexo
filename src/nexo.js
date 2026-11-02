@@ -169,11 +169,18 @@ const resolutionOf = (registry, definition, parameterBindings) => {
             }
         };
 
-        // A prepared call projects through the same entry, so each projection checks the registry and evaluates alone, as an evaluation does.
+        // A prepared call projects, and calls each function it keeps, through the same entry, so each checks the registry and evaluates alone, as an evaluation does.
         const prepareHostCall = () => {
             const call = enter(() => evaluator.prepareHostCall());
 
-            return call.project === undefined ? call : Object.freeze({ ...call, project: (value, hooks = null) => enter(() => call.project(value, hooks)) });
+            if (call.kind !== 'prepared') {
+                return call;
+            }
+
+            const kept = call.declaration.parameters.filter(parameter => parameter.kind === 'function' && typeof call.args[parameter.name] === 'function');
+            const args = kept.length === 0 ? call.args : { ...call.args, ...Object.fromEntries(kept.map(({ name }) => [name, (...values) => enter(() => call.args[name](...values))])) };
+
+            return Object.freeze({ ...call, args, ...(call.project === undefined ? {} : { project: (value, hooks = null) => enter(() => call.project(value, hooks)) }) });
         };
 
         return Object.freeze({

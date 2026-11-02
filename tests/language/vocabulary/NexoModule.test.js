@@ -274,10 +274,14 @@ describe('NexoModule', () => {
             refusal({ members: [hostCall({ impl: () => 1 })] }, 'dim', 'impl', 'its module gives Nexo no implementation of it');
         });
 
-        it('are written as a function call and take value parameters alone', () => {
+        it('are written as a function call and take value and function parameters, never an expression or a predicate parameter', () => {
             refusal({ members: [indexerDeclaration({ name: 'dim', invokedBy: 'host', updates: undefined })] }, 'dim', 'invokedBy', 'A function the host invokes is written as a function call, never as an indexer');
-            refusal({ members: [hostCall({ parameters: [parameterDeclaration({ name: 'by', kind: 'expression', context: 'item' })] })] }, 'dim', 'parameters', "A function the host invokes takes value parameters alone, each argument prepared as a value its host keeps, and 'by' is an expression parameter");
-            refusal({ members: [hostCall({ parameters: [parameterDeclaration({ name: 'f', kind: 'function', parameterTypes: [], nulls: undefined })] })] }, 'dim', 'parameters', "'f' is a function parameter");
+            refusal({ members: [hostCall({ parameters: [parameterDeclaration({ name: 'by', kind: 'expression', context: 'item' })] })] }, 'dim', 'parameters', "A function the host invokes takes value and function parameters, each argument prepared as a value or a function its host keeps, and 'by' is an expression parameter");
+            refusal({ members: [hostCall({ parameters: [parameterDeclaration({ name: 'when', kind: 'predicate', type: 'Boolean', context: 'item' })] })] }, 'dim', 'parameters', "'when' is a predicate parameter");
+
+            const kept = new NexoModule('charts', { members: [hostCall({ parameters: [parameterDeclaration({ name: 'f', kind: 'function', parameterTypes: [], nulls: undefined })] })] });
+
+            expect(kept.members[0].parameters[0]).toMatchObject({ name: 'f', kind: 'function', parameterTypes: [], required: true });
         });
     });
 

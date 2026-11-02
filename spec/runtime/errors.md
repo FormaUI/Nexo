@@ -164,7 +164,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4053` | An indexer the host invokes | A module error naming the indexer |
 | `NEXO4054` | A function parameter that is optional or has a null policy | A module error naming the parameter |
 | `NEXO4055` | A function parameter an observation is given | A module error naming the parameter |
-| `NEXO4056` | A function the host invokes taking a parameter other than a value parameter | A module error naming the parameter |
+| `NEXO4056` | A function the host invokes taking an expression or a predicate parameter | A module error naming the parameter |
 | `NEXO4022` | A module member that is an indexer or an operator | A module error naming the member |
 | `NEXO4057` | A module member that observes its receiver or a target found from one | A module error naming the member |
 | `NEXO4023` | `updates` without `changes` or `reads` | A module error naming the member and the declaration key |
@@ -265,6 +265,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO5006` | A module returning a value of a type other than the one it declared | An evaluation error naming the member and its module |
 | `NEXO5007` | A member failing unexpectedly while it evaluates, its implementation throwing | An evaluation error at the member, its `cause` exactly what the implementation threw, as [the evaluator](evaluation.md#runtime-evaluation) sets out |
 | `NEXO5008` | A function given to a member called after that member's invocation has ended | An evaluation error |
+| `NEXO5051` | A function a host call gave its host called after the host disposed the prepared call, as [kept functions](host-calls.md#runtime-host-calls-kept-functions) set out | An evaluation error at the argument that gave it |
 | `NEXO5009` | A hook that throws: `beforeInvoke`, a host refusing a member among them, `afterInvoke`, or `afterEvaluation` after a completed evaluation | An evaluation error at that member, its `cause` exactly what the hook threw, as [a hook that throws](evaluation.md#runtime-evaluation) sets out; after a failed evaluation, the cleanup's failure is recorded on the original error |
 | `NEXO5010` | Evaluating an evaluator from within its own evaluation | An evaluation error |
 | `NEXO5011` | Evaluating without `beforeInvoke` a script that reads a maintained member | An evaluation error |

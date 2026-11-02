@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.19` · definition format 38*
+*Unpublished · language `1.0.0-beta.20` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -33,3 +33,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - `NexoError` exposes the four factories it declares alone; `NexoError.syntax` and `NexoError.locate`, never declared, are gone.
 - `resolution.typeAt` and `nexo.paths.valueAt` refuse a path of another shape, NEXO2646, as `nexo.paths.validate` does, a path that is no list among it; `valueAt` steps to an object field a value holds and a list's item alone.
 - A text that ends inside a collection, as `[10,`, is refused with NEXO1000, where a `TypeError` escaped `nexo.parse`.
+- A function the host invokes takes function parameters: its prepared call gives the host each function argument as a kept function, which it calls later in the context preparation found, until it disposes the call with `dispose()`, after which a call fails with NEXO5051. NEXO4056 refuses an expression or a predicate parameter alone.

@@ -918,7 +918,8 @@ export class NexoModule {
     }
 
     /**
-     * Refuses what a host call cannot take: updates, since it is never evaluated; an implementation, since its host invokes it; an indexer's kind, since it is a function; and a parameter other than a value parameter, whose argument is prepared as a value its host keeps.
+     * Refuses what a host call cannot take: updates, since it is never evaluated; an implementation, since its host invokes it; an indexer's kind, since it is a function; and an expression or a predicate parameter, a body of
+     * each item of a list the call follows, whose argument its host could keep neither as a value nor as a function of its own contract.
      */
     static #validateHostInvokedFunction(member, parameters, name, fail) {
         if (member.updates !== undefined) {
@@ -933,10 +934,10 @@ export class NexoModule {
             fail('NEXO4053', 'A function the host invokes is written as a function call, never as an indexer', name, 'invokedBy');
         }
 
-        const unprepared = parameters.find(parameter => parameter.kind !== 'value');
+        const unprepared = parameters.find(parameter => parameter.kind !== 'value' && parameter.kind !== 'function');
 
         if (unprepared !== undefined) {
-            fail('NEXO4056', `A function the host invokes takes value parameters alone, each argument prepared as a value its host keeps, and '${unprepared.name}' is ${unprepared.kind === 'expression' ? 'an' : 'a'} ${unprepared.kind} parameter`, name, 'parameters');
+            fail('NEXO4056', `A function the host invokes takes value and function parameters, each argument prepared as a value or a function its host keeps, and '${unprepared.name}' is ${unprepared.kind === 'expression' ? 'an' : 'a'} ${unprepared.kind} parameter`, name, 'parameters');
         }
     }
 

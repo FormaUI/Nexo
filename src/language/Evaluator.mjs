@@ -272,8 +272,8 @@ export class Evaluator {
      * Prepares the host call the script ends in for its host: evaluates the locals before it, each body's along the script's terminal position in order, then its receiver and its arguments, once, without hooks, as `evaluate` given none evaluates a script.
      * It answers a prepared call, with its declaration, its receiver, its arguments by parameter name and its definition pointer, as an invocation request names its call, whose `project` projects each value its host supplies where the call declares a result; or a skipped call where the
      * receiver, or an argument whose parameter propagates null, is null, or the call has no declaration yet, its receiver's type unknown, so there is nothing to invoke. Each prepared call keeps the locals it was prepared with, so the prepared
-     * calls of one evaluator stay apart.
-     * @returns {{ kind: 'prepared', declaration: object, receiver: unknown, args: Record<string, unknown>, pointer: string, isDeferred: false, project?: (value: unknown, hooks?: EvaluationHooks | null) => Evaluation } | { kind: 'skipped', pointer: string }}
+     * calls of one evaluator stay apart. A function argument is a kept function its host calls as long as it keeps the call, which `dispose` ends.
+     * @returns {{ kind: 'prepared', declaration: object, receiver: unknown, args: Record<string, unknown>, pointer: string, isDeferred: false, dispose: () => void, project?: (value: unknown, hooks?: EvaluationHooks | null) => Evaluation } | { kind: 'skipped', pointer: string }}
      */
     prepareHostCall() {
         const { hostCall } = this.#resolvedDefinition;
@@ -296,6 +296,8 @@ export class Evaluator {
         let args;
 
         // The receiver and the arguments are evaluated within the locals' frame, and no result records the selections they make.
+        let kept;
+
         try {
             ({ receiver, args } = this.#evaluateWithin(localsFrame, this.#objectRoot, evaluator => {
                 const evaluatedReceiver = declaration === null ? null : takesReceiver ? evaluator.#evaluateNode(resolution.receiverNode, null) : undefined;
@@ -304,14 +306,28 @@ export class Evaluator {
             }, null));
         } finally {
             this.#selections = enclosingSelections;
+
+            // The lifetimes of the functions the call's arguments gave its host, which no invocation closes: the host keeps them until it disposes the call.
+            kept = this.#givenLifetimes ?? [];
+            this.#givenLifetimes = null;
         }
 
         if (args === null) {
             return Object.freeze({ kind: 'skipped', pointer });
         }
 
+        for (const lifetime of kept) {
+            lifetime.isKept = true;
+        }
+
+        const dispose = () => {
+            for (const lifetime of kept) {
+                lifetime.isOpen = false;
+            }
+        };
+
         // Resolution selects every host call, so none is deferred.
-        const call = takesReceiver ? { kind: 'prepared', declaration, receiver, args, pointer, isDeferred: false } : { kind: 'prepared', declaration, args, pointer, isDeferred: false };
+        const call = takesReceiver ? { kind: 'prepared', declaration, receiver, args, pointer, isDeferred: false, dispose } : { kind: 'prepared', declaration, args, pointer, isDeferred: false, dispose };
 
         // A call whose host supplies nothing has nothing to project.
         if (declaration.result !== undefined) {
@@ -1793,6 +1809,10 @@ export class Evaluator {
         const callback = (...argumentValues) => {
             try {
                 if (!lifetime.isOpen) {
+                    if (lifetime.isKept === true) {
+                        this.#fail('NEXO5051', `The function given as '${name}' of '${memberName}' is called after its host disposed the call, and a host calls the functions a call gives it only while it keeps the call`, pointer);
+                    }
+
                     this.#fail('NEXO5008', `The function given as '${name}' of '${memberName}' is called after '${memberName}' returned, and a member calls the functions it is given only while its own invocation lasts`, pointer);
                 }
 
@@ -1829,9 +1849,9 @@ export class Evaluator {
 
     /**
      * The lifetimes of the functions the arguments made last give their member, or null where they give none, which the caller reads as the arguments are made, before evaluating anything else, and hands to the
-     * invocation, which closes them. One the evaluator never closes, given to a host call or to an invocation an argument's failure prevented, keeps its lifetime as it is. An index of every open function, which
-     * each invocation searched by its arguments, measured a few hundredths of an evaluation.
-     * @type {{ isOpen: boolean }[] | null}
+     * invocation, which closes them. A host call's are kept, `isKept`, and its prepared call's `dispose` closes them; one given to an invocation an argument's failure prevented keeps its lifetime as it is. An index of
+     * every open function, which each invocation searched by its arguments, measured a few hundredths of an evaluation.
+     * @type {{ isOpen: boolean, isKept?: boolean }[] | null}
      */
     #givenLifetimes = null;
 

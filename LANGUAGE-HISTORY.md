@@ -7,6 +7,23 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-20"></a>
+
+## `1.0.0-beta.20`
+
+*November 2, 2026 · definition format 38*
+
+**Language**
+
+- [Host calls](spec/language/members.md#members-host-calls): a host call takes a function argument, which its host keeps and calls later, as a running behavior keeps a test of what it hears.
+
+**Runtime**
+
+- [Kept functions](spec/runtime/host-calls.md#runtime-host-calls-kept-functions): a function the host invokes declares function parameters, and preparing it gives its host each function argument as a kept function. Each call evaluates the function in the context preparation found, the locals before the call and the bindings, without hooks, checked against its callback contract, and refused while its evaluator evaluates or once its resolution is stale, as a projection is. A prepared call's `dispose()` ends them, and a call of one after it fails (NEXO5051), as [decisions](docs/decisions.md#d49) records.
+- [Members](spec/runtime/members.md#members-declaring-a-member): NEXO4056 refuses an expression or a predicate parameter of a function the host invokes, and no longer a function parameter.
+
+**Breaking:** nothing. A prepared call gains `dispose`, and a declaration refused before is accepted.
+
 <a id="v1-0-0-beta-19"></a>
 
 ## `1.0.0-beta.19`

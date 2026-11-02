@@ -660,3 +660,22 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Keeping it on `main` as a draft, which would leave an undesigned contract in the specification.
   - Discarding it, which would lose work a design may reuse.
+
+<a id="d49"></a>
+
+## D49 — A host call's function arguments are kept by its host until it disposes the call
+
+*November 2, 2026*
+
+- **Kind:** Language and runtime contract, for DOMQL's behaviors.
+- **Decision:** A function the host invokes may declare function parameters. Preparing it gives its host each function argument as a kept function, which the host calls later, any number of times. Each call evaluates the function as an evaluation of its own, in the context preparation found: the locals before the call with their prepared values, the script's bindings and the function's own parameters, without hooks, checked against its callback contract, and refused while its evaluator evaluates or where its resolution is stale. The kept functions last until the host calls the prepared call's `dispose()`; a call after it fails with NEXO5051 at the argument. Expression and predicate parameters stay refused. The language advances to `1.0.0-beta.20`.
+- **Why:**
+  - A running behavior, as an input router matching keys, keeps a test of what it hears and calls it at each event, long after preparation ended, so a function argument a host call takes must outlive the call's preparation; data alone made every such test a protocol of the host's own.
+  - The evaluation context is the one a projection already has, the frame of the locals preparation evaluated, so a kept function reads the same values the call's projections read, and no local is evaluated again.
+  - Only the host knows when what it started ends, so it ends the functions it keeps, as it ends what it started; a call after that is a host's mistake, which fails loudly with a code of its own, apart from a member calling a function after its own invocation.
+  - Without hooks a kept function reads members as they are, which is what a test of an event needs; a host that must keep its result current holds the observations itself, so Nexo adds no hooks to a call it doesn't schedule.
+  - An expression or a predicate argument is a body of each item of a list its member follows, which a host call never reads, so a function parameter, of a contract the declaration states, is the one form a host can call.
+- **Declined:**
+  - A lifetime Nexo ends by itself, as with the evaluator or a timer, which can't know when a host's behavior ends.
+  - Hooks for a kept function's calls, which would make every call an evaluation a host schedules, where a test is called inside an event's dispatch.
+  - Answering null after disposal, which would hide a host's mistake behind a value the contract allows.

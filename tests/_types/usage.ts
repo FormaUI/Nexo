@@ -52,4 +52,17 @@ const hostCall = registry.resolve('nothing', { nothing: null }).hostCall;
 const candidates: readonly NexoMemberDeclaration[] = hostCall === null ? [] : hostCall.candidates;
 const callPointer: string | undefined = hostCall?.pointer;
 
-export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer };
+// A host keeps the functions a prepared call's function arguments give it, calls them later, and disposes the call once it is done with them.
+const prepared = registry.resolve('nothing', { nothing: null }).createEvaluator({ nothing: null }).prepareHostCall();
+
+if (prepared.kind === 'prepared') {
+    const kept = prepared.args.when;
+
+    if (typeof kept === 'function') {
+        kept('hall');
+    }
+
+    prepared.dispose();
+}
+
+export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer, prepared };

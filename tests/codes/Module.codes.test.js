@@ -233,7 +233,7 @@ describe('the module error codes', () => {
             expectModuleCode(creating({ members: [indexerDeclaration({ invokedBy: 'host', updates: undefined })] }), 'NEXO4053');
         });
 
-        it('NEXO4056: a host call taking a parameter other than a value parameter', () => {
+        it('NEXO4056: a host call taking an expression or a predicate parameter', () => {
             expectModuleCode(creating({ members: [hostCall({ parameters: [parameterDeclaration({ kind: 'expression', context: 'item' })] })] }), 'NEXO4056');
         });
 
