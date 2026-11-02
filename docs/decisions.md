@@ -687,3 +687,21 @@ Forty decisions were taken while implementing the declarations, member selection
   - Laying the text out as canonical text does and placing its comments back in it: that joins and breaks lines the author chose, leaves a comment no place where a construct it stood in is written on one line, and must satisfy line structure anew.
   - Normalizing what the tokens spell, a raw string to a string or a redundant parenthesis away: canonical text does that, and this formatting is the one that keeps them.
   - Formatting a text that breaks the grammar, whose constructs' extents a tolerant reading guesses, so its indentation would be a guess too.
+
+<a id="d47"></a>
+
+## D47 — Completion offers what resolution would accept, read through a probe
+
+*November 2, 2026*
+
+- **Kind:** Runtime contract.
+- **Decision:** `nexo.tooling.getCompletions` writes a probe, a name of one character, in place of the word at the offset, and reads the text with it. The node the probe stands for, a value or a member's name, is a hole, which the tolerant resolution records the scope and the receiver of. It offers the names in that scope, and the members the registry's own selector selects for the receiver's type among those the script's imports make available. `nexo.tooling.getHover` answers the declaration resolution used at a name, its signature and its qualified name, and the type the resolution recorded there. The language advances to `1.0.0-beta.18`.
+- **Why:**
+  - The status planned completion that offers only the declarations a script can reach, and the design called for joining a position in the text to what resolution knows of it. Resolution already decides what a script reaches: its imports, its scopes and member selection.
+  - A probe makes the text read where the word being written is incomplete, as `room.` lacks its member's name, so resolution reaches the place and records exactly what it would check there.
+  - Hover is the same join read the other way: the declaration a name selected, which the design's syntax-to-meaning bullet describes.
+- **Declined:**
+  - Reading scopes and members from the syntax tree apart from resolution, a second account of the rules that would drift from them.
+  - Filtering completions by the word written so far: a tool matches them its own way, and the range each replaces says what is written.
+  - Offering keywords, which are no declarations.
+  - Offering type names after `as` and `to`: a type's name is no value, so no probe stands for it, and the import's types are offered after `import`.

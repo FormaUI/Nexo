@@ -7,6 +7,20 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-18"></a>
+
+## `1.0.0-beta.18`
+
+*November 2, 2026 · definition format 38*
+
+**Runtime**
+
+- [Completion](spec/runtime/tooling.md#tooling-completion): `nexo.tooling.getCompletions` answers what a script can reach at an offset, each completion with what it inserts and the range it replaces: the names in scope where a value stands, the members a receiver's type selects after `.`, the extension members that apply to it after `:`, a namespace's members after its `.`, and the modules and their types after `import`. It offers only what the script's imports make available, an internal declaration never.
+- [Hover](spec/runtime/tooling.md#tooling-hover): `nexo.tooling.getHover` answers what the name at an offset reads: a member's declaration, its signature and its qualified name, or a name in scope, a script parameter, `it`, `root` or a namespace, each with the type it gives there.
+- [Structure errors](spec/runtime/errors.md#runtime-structure-errors): an offset that is no whole number from 0 to its text's length is refused (NEXO2648).
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-17"></a>
 
 ## `1.0.0-beta.17`

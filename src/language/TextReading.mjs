@@ -39,11 +39,16 @@ export class TextReading {
     /** The structure the definition was validated to, once asked for: its copy, holes where the text lacks a part or validation recovered, or null where its imports were refused, and what validation recorded. */
     #validated = null;
 
+    /** The probe the text holds, where a tool asks what the text reaches there: the hole it is read as, by its pointer, and what reads it; null where it holds none, or the probe stands where no value or member's name does. */
+    #probe = null;
+
     /**
      * @param {string} text
      * @param {readonly object[]} suppliedImports The imports a host supplies, in a definition's shape, checked already.
+     * @param {number | null} [probe] Where a probe stands, a name of one character a tool wrote where it asks what the text reaches: the node it stands for, a value or a member's name, is read as a hole, which a tolerant
+     * resolution records the scope of and, for a member's name, the receiver of; null where the text holds none.
      */
-    constructor(text, suppliedImports) {
+    constructor(text, suppliedImports, probe = null) {
         const parser = new Parser(text, suppliedImports, true);
 
         this.#text = text;
@@ -51,8 +56,103 @@ export class TextReading {
         this.#tree = parser.parse();
         this.#syntaxDiagnostics = parser.diagnostics;
         this.#lowered = Lowering.lower(this.#tree, suppliedImports);
+
+        if (probe !== null) {
+            this.#probe = this.#placeProbe(this.#lowered.definition, '/expression', 'expression', probe);
+        }
+
         this.#locations = new TextLocations(text, suppliedImports, this.#lowered);
         this.#holes = TextReading.#holesOf(this.#lowered.definition.expression, '/expression');
+    }
+
+    /**
+     * The probe the text holds, read as a hole: its pointer, and what reads it, `value` where it stands for a value, `member` for a member's name read with `.`, `extension` with `:`, `extensionName` for a name of an extension
+     * access after its first, with the names before it, and `namespace` for a member's name read through a namespace, with the namespace's local name; null where it holds none.
+     * @returns {{ pointer: string, reads: string, names?: string[], namespace?: string } | null}
+     */
+    get probe() {
+        return this.#probe;
+    }
+
+    /**
+     * Finds the node the probe at the offset stands for, beneath the holder's property, and reads it as a hole in its place, holding the receiver a member's name is read on; answers what reads it, or null where no node
+     * the probe stands for is beneath it.
+     */
+    #placeProbe(holder, pointer, property, offset) {
+        const node = holder[property];
+
+        if (Array.isArray(node)) {
+            return node.reduce((found, _, index) => found ?? this.#placeProbe(node, `${pointer}/${index}`, index, offset), null);
+        }
+
+        if (node === null || typeof node !== 'object') {
+            return null;
+        }
+
+        const reading = this.#probeReadingOf(node, offset);
+
+        if (reading !== null) {
+            // A member's name read optionally keeps its access optional, so the optional chain around it holds one.
+            const hole = reading.receiver === undefined ? { kind: 'hole' } : { kind: 'hole', receiver: reading.receiver, ...(reading.isOptional ? { optional: true } : {}) };
+
+            this.#lowered.spans.set(hole, this.#lowered.spans.get(node));
+            holder[property] = hole;
+
+            return { pointer, reads: reading.reads, ...(reading.names === undefined ? {} : { names: reading.names }), ...(reading.namespace === undefined ? {} : { namespace: reading.namespace }) };
+        }
+
+        for (const key of Object.keys(node)) {
+            const found = this.#placeProbe(node, `${pointer}/${key}`, key, offset);
+
+            if (found !== null) {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    /** What reads the node where it is the one the probe at the offset stands for: a value of the probe's one character, a member's name ending after it, or a call of either; null for any other node. */
+    #probeReadingOf(node, offset) {
+        const span = this.#lowered.spans.get(node);
+
+        if ((node.kind === 'scriptParameter' || node.kind === 'local') && span?.start === offset && span.end === offset + 1) {
+            return { reads: 'value' };
+        }
+
+        if (node.kind === 'call') {
+            const callee = this.#probeReadingOf(node.callee, offset);
+
+            return callee;
+        }
+
+        if (node.kind !== 'memberAccess' || typeof node.name !== 'string' || span?.end !== offset + 1) {
+            return null;
+        }
+
+        if (node.receiver.kind === 'namespace') {
+            return { reads: 'namespace', namespace: node.receiver.name };
+        }
+
+        const isOptional = node.optional === true;
+
+        if (node.extension === true) {
+            return { reads: 'extension', receiver: node.receiver, isOptional };
+        }
+
+        if (node.continues !== true) {
+            return { reads: 'member', receiver: node.receiver, isOptional };
+        }
+
+        // A later name of an extension access is read on the receiver its first name follows, after the names before it.
+        const names = [];
+        let first = node.receiver;
+
+        for (; first.continues === true; first = first.receiver) {
+            names.unshift(first.name);
+        }
+
+        return { reads: 'extensionName', receiver: first.receiver, names: [first.name, ...names] };
     }
 
     /** The text read. */
@@ -126,13 +226,63 @@ export class TextReading {
 
         const recovery = new RecoveryRecord(validation.holes);
         const resolver = new LanguageResolver(registry, bindings, this.#locations, recovery);
-
-        resolver.resolveDefinition(definition);
+        const resolved = resolver.resolveDefinition(definition);
 
         const refusedImport = recovery.diagnostics.some(error => error.location.pointer?.startsWith('/imports/'));
         const diagnostics = refusedImport ? recovery.diagnostics.filter(error => error.location.pointer?.startsWith('/imports/')) : recovery.diagnostics;
 
-        return { resolver, diagnostics: TextReading.#inTextOrder(diagnostics), bindingDiagnostics };
+        return { resolver, resolved, bindings, diagnostics: TextReading.#inTextOrder(diagnostics), bindingDiagnostics };
+    }
+
+    /**
+     * What declares the name a node at the pointer reads where a local, an object field, a conditional binding or a function parameter of its name is in scope there: the nearest construct around the pointer that declares
+     * the name, a body's or an object expression's local, an object expression's field, a conditional's binding, in its consequent, or a function's parameter; null where none does.
+     * @returns {'local' | 'objectField' | 'conditionalBinding' | 'functionParameter' | null}
+     */
+    getDeclarationKind(pointer, name) {
+        const segments = pointer.split('/').slice(1);
+        const nodes = [this.#lowered.definition];
+
+        segments.forEach(segment => nodes.push(nodes.at(-1)?.[segment]));
+
+        for (let depth = segments.length - 1; depth >= 1; depth--) {
+            const node = nodes[depth];
+
+            switch (node?.kind) {
+                case 'body':
+                case 'object':
+                    if (node.locals?.some(local => local.name === name)) {
+                        return 'local';
+                    }
+
+                    if (node.objectFields?.some(field => field.name === name)) {
+                        return 'objectField';
+                    }
+
+                    break;
+                case 'conditional':
+                    if (node.binding?.name === name && segments[depth] === 'consequent') {
+                        return 'conditionalBinding';
+                    }
+
+                    break;
+                case 'function':
+                    if (node.parameters.includes(name)) {
+                        return 'functionParameter';
+                    }
+
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return null;
+    }
+
+    /** The span of the node at the pointer in the definition, before validation, where it has one. */
+    getSpan(pointer) {
+        return this.#locations.getSpan(pointer);
     }
 
     /**

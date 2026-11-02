@@ -3,6 +3,7 @@ import { LanguageResolver } from '#nexo/language/LanguageResolver.mjs';
 import { ParameterBindings } from '#nexo/language/ParameterBindings.mjs';
 import { ParsedTexts } from '#nexo/language/ParsedTexts.mjs';
 import { RecoveryRecord } from '#nexo/language/RecoveryRecord.mjs';
+import { Versions } from '#nexo/language/Versions.mjs';
 import { TextReading } from '#nexo/language/TextReading.mjs';
 import { Declarations } from '#nexo/language/vocabulary/Declarations.mjs';
 import { NexoModule } from '#nexo/language/vocabulary/NexoModule.mjs';
@@ -286,6 +287,16 @@ describe('LanguageResolver', () => {
             const { diagnostics } = resolveTolerantly('import Stock\n\n{ a = Stock.level, b = word.pad(1) }');
 
             expect(diagnostics[0]).toEqual(['NEXO3002', '/imports/0']);
+        });
+
+        it("refuses, as a hole explains it, an extension access whose first name validation recovered from, reading the access's names no further", () => {
+            const recovery = new RecoveryRecord(['/expression/receiver']);
+            const definition = { version: Versions.definition, imports: [], expression: { kind: 'memberAccess', receiver: { kind: 'hole' }, name: 'round', continues: true } };
+
+            new LanguageResolver(registry, new ParameterBindings(registry), null, recovery).resolveDefinition(definition);
+
+            expect(recovery.diagnostics).toEqual([]);
+            expect([...recovery.holes]).toEqual(['/expression/receiver', '/expression']);
         });
 
         it('settles nothing from bindings of declared types alone, which hold no value', () => {

@@ -329,7 +329,7 @@ export class Lowering {
 
         // A member whose name a tolerant reading's text lacks is a hole of its receiver, which a tool reads the receiver's type from, its arguments left out.
         if (second.missing === true && (part.kind === 'dot-property-access' || part.kind === 'member-call')) {
-            node = { kind: 'hole', receiver };
+            node = { kind: 'hole', receiver, ...optionalProperty };
             this.#spans.set(node, { start, end: SyntaxTree.endOf(part) });
 
             return node;

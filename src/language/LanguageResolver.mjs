@@ -1927,6 +1927,12 @@ export class LanguageResolver {
         }
 
         const [first] = names;
+
+        // A tolerant reading's hole may stand for the first name, which validation recovered from, so no extension access begins there.
+        if (first.access.kind !== 'memberAccess') {
+            this.#fail('NEXO2000', 'An extension access begins with its first name, written after its colon', first.pointer);
+        }
+
         const receiverNode = first.access.receiver;
         const optional = first.access.optional === true ? { optional: true } : {};
 

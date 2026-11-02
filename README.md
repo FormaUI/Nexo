@@ -61,6 +61,7 @@ What the example shows:
 | Functions and composition | `lateFee` is written once, and both the total and each overdue line apply it, so the fee changes in one place. |
 | An explicit host boundary | The script reads only the `customer` the application binds, as a frozen copy, through members `Billing` and Nexo declare. `daysOverdue` runs the application's code, and nothing the script does changes the application's data. |
 | Definitions as data, with canonical text | `nexo.parse` gives the script as a JSON definition to store or inspect, and `nexo.format` gives the text above back from it, so a definition a tool generates reads as a script written by hand. |
+| Tooling for editors | `nexo.tooling` reads a script while it is being written and never throws: every diagnostic with the range it stands at, completion of what the script can reach, a member's signature on hover, and formatting that keeps comments and line breaks. |
 | Reads reported as it evaluates | Hooks the application gives an evaluation are told of each member it invokes, `daysOverdue` among them, so the application knows what the summary read. Each member also declares how it changes: `daysOverdue` is `unobserved`, since nothing signals that a day has passed, so when to evaluate again is the application's choice. |
 
 ## Run it
@@ -125,7 +126,7 @@ const summary = resolution.createEvaluator(bindings, { today: Date.parse('2026-1
 
 ## Availability
 
-> **Beta.** No breaking redesign is planned, and a version that breaks what the one before it allowed says how to migrate. Neither package is published yet: build them locally, as [Build](#build) shows, to try Nexo. The implementation, `1.0.0-beta.1`, implements language version `1.0.0-beta.17`. [The status overview](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) says what is implemented and what remains.
+> **Beta.** No breaking redesign is planned, and a version that breaks what the one before it allowed says how to migrate. Neither package is published yet: build them locally, as [Build](#build) shows, to try Nexo. The implementation, `1.0.0-beta.1`, implements language version `1.0.0-beta.18`. [The status overview](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) says what is implemented and what remains.
 
 ## Documents
 

@@ -314,15 +314,20 @@ export class DefinitionValidator {
     }
 
     /**
-     * Validates a hole, which a tolerant validation alone takes: where the text lacks a member's name, the receiver it is read on, validated in its place in the chain, so a tool reads the receiver's type from it; any other
-     * holds nothing.
+     * Validates a hole, which a tolerant validation alone takes: where the text lacks a member's name, the receiver it is read on, validated in its place in the chain, so a tool reads the receiver's type from it, and
+     * whether the access was optional; any other holds nothing.
      */
     #validateHole(node, pointer, contextAvailability) {
         if (node.receiver === undefined) {
             return HOLE;
         }
 
-        return Object.freeze({ kind: 'hole', receiver: this.#validateNode(node.receiver, `${pointer}/receiver`, contextAvailability) });
+        // A member's name the text lacks after `?.` is an optional access of the chain it stands in, as the access would be.
+        if (node.optional === true && this.#optionalChain !== null) {
+            this.#optionalChain.hasOptional = true;
+        }
+
+        return Object.freeze({ kind: 'hole', receiver: this.#validateNode(node.receiver, `${pointer}/receiver`, contextAvailability), ...(node.optional === true ? { optional: true } : {}) });
     }
 
     #validateKind(node, pointer, contextAvailability) {

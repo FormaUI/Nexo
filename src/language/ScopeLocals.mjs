@@ -88,6 +88,15 @@ export class ScopeLocals {
         return scope.#names.has(name);
     }
 
+    /** Every name in scope, each with what it holds, a name added later hiding one of its spelling, which tooling offers; a copy, so nothing of the scope is changed through it. */
+    get entries() {
+        const names = new Map();
+
+        this.#copyInto(names);
+
+        return names;
+    }
+
     /** Copies every name in scope into the map, each added later replacing one of its spelling added before it. */
     #copyInto(names) {
         if (this.#names !== null) {

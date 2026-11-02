@@ -151,7 +151,19 @@ nexo.tooling.format(written); // "{\n    label = 'it''s', // shown as written\n 
 nexo.format(written);         // '{\n    label = "it\'s",\n    cut = product:discount(code)\n}'
 ```
 
-[Tooling](../spec/runtime/tooling.md) sets out what each answers.
+An editor completes a name being written, and describes the one under the pointer. Each completion says what it inserts and the range of text it replaces:
+
+```js
+const typing = '{ price = product:pr }';
+const read = { registry, types: { product: 'String' }, imports: ['Shop'] };
+
+nexo.tooling.getCompletions(typing, 20, read).map(({ insert, range, detail }) => [insert, range, detail]);
+// [['price', { start: 18, end: 20 }, 'price: Price'], ['discount', { start: 18, end: 20 }, 'discount(code: String): Number']]
+nexo.tooling.getHover('product:discount(code)', 10, { ...read, types: { product: 'String', code: 'String' } });
+// { name: 'discount', kind: 'function', range: { start: 8, end: 16 }, detail: 'discount(code: String): Number', qualifiedName: 'String.discount', type: 'Number' }
+```
+
+Completion offers only what the script reaches: the names in scope where a value stands, the members the receiver's type selects after `.`, the extension members after `:`, and the members of a namespace its imports give. It offers each one, whatever is written so far, and an editor filters them by the word being written. [Tooling](../spec/runtime/tooling.md) sets out what each answers.
 
 ## Handle errors
 

@@ -16,6 +16,8 @@ In this document:
 2. [The syntax tree](#tooling-syntax-tree)
 3. [Diagnostics](#tooling-diagnostics)
 4. [Formatting](#tooling-formatting)
+5. [Completion](#tooling-completion)
+6. [Hover](#tooling-hover)
 
 <a id="tooling-tokens"></a>
 
@@ -101,3 +103,40 @@ What stands between two tokens is laid out:
 - **Spacing.** Two tokens on one line are spaced as canonical text spaces them. A comment after code is one space after it.
 
 The text it gives reads back as the same definition, since its tokens and its line breaks are the text's. Canonical text, and a text it formatted, it formats as it is. A text that breaks the grammar it answers as it is, since where the text's constructs begin and end is not known.
+
+<a id="tooling-completion"></a>
+
+## Completion
+
+`nexo.tooling.getCompletions(text, offset, options)` answers what the script can reach at the offset, frozen. It reads the text as [diagnostics](#tooling-diagnostics) do, against `options.registry`, or Nexo's own vocabulary alone where none is given, with bindings of the types `options.types` declares. What it offers depends on what the offset follows:
+
+| The offset follows | What it offers |
+| --- | --- |
+| A value's start, where a value stands | The names in scope: locals, object fields, conditional bindings and function parameters; the script parameters the bindings declare; the namespaces the script's imports give; and `it` and `root` where they stand |
+| `.` or `?.` after a value | The members its type selects through `.`, as [selection](../language/extensions.md) selects them, an object type's fields and the object root's completed fields among them |
+| `:` or `?:` after a value | The extension members that apply to its type, or, after an extension's name and a dot, that extension's |
+| A namespace's `.` | The module's members, its module members and the qualified forms of the members its own types declare |
+| `import`, or an import's alias and `=` | The modules the registry holds, Nexo's own aside |
+| An import's module and `.` | The module's public types and extensions |
+
+- **Only what the script reaches.** A member is offered where the script's imports make it available, and an internal declaration never is. A receiver of `Any`, whose member is selected as it is evaluated, is offered none.
+- **What the offset stands in.** The offset may stand within or directly after the word being written, whose whole range a completion replaces, and otherwise a completion is inserted at the offset. Within a string's text or a comment, nothing is offered.
+- **What a completion holds.** Each is `{ name, kind, insert, range, detail, qualifiedName }`: the name, what it is, the text it inserts, the range it replaces, what describes it, a member's signature, a name's type or a namespace's module, and a member's qualified name, as a diagnostic names its use.
+- **What it inserts.** A name is inserted as it must be written there: a local, an object field, a conditional binding or a function parameter a reserved word or a namespace names after `@`, and a script parameter a name in scope hides, or a reserved word names, after `~`.
+- **The order.** Completions come in the order of their kinds, the names in scope first, then the script parameters, the namespaces and the members, each kind's in the order of their names.
+- **Every one.** Each completion the script reaches there is offered, whatever the word written so far, which a tool filters them by.
+
+A member's signature writes its name and type parameters, its parameters in parentheses, each its name and type, an optional one's name marked `?`, and its result, as `select<U>(expression: U): List<U>`; a property its name and result, `count: Number`; and a named indexer its key in brackets, `setting[name: String]: String?`.
+
+<a id="tooling-hover"></a>
+
+## Hover
+
+`nexo.tooling.getHover(text, offset, options)` answers what the name at the offset reads, or the name the offset directly follows, read and resolved as completion reads a text, frozen, or null where it stands on no name:
+
+- **A member's name:** the declaration resolution selected there, its `kind`, its signature as `detail`, its qualified name, and the type of what it answers there. A member resolution did not select, one a value of `Any` selects as it is evaluated among them, gives null.
+- **A name in scope:** a local, an object field, a conditional binding or a function parameter, by the nearest construct that declares it, and its type there.
+- **A script parameter, `it` and `root`:** what it is, and its type there.
+- **A namespace:** its module, as `detail`.
+
+Each is `{ name, kind, range, detail, qualifiedName, type }`, its `range` the name's. Both operations refuse an offset that is no whole number from 0 to the text's length (NEXO2648), and the options a host misuses, as [diagnostics](#tooling-diagnostics) do.

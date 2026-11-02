@@ -29,6 +29,15 @@ describe('RecoveryRecord', () => {
         expect(record.holdsHole('/expression/objectFields/10')).toBe(false);
     });
 
+    it("leaves out a diagnostic at a key holding no node of a node that holds a hole, as its marks, but keeps one at a node beside a hole", () => {
+        const record = new RecoveryRecord(['/expression/receiver', '/expression/right']);
+
+        record.record(NexoErrors.structure('NEXO2000', 'A mark', { pointer: '/expression/continues' }));
+        record.record(errorAt('NEXO3067', '/expression/left'));
+
+        expect(record.diagnostics.map(error => error.location.pointer)).toEqual(['/expression/left']);
+    });
+
     it('records a diagnostic of a code at a pointer once, as a function body resolved for each of its calls gives it again, and one of no pointer, as a binding\'s, alike', () => {
         const record = new RecoveryRecord();
 

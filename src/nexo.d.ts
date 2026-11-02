@@ -727,6 +727,37 @@ export interface NexoSyntaxReading {
     readonly diagnostics: readonly NexoDiagnostic[];
 }
 
+/**
+ * What a name a completion offers or a hover describes is: a name in scope, `local`, `objectField`, `conditionalBinding` or `functionParameter`; `implicitParameter`, `it`, and `objectRoot`, `root`; a `scriptParameter`
+ * its bindings declare; a `namespace` its imports give; a member, `property`, `function` or `indexer`; or what an import names, a `module`, a `type` or an `extension`.
+ */
+export type NexoNameKind = 'local' | 'objectField' | 'conditionalBinding' | 'functionParameter' | 'implicitParameter' | 'objectRoot' | 'scriptParameter' | 'namespace' | 'property' | 'function' | 'indexer' | 'module' | 'type' | 'extension';
+
+/** A completion: a name the text reaches at an offset, what it is, what it inserts, as `@to` for a local a keyword names, the range of text it replaces, and what describes it. */
+export interface NexoCompletion {
+    readonly name: string;
+    readonly kind: NexoNameKind;
+    /** The text written in the range's place. */
+    readonly insert: string;
+    /** The word the offset stands in or after, or an empty range at the offset. */
+    readonly range: NexoTextRange;
+    /** A member's signature, as `device(name: String): Device?`, a name's type, or a namespace's module. */
+    readonly detail?: string;
+    /** A member's name qualified by the type it is read on or its module, as `Room.device`. */
+    readonly qualifiedName?: string;
+}
+
+/** What the name at an offset reads: its name, what it is, the range it stands at, a member's signature and qualified name or a namespace's module, and the type of what it gives there. */
+export interface NexoHover {
+    readonly name: string;
+    readonly kind: Exclude<NexoNameKind, 'module' | 'type' | 'extension'>;
+    readonly range: NexoTextRange;
+    readonly detail?: string;
+    readonly qualifiedName?: string;
+    /** The type of the value it gives where it stands, in type notation, absent where resolution gave none. */
+    readonly type?: string;
+}
+
 /** The options of reading a text for tooling: the imports its host supplies, and, for its resolution, the registry and the type declared for each binding, in type notation. */
 export interface NexoToolingOptions extends NexoScriptOptions {
     /** The registry the text is resolved against, one `nexo.createRegistry` created; without one, the text's syntax and structure alone are read. */
@@ -759,6 +790,14 @@ export interface NexoTooling {
      * each line indented and each token spaced as canonical text does. It reads back as the same definition; a text that breaks the grammar is answered as it is.
      */
     format(text: string, options?: NexoScriptOptions): string;
+    /**
+     * The completions at the offset, what the script can reach there, in the order of their kinds and their names: the names in scope where a value stands, the members a receiver's type selects after `.`, the extension
+     * members that apply to it after `:`, a namespace's members after its `.`, and after `import` the modules and their types; none within a string's text or a comment. Without a registry, Nexo's own vocabulary
+     * alone is read. Refuses an offset outside the text (NEXO2648).
+     */
+    getCompletions(text: string, offset: number, options?: NexoToolingOptions): readonly NexoCompletion[];
+    /** What the name at the offset, or the one it directly follows, reads, or null where it stands on no name or on one nothing resolution selected reads. Refuses an offset outside the text (NEXO2648). */
+    getHover(text: string, offset: number, options?: NexoToolingOptions): NexoHover | null;
 }
 
 /** The versions an implementation of Nexo reports, which change apart. */

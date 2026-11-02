@@ -3,9 +3,11 @@
  * binds values, and evaluates a resolved script for its host, describing its result; reads text being written for tooling, never throwing for any text; and says which build it is and which specification it follows
  */
 
+import { Completion } from './language/Completion.mjs';
 import { DefinitionValidator } from './language/DefinitionValidator.mjs';
 import { DefinitionWriter } from './language/DefinitionWriter.mjs';
 import { Evaluator } from './language/Evaluator.mjs';
+import { Hover } from './language/Hover.mjs';
 import { Imports } from './language/Imports.mjs';
 import { LanguageResolver } from './language/LanguageResolver.mjs';
 import { NexoError, NexoErrors } from './language/NexoError.mjs';
@@ -283,6 +285,24 @@ const toolingVocabularyOf = options => {
 };
 
 /**
+ * A registry of Nexo's own vocabulary alone, which tooling reads a text against where its options give none; it is never given a module, so it stays as it was made, and no host sees it.
+ * @type {NexoRegistry | null}
+ */
+let ownRegistry = null;
+
+/** The registry a tooling operation that reads what a text reaches reads it against: the one its options give, and otherwise Nexo's own vocabulary alone. */
+const reachingRegistryOf = registry => registry ?? (ownRegistry ??= new NexoRegistry([Vocabulary.module]));
+
+/** The offset a tooling operation asks at, a whole number from the text's start to its end, refused otherwise (NEXO2648). */
+const toolingOffsetOf = (text, offset) => {
+    if (!Number.isInteger(offset) || offset < 0 || offset > text.length) {
+        throw NexoErrors.structure('NEXO2648', `An offset tooling asks at is a whole number from 0 to the text's length, ${text.length}`, {});
+    }
+
+    return offset;
+};
+
+/**
  * Tooling: text being written read tolerantly, never throwing for any text, as an editor reads it: its tokens, its syntax tree and every diagnostic of its syntax, its structure and, against a registry and the types
  * of its bindings, its resolution, each the code, the kind, the message and the location a strict operation's error would have; and the text laid out as it was written.
  */
@@ -307,6 +327,22 @@ const tooling = Object.freeze({
         return Object.freeze(new TextReading(source, supplied).getDiagnostics(registry, types));
     },
     format: (text, options) => SourceFormatter.format(toolingTextOf(text), suppliedImportsOf(options)),
+    getCompletions: (text, offset, options) => {
+        const source = toolingTextOf(text);
+        const at = toolingOffsetOf(source, offset);
+        const supplied = suppliedImportsOf(options);
+        const { registry, types } = toolingVocabularyOf(options);
+
+        return new Completion(source, at, supplied, reachingRegistryOf(registry), types).complete();
+    },
+    getHover: (text, offset, options) => {
+        const source = toolingTextOf(text);
+        const at = toolingOffsetOf(source, offset);
+        const supplied = suppliedImportsOf(options);
+        const { registry, types } = toolingVocabularyOf(options);
+
+        return Hover.describe(source, at, supplied, reachingRegistryOf(registry), types);
+    },
 });
 
 /** The declaration helpers, each creating a declaration as a module declares it, a member with no receiver of its own, since where it stands gives it one. */

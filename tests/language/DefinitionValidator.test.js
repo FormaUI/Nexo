@@ -77,6 +77,15 @@ describe('DefinitionValidator', () => {
             expect(errorThrownBy(() => new DefinitionValidator().validate(validated))).toMatchObject({ code: 'NEXO2000', location: { pointer: '/expression/objectFields/0/value' } });
         });
 
+        it('marks the optional chain a hole of an optional access stands in, as the access would', () => {
+            const recovery = new RecoveryRecord();
+            const hole = { kind: 'hole', receiver: { kind: 'scriptParameter', name: 'room' }, optional: true };
+            const validated = new DefinitionValidator(null, null, recovery).validate({ version: Versions.definition, imports: [], expression: { kind: 'optionalChain', chain: hole } });
+
+            expect(validated.expression).toEqual({ kind: 'optionalChain', chain: hole });
+            expect(recovery.diagnostics).toEqual([]);
+        });
+
         it('is the strict validation\'s alone, which refuses a hole as a node of no kind the format has (NEXO2000)', () => {
             expect(errorThrownBy(() => new DefinitionValidator().validate({ version: Versions.definition, imports: [], expression: { kind: 'hole' } }))).toMatchObject({ code: 'NEXO2000', location: { pointer: '/expression' } });
         });

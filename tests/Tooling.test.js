@@ -8,10 +8,11 @@ import { repositoryRoot } from './support/paths.mjs';
 
 const { createPropertyDeclaration, createFunctionDeclaration, createValueParameterDeclaration } = nexo.declarations;
 
-/** A shop whose items have a name and a price, and whose orders hold items, each type of a module of its own. */
+/** A shop whose items have a name and a price, whose orders hold items, and which shouts a word, an extension of a string. */
 const shop = nexo.createModule('Shop', {
     types: [
         { name: 'Item', kind: 'structured', members: [createPropertyDeclaration('name', 'String'), createPropertyDeclaration('price', 'Number')] },
+        { name: 'Words', kind: 'extension', target: 'String', members: [createPropertyDeclaration('shout', 'String', { updates: { changes: 'constant', reads: 'fresh' } })] },
         {
             name: 'Order',
             kind: 'reference',
@@ -25,6 +26,12 @@ const shop = nexo.createModule('Shop', {
 });
 const registry = nexo.createRegistry([shop]);
 const options = { registry, types: { order: 'Shop.Order' }, imports: ['Shop'] };
+
+/** The text and the offset a text marked with `|` where a tool asks gives. */
+const at = marked => [marked.replace('|', ''), marked.indexOf('|')];
+
+/** The completions at the marked offset, each as its kind, what it inserts and its detail. */
+const completionsAt = (marked, given = options) => nexo.tooling.getCompletions(...at(marked), given).map(({ kind, insert, detail }) => [kind, insert, detail]);
 
 /** The text a tree holds, rebuilt from its tokens, the tokens skipped before each among them, and the trivia before each. */
 const textOf = (node, text) => {
@@ -252,6 +259,108 @@ describe('nexo.tooling', () => {
             expectNexoError(errorThrownBy(() => nexo.tooling.format(5)), 'NEXO2645', 'structure');
         });
     });
+
+    describe('getCompletions', () => {
+        it("offers the members a receiver's type selects after a dot, each with what it inserts, the range it replaces, its signature and its qualified name", () => {
+            const [completion] = nexo.tooling.getCompletions(...at('order.it|'), options);
+
+            expect(completion).toEqual({ name: 'items', kind: 'property', insert: 'items', range: { start: 6, end: 8 }, detail: 'items: List<Item>', qualifiedName: 'Order.items' });
+            expect(completionsAt('order.|')).toEqual([['property', 'items', 'items: List<Item>'], ['function', 'item', 'item(name: String): Item?']]);
+            expect(nexo.tooling.getCompletions(...at('order.|'), options)[0].range).toEqual({ start: 6, end: 6 });
+            expect(completionsAt('order.item("tea")?.|')).toEqual([['property', 'name', 'name: String'], ['property', 'price', 'price: Number']]);
+        });
+
+        it('offers the names in scope where a value stands, nearest first, then the script parameters and the namespaces, and it and root where they stand', () => {
+            expect(completionsAt('let total = 2\nreturn order.items { a = it.price * total, b = | }')).toEqual([
+                ['local', 'total', 'Number'],
+                ['objectField', 'a', 'Number'],
+                ['implicitParameter', 'it', 'Item'],
+                ['objectRoot', 'root', undefined],
+                ['scriptParameter', 'order', 'Order'],
+                ['namespace', 'Shop', 'Shop'],
+            ]);
+            expect(completionsAt('order.items.where(it.|)')).toEqual([['property', 'name', 'name: String'], ['property', 'price', 'price: Number']]);
+            expect(completionsAt('order.items.select(each => each.pr|)').map(([, insert]) => insert)).toEqual(['name', 'price']);
+        });
+
+        it('writes a name as it must be written there: a local a keyword names after @, and a script parameter a name in scope hides after ~', () => {
+            expect(completionsAt('let to = 1\nreturn { order = to, b = | }', { ...options, types: { order: 'Shop.Order', to: 'Number' } }).map(([kind, insert]) => [kind, insert])).toEqual([
+                ['local', '@to'],
+                ['objectField', 'order'],
+                ['objectRoot', 'root'],
+                ['scriptParameter', '~order'],
+                ['scriptParameter', '~to'],
+                ['namespace', 'Shop'],
+            ]);
+        });
+
+        it("offers the extension members that apply to a receiver after a colon, a namespace's members after its dot, and the modules and their types after import", () => {
+            expect(completionsAt('"tea":|')).toEqual([['property', 'shout', 'shout: String']]);
+            expect(completionsAt('Shop.|').map(([kind, insert]) => [kind, insert])).toEqual([['property', 'items'], ['property', 'name'], ['property', 'price'], ['function', 'item']]);
+            expect(completionsAt('import |\n\n1')).toEqual([['module', 'Shop', 'module']]);
+            expect(completionsAt('import Shop.|\n\n1')).toEqual([['type', 'Item', 'structured'], ['type', 'Order', 'reference'], ['extension', 'Words', 'extension']]);
+        });
+
+        it('offers only what the script reaches: no member its imports leave out, none of a receiver of Any, and nothing within a string or a comment', () => {
+            expect(completionsAt('order.|', { registry, types: { order: 'Shop.Order' } })).toEqual([]);
+            expect(completionsAt('(order.items.first?.name ?? "").|').map(([, insert]) => insert)).toContain('length');
+            expect(completionsAt('order.items.first.name.|')).toEqual([]);
+            expect(completionsAt('"order.|"')).toEqual([]);
+            expect(completionsAt('order // order.|')).toEqual([]);
+        });
+
+        it('reads Nexo\'s own vocabulary where no registry is given, and refuses an offset outside the text (NEXO2648)', () => {
+            expect(completionsAt('"tea".|', {}).map(([, insert]) => insert)).toContain('uppercase');
+            expectNexoError(errorThrownBy(() => nexo.tooling.getCompletions('order', 6, options)), 'NEXO2648', 'structure');
+            expectNexoError(errorThrownBy(() => nexo.tooling.getHover('order', 1.5, options)), 'NEXO2648', 'structure');
+        });
+    });
+
+    describe('getHover', () => {
+        it("describes the member a name reads: its kind, its signature, its qualified name and the type of what it answers there", () => {
+            expect(nexo.tooling.getHover(...at('order.it|em("tea")'), options)).toEqual({ name: 'item', kind: 'function', range: { start: 6, end: 10 }, detail: 'item(name: String): Item?', qualifiedName: 'Order.item', type: 'Item?' });
+            expect(nexo.tooling.getHover(...at('order.items.count|'), options)).toMatchObject({ name: 'count', kind: 'property', qualifiedName: 'List.count', type: 'Number' });
+        });
+
+        it('describes a name in scope by what declares it, a script parameter, it, root and a namespace, each with its type there', () => {
+            const text = 'let total = 2\nreturn order.items { a = it.price * total, b = root.a, c = Shop.item }';
+            const hoverAt = word => nexo.tooling.getHover(text, text.lastIndexOf(word) + 1, options);
+
+            expect(hoverAt('total')).toEqual({ name: 'total', kind: 'local', range: { start: 50, end: 55 }, type: 'Number' });
+            expect(hoverAt('order')).toMatchObject({ kind: 'scriptParameter', type: 'Order' });
+            expect(hoverAt('it.price')).toMatchObject({ kind: 'implicitParameter', type: 'Item' });
+            expect(hoverAt('item')).toMatchObject({ name: 'item', kind: 'function', qualifiedName: 'Shop.item' });
+            expect(hoverAt('root')).toMatchObject({ kind: 'objectRoot' });
+            expect(hoverAt('Shop')).toEqual({ name: 'Shop', kind: 'namespace', range: { start: 73, end: 77 }, detail: 'Shop' });
+            expect(nexo.tooling.getHover('[1].select(n => n + 1)', 16, options)).toEqual({ name: 'n', kind: 'functionParameter', range: { start: 16, end: 17 }, type: 'Number' });
+        });
+
+        it('answers null where the offset stands on no name, or on one no declaration resolution selected reads', () => {
+            expect(nexo.tooling.getHover('1 + 2', 2, options)).toBeNull();
+            expect(nexo.tooling.getHover('order.itmes', 8, options)).toBeNull();
+        });
+    });
+
+    it("completes and describes the specification's examples at their offsets without throwing, each answer frozen", () => {
+        const { home, values, types } = createExamplesFixtures();
+        const examplesRegistry = nexo.createRegistry([createExamplesHome(home), createExamplesEnergy()]);
+        const bindings = examplesRegistry.createBindings(values, { types });
+        const declared = Object.fromEntries(Object.keys(values).map(name => [name, bindings.getType(name)]).filter(([, type]) => !type.includes('{')));
+        const read = { registry: examplesRegistry, types: declared, imports: ['Home', 'Energy'] };
+        let offered = 0;
+
+        for (const example of examples()) {
+            for (let offset = 0; offset <= example.length; offset += 5) {
+                const completions = nexo.tooling.getCompletions(example, offset, read);
+                const hover = nexo.tooling.getHover(example, offset, read);
+
+                expect(Object.isFrozen(completions) && (hover === null || Object.isFrozen(hover))).toBe(true);
+                offered += completions.length;
+            }
+        }
+
+        expect(offered).toBeGreaterThan(1000);
+    }, 60000);
 
     it('never throws for any text, and its tree holds every character of it: each prefix of the specification\'s examples, and each with a token removed or a stray one written in', () => {
         const { home, values, types } = createExamplesFixtures();

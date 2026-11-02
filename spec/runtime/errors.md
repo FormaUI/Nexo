@@ -71,7 +71,7 @@ A **location** says where a failure stands by one group of fields, never two, th
 - **A position counts from the text's start.** `offset` counts the text's UTF-16 code units from 0, and `line` and `column` count from 1. Each line break, LF, CRLF or a lone CR, begins a line, so CRLF begins one, its two characters both counted in the offset.
 - **An unnamed indexer and a mapping** have no name, so a module error names an unnamed indexer `[]` as its `declaration`, and a mapping by its key. Two unnamed indexers that collide (NEXO4068) stand at the declaration key `kind`.
 - **A node without text of its own** is positioned at the nearest node enclosing it that has some, its `pointer` still its own.
-- **A failure of the API's use that stands nowhere** carries an empty location, `{}`: imports a host supplies that are refused, `NEXO2008`, bindings or their options that are not a plain object, `NEXO2020`, bindings another registry made, `NEXO2024`, bindings of another resolution key, `NEXO2025`, a resolution no longer current, `NEXO2040`, a pointer that is no JSON Pointer, `NEXO2643`, reading what is not a script's source, `NEXO2645`, a result path of another shape, `NEXO2646`, a tooling operation's registry no `createRegistry` created, `NEXO2647`, and evaluating an evaluator from within its own evaluation, `NEXO5010`.
+- **A failure of the API's use that stands nowhere** carries an empty location, `{}`: imports a host supplies that are refused, `NEXO2008`, bindings or their options that are not a plain object, `NEXO2020`, bindings another registry made, `NEXO2024`, bindings of another resolution key, `NEXO2025`, a resolution no longer current, `NEXO2040`, a pointer that is no JSON Pointer, `NEXO2643`, reading what is not a script's source, `NEXO2645`, a result path of another shape, `NEXO2646`, a tooling operation's registry no `createRegistry` created, `NEXO2647`, an offset outside the text it asks at, `NEXO2648`, and evaluating an evaluator from within its own evaluation, `NEXO5010`.
 
 An evaluation error fails the entire result and is delivered to the host in its place.
 
@@ -117,6 +117,7 @@ An evaluation error fails the entire result and is delivered to the host in its 
 | `NEXO2645` | Reading what is not a script's source, by `nexo.parse` or a [tooling](tooling.md) operation | A structure error |
 | `NEXO2646` | A result path that is no list, or holds an item that is neither a name nor a whole number that is not negative, given to `nexo.paths.validate`, `resolution.typeAt` or `nexo.paths.valueAt` | A structure error naming the item or the path |
 | `NEXO2647` | A [tooling](tooling.md) operation given a registry `nexo.createRegistry` did not create | A structure error |
+| `NEXO2648` | A [tooling](tooling.md) operation asked at an offset that is no whole number from 0 to its text's length | A structure error naming the text's length |
 
 <a id="module-errors"></a>
 

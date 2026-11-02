@@ -57,4 +57,24 @@ describe('TextReading', () => {
         expect(tokens.every((token, index) => token.end >= token.start && (index === 0 || token.triviaStart >= tokens[index - 1].end))).toBe(true);
         expect(SyntaxTree.textOf(new TextReading(text, []).tree)).toBe(text);
     });
+
+    it("reads a probe as a hole where it stands for a value or a member's name, saying what reads it, and none where it stands for neither", () => {
+        const probeAt = (text, offset) => new TextReading(text, [{ module: 'Shop' }], offset).probe;
+
+        expect(probeAt('{ a = x }', 6)).toEqual({ pointer: '/expression/objectFields/0/value', reads: 'value' });
+        expect(probeAt('room?.x', 6)).toEqual({ pointer: '/expression/chain', reads: 'member' });
+        expect(probeAt('room.x(1)', 5)).toEqual({ pointer: '/expression', reads: 'member' });
+        expect(probeAt('room:x', 5)).toEqual({ pointer: '/expression', reads: 'extension' });
+        expect(probeAt('room:Shop.Loud.x', 15)).toEqual({ pointer: '/expression', reads: 'extensionName', names: ['Shop', 'Loud'] });
+        expect(probeAt('Shop.x', 5)).toEqual({ pointer: '/expression', reads: 'namespace', namespace: 'Shop' });
+        expect(probeAt('{ x = 1 }', 2)).toBeNull();
+        expect(new TextReading('room?.x', [], 6).definition.expression).toEqual({ kind: 'optionalChain', chain: { kind: 'hole', receiver: { kind: 'scriptParameter', name: 'room' }, optional: true } });
+    });
+
+    it('tells what declares a name in scope at a pointer, the nearest construct that declares it', () => {
+        const reading = new TextReading('let a = 1\nreturn { let b = 2, c = 3, d = [a, b, c].select(e => if let f = e then f else e end) }', []);
+        const at = '/expression/result/objectFields/1/value/arguments/0/body/consequent';
+
+        expect(['a', 'b', 'c', 'e', 'f', 'g'].map(name => reading.getDeclarationKind(at, name))).toEqual(['local', 'local', 'objectField', 'functionParameter', 'conditionalBinding', null]);
+    });
 });
