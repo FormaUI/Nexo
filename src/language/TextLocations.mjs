@@ -23,18 +23,12 @@ export class TextLocations {
     #spans = null;
 
     /**
-     * @param {string} text The source text, which parsed, or, where the definition it was lowered to is given, which a tolerant reading read.
+     * @param {string} text The source text, which parsed.
      * @param {readonly object[]} [suppliedImports] The imports a host supplied to it, in a definition's shape, checked already.
-     * @param {{ definition: object, spans: WeakMap<object, Span> } | null} [lowered] The definition the text was lowered to, with the span of each of its parts, whose spans are collected at once rather than from the
-     * text read again, which a text that breaks the grammar gives no definition of; null where the text is read again for them.
      */
-    constructor(text, suppliedImports = [], lowered = null) {
+    constructor(text, suppliedImports = []) {
         this.#text = text;
         this.#suppliedImports = suppliedImports;
-
-        if (lowered !== null) {
-            this.#collectAll(lowered.definition, lowered.spans);
-        }
     }
 
     /** The span of each part of the definition by its pointer, collected from the text read again where none was collected yet. */
@@ -42,40 +36,18 @@ export class TextLocations {
         if (this.#spans === null) {
             const { definition, spans } = Lowering.lower(new Parser(this.#text, this.#suppliedImports).parse(), this.#suppliedImports);
 
-            this.#collectAll(definition, spans);
+            this.#spans = new Map();
+            definition.imports.forEach((entry, index) => {
+                const span = spans.get(entry);
+
+                if (span) {
+                    this.#spans.set(`/imports/${index}`, span);
+                }
+            });
+            this.#collect(definition.expression, '/expression', spans);
         }
 
         return this.#spans;
-    }
-
-    /** Collects the span of each of the definition's imports and of each part of its expression, by its pointer. */
-    #collectAll(definition, spans) {
-        this.#spans = new Map();
-        definition.imports.forEach((entry, index) => {
-            const span = spans.get(entry);
-
-            if (span) {
-                this.#spans.set(`/imports/${index}`, span);
-            }
-        });
-        this.#collect(definition.expression, '/expression', spans);
-    }
-
-    /** The span of text the pointer's part came from, or the nearest enclosing part's; null where none encloses it. */
-    getSpan(pointer) {
-        const spans = this.#getSpans();
-
-        for (let current = pointer; ; current = current.slice(0, current.lastIndexOf('/'))) {
-            const span = spans.get(current);
-
-            if (span) {
-                return span;
-            }
-
-            if (current === '' || !current.includes('/')) {
-                return null;
-            }
-        }
     }
 
     /** The text the definition was read from, from which its syntax tree is read again where a tool asks for it, since no definition keeps one. */

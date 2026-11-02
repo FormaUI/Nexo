@@ -24,10 +24,7 @@ In this document:
 | Host | The application around an implementation of Nexo, which registers modules, binds values, evaluates, invokes its host calls and decides what to do with each result | [Host contract](hosting.md#runtime) |
 | Registry | What holds the modules a host resolves and evaluates against | [Registries](modules.md#modules-registries) |
 | Resolution | A script resolved against a registry with bindings of one resolution key: its type and the declarations it uses | [Resolution](resolution.md#runtime-bindings-and-resolution) |
-| Diagnostic | A description of one problem, its kind, message and location, which a strict operation throws as an error and tooling answers | [Diagnostics and errors](errors.md#diagnostics-and-errors) |
-| Tolerant reading | Reading text being written, as tooling does: never throwing for any text, recovering where it breaks the grammar, and answering every diagnostic | [Tooling](tooling.md#runtime-tooling) |
-| Missing token | A token the text lacks, which a tolerant reading's syntax tree stands where it was expected, with no text | [The syntax tree](tooling.md#tooling-syntax-tree) |
-| Hole | A part the text lacks, or a node whose validation or resolution failed, which tooling's later stages read as a value of `Any` | [Diagnostics](tooling.md#tooling-diagnostics) |
+| Diagnostic | A description of one problem, its kind, message and location, which a strict operation throws as an error | [Diagnostics and errors](errors.md#diagnostics-and-errors) |
 | Binding | The value a host supplies for a script parameter, as the language's [glossary](../language/terms.md#expressions-and-results) defines it | [Bindings](bindings.md) |
 
 <a id="runtime-terms-declarations"></a>

@@ -57,91 +57,31 @@ export class LanguageResolver {
     /** The selection of a declaration among those of a name for a receiver, the one every access, indexer and qualified call reads. */
     #memberSelector;
 
-    /**
-     * What a tolerant resolution, as tooling resolves a definition a tolerant reading lowered, records as it recovers: each diagnostic, and the holes, each a node it read as a value of `Any` where the text lacks it or
-     * its resolution failed; null for a strict one, which throws its first diagnostic and refuses a hole.
-     * @type {import('./RecoveryRecord.mjs').RecoveryRecord | null}
-     */
-    #recovery;
-
-    /** How many readings are being resolved speculatively, within which a failure refuses the reading, so no tolerant resolution recovers from it there. */
-    #speculating = 0;
-
-    /** Whether the bindings hold their values, which resolution settles a fixed argument, a computed name or a decision from; bindings of declared types alone, as tooling's, hold none. */
-    #bindingsHoldValues;
-
-    /** The type of the value each node gives, by its pointer into the definition, a body's part given its last call's; a tolerant resolution's alone, which tooling reads, and null for a strict one. @type {Map<string, Type> | null} */
-    #nodeTypes = null;
-
-    /**
-     * The scope each hole stands in, by its pointer into the definition, with what its receiver resolved to where it holds one; a tolerant resolution's alone, which tooling reads, and null for a strict one.
-     * @type {Map<string, { scope: object, receiver: object | null }> | null}
-     */
-    #holeScopes = null;
-
-    /**
-     * @param {import('./vocabulary/NexoRegistry.mjs').NexoRegistry} registry The vocabulary to resolve against.
-     * @param {import('./ParameterBindings.mjs').ParameterBindings} bindings What the request's parameters are bound to.
-     * @param {import('./TextLocations.mjs').TextLocations | null} locations Where in a text each part of the definition came from.
-     * @param {import('./RecoveryRecord.mjs').RecoveryRecord | null} [recovery] What a tolerant resolution records; null for a strict one.
-     */
-    constructor(registry, bindings, locations, recovery = null) {
+    constructor(registry, bindings, locations) {
         this.#registry = registry;
         this.#typeChecker = registry.typeChecker;
         this.#memberSelector = registry.memberSelector;
         this.#bindings = bindings;
         this.#locations = locations;
-        this.#recovery = recovery;
-        this.#bindingsHoldValues = bindings.holdsValues !== false;
-
-        if (recovery !== null) {
-            this.#nodeTypes = new Map();
-            this.#holeScopes = new Map();
-        }
         this.#imported = new ImportedVocabulary(registry, []);
-    }
-
-    /** What the definition's imports, those the registry gives, make available, which a tool offers names of. */
-    get importedVocabulary() {
-        return this.#imported;
-    }
-
-    /** The type of the value each node gave, by its pointer into the definition, a tolerant resolution's. */
-    get nodeTypes() {
-        return this.#nodeTypes;
-    }
-
-    /** The scope each hole stood in, by its pointer into the definition, with its receiver's resolution where it holds one, a tolerant resolution's. */
-    get holeScopes() {
-        return this.#holeScopes;
     }
 
     /** Resolves and types the definition, answering what it resolved to or throwing where it cannot. */
     resolveDefinition(definition) {
         this.#resolveImports(definition.imports);
 
-        let result;
-
-        try {
-            result = this.#resolveTerminal(definition.expression, '/expression', { contextType: null, contextKey: {}, locals: ScopeLocals.empty, facts: NO_FACTS, objectRoot: null });
-        } catch (error) {
-            result = this.#recoverFrom(error, '/expression');
-        }
+        const result = this.#resolveTerminal(definition.expression, '/expression', { contextType: null, contextKey: {}, locals: ScopeLocals.empty, facts: NO_FACTS, objectRoot: null });
 
         // A host call that supplies nothing gives no result, and one that supplies values gives, for each, what its result projection makes of it, or the value itself.
         const type = result.suppliesNothing === true ? null : result.type;
 
-        try {
-            if (type !== null && LanguageResolver.#heldReferenceOf(type) === 'function') {
-                this.#fail('NEXO3035', 'The result would hold a function, which is used within the expression and never part of its result: call it, as name(…)', '/expression');
-            }
+        if (type !== null && LanguageResolver.#heldReferenceOf(type) === 'function') {
+            this.#fail('NEXO3035', 'The result would hold a function, which is used within the expression and never part of its result: call it, as name(…)', '/expression');
+        }
 
-            // A value of Any in it is data or not as it is evaluated, which checks it then.
-            if (type !== null && !this.#registry.isDataOnceChecked(type)) {
-                this.#fail('NEXO3043', `The result would hold ${type}, which is no data; read the facts it needs through an object expression`, '/expression');
-            }
-        } catch (error) {
-            this.#recoverFrom(error, '/expression');
+        // A value of Any in it is data or not as it is evaluated, which checks it then.
+        if (type !== null && !this.#registry.isDataOnceChecked(type)) {
+            this.#fail('NEXO3043', `The result would hold ${type}, which is no data; read the facts it needs through an object expression`, '/expression');
         }
 
         const hostCall = result.kind === 'hostCall' ? this.#hostCallOf(definition.expression, '/expression') : null;
@@ -170,50 +110,29 @@ export class LanguageResolver {
      * is then the vocabulary the script resolves against.
      */
     #resolveImports(imports) {
-        if (this.#recovery === null) {
-            imports.forEach((entry, index) => this.#resolveImport(entry, `/imports/${index}`));
-            this.#imported = new ImportedVocabulary(this.#registry, imports);
-            this.#namespaceNames = this.#imported.namespaceNames;
+        imports.forEach((entry, index) => {
+            const pointer = `/imports/${index}`;
 
-            return;
-        }
+            if (this.#registry.getModule(entry.module) === undefined) {
+                this.#fail('NEXO3002', `'${Imports.quote(entry)}' imports the module '${entry.module}', which the registry does not hold`, pointer);
+            }
 
-        const given = imports.filter((entry, index) => {
-            try {
-                this.#resolveImport(entry, `/imports/${index}`);
+            if (Imports.isModuleImport(entry)) {
+                return;
+            }
 
-                return true;
-            } catch (error) {
-                // A tolerant resolution records an import the registry can't give and resolves the rest without it.
-                this.#recoverFrom(error);
+            const declaration = this.#registry.getModuleType(entry.module, entry.type);
 
-                return false;
+            if (declaration === undefined) {
+                this.#fail('NEXO3052', `'${Imports.quote(entry)}' imports '${entry.module}.${entry.type}', which its module does not declare`, pointer);
+            }
+
+            if (this.#registry.isInternal(declaration)) {
+                this.#fail('NEXO3053', `'${Imports.quote(entry)}' imports '${entry.module}.${entry.type}', which is internal to its module`, pointer);
             }
         });
-
-        this.#imported = new ImportedVocabulary(this.#registry, given);
+        this.#imported = new ImportedVocabulary(this.#registry, imports);
         this.#namespaceNames = this.#imported.namespaceNames;
-    }
-
-    /** Resolves an import at the pointer against the registry, refusing it where the registry can't give it. */
-    #resolveImport(entry, pointer) {
-        if (this.#registry.getModule(entry.module) === undefined) {
-            this.#fail('NEXO3002', `'${Imports.quote(entry)}' imports the module '${entry.module}', which the registry does not hold`, pointer);
-        }
-
-        if (Imports.isModuleImport(entry)) {
-            return;
-        }
-
-        const declaration = this.#registry.getModuleType(entry.module, entry.type);
-
-        if (declaration === undefined) {
-            this.#fail('NEXO3052', `'${Imports.quote(entry)}' imports '${entry.module}.${entry.type}', which its module does not declare`, pointer);
-        }
-
-        if (this.#registry.isInternal(declaration)) {
-            this.#fail('NEXO3053', `'${Imports.quote(entry)}' imports '${entry.module}.${entry.type}', which is internal to its module`, pointer);
-        }
     }
 
     /** The receiver members of the name `.` reads that the script's imports make available, Nexo's own among them, extension members, which `:` reads, left out. */
@@ -281,56 +200,6 @@ export class LanguageResolver {
     }
 
     #resolveNode(node, pointer, scope) {
-        return this.#recovery === null ? this.#resolveKind(node, pointer, scope) : this.#resolveRecovering(node, pointer, scope);
-    }
-
-    /**
-     * Resolves the node as a tolerant resolution does: recording the type of the value it gives, by its pointer into the definition, and, where its resolution fails outside a speculative reading, recording the diagnostic
-     * and reading the node as a value of `Any`.
-     */
-    #resolveRecovering(node, pointer, scope) {
-        let result;
-
-        try {
-            result = this.#resolveKind(node, pointer, scope);
-        } catch (error) {
-            result = this.#recoverFrom(error, pointer);
-        }
-
-        if (result.type !== undefined) {
-            this.#nodeTypes.set(ResolvedDefinition.resolveDefinitionPointer(pointer, this.#functionBodyCopies), result.type);
-        }
-
-        return result;
-    }
-
-    /**
-     * Recovers from a failure to resolve the node at the pointer, where one is given: a strict resolution, and any resolution within a speculative reading, throws it, and a tolerant one records the diagnostic, the
-     * node a hole from then on, and answers a value of `Any` in its place.
-     */
-    #recoverFrom(error, pointer = undefined) {
-        if (this.#recovery === null || this.#speculating > 0 || !(error instanceof NexoError)) {
-            throw error;
-        }
-
-        this.#recovery.record(error, pointer === undefined ? undefined : ResolvedDefinition.resolveDefinitionPointer(pointer, this.#functionBodyCopies));
-
-        return { type: Type.any, kind: 'value', isFixed: false };
-    }
-
-    /**
-     * Resolves a hole, which a tolerant resolution alone meets, as a value of `Any`, recording the scope it stands in, and its receiver's resolution where it holds one, which a tool offers the names and the members of.
-     */
-    #resolveHole(node, pointer, scope) {
-        const receiver = node.receiver === undefined ? null : this.#resolveNode(node.receiver, `${pointer}/receiver`, scope);
-
-        this.#holeScopes.set(ResolvedDefinition.resolveDefinitionPointer(pointer, this.#functionBodyCopies), { scope, receiver });
-
-        return { type: Type.any, kind: 'value', isFixed: false };
-    }
-
-    /** Resolves the node by its kind. */
-    #resolveKind(node, pointer, scope) {
         this.#pointers.set(node, pointer);
 
         switch (node.kind) {
@@ -439,8 +308,6 @@ export class LanguageResolver {
             case 'and':
             case 'or':
                 return this.#resolveLogical(node, pointer, scope);
-            case 'hole':
-                return this.#resolveHole(node, pointer, scope);
             default:
                 return this.#resolveObjectExpression(node, pointer, scope);
         }
@@ -1775,7 +1642,7 @@ export class LanguageResolver {
             this.#fail('NEXO3009', `No local in scope or script parameter is named '${node.name}'${form === null ? '' : `; write '${form}' for the member of the implicit parameter`}`, pointer);
         }
 
-        return { type: scope.facts.get(`@${node.name}`) ?? this.#bindings.getType(node.name), kind: 'value', isFixed: this.#bindingsHoldValues, value: this.#bindings.readValue(node.name) };
+        return { type: scope.facts.get(`@${node.name}`) ?? this.#bindings.getType(node.name), kind: 'value', isFixed: true, value: this.#bindings.readValue(node.name) };
     }
 
     /**
@@ -1927,12 +1794,6 @@ export class LanguageResolver {
         }
 
         const [first] = names;
-
-        // A tolerant reading's hole may stand for the first name, which validation recovered from, so no extension access begins there.
-        if (first.access.kind !== 'memberAccess') {
-            this.#fail('NEXO2000', 'An extension access begins with its first name, written after its colon', first.pointer);
-        }
-
         const receiverNode = first.access.receiver;
         const optional = first.access.optional === true ? { optional: true } : {};
 
@@ -2431,7 +2292,7 @@ export class LanguageResolver {
             case 'literal':
                 return LanguageResolver.#possibleOf(node.value);
             case 'scriptParameter':
-                return this.#bindingsHoldValues ? LanguageResolver.#possibleOf(this.#bindings.readValue(node.name)) : null;
+                return LanguageResolver.#possibleOf(this.#bindings.readValue(node.name));
             case 'local': {
                 const local = scope.locals.get(node.name);
                 const possible = local === undefined ? null : this.#possibleNamesOf(local.initializer, local.scope);
@@ -2948,8 +2809,6 @@ export class LanguageResolver {
         const bodyCopyCount = this.#functionBodyCopies.length;
         let isKept = false;
 
-        this.#speculating++;
-
         try {
             const result = resolve();
 
@@ -2963,8 +2822,6 @@ export class LanguageResolver {
 
             return { error };
         } finally {
-            this.#speculating--;
-
             if (!isKept) {
                 this.#resolutions = resolutions;
                 this.#usedDeclarations.length = usedCount;

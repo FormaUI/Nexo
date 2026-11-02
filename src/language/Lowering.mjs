@@ -1,6 +1,5 @@
 /**
- * Lowering — a syntax tree turned into the definition it writes, with the span of text each node, field, local, binding and import of it came from; a tolerant reading's tree, a hole where the text lacks a value or
- * a member's name
+ * Lowering — a syntax tree turned into the definition it writes, with the span of text each node, field, local, binding and import of it came from
  */
 
 import { Imports } from './Imports.mjs';
@@ -210,11 +209,6 @@ export class Lowering {
             case 'literal':
                 return this.#span({ kind: 'literal', value: token.value }, token);
             case 'identifier': {
-                // A value a tolerant reading's text lacks is a hole, which no definition a strict reading gives holds.
-                if (token.missing === true) {
-                    return this.#span({ kind: 'hole' }, token);
-                }
-
                 // `root` is the object root wherever it stands; any other name is the local or the field its lexical scope declares, and otherwise the script parameter of its name.
                 if (Names.isRoot(token.value)) {
                     return this.#span({ kind: 'root' }, token);
@@ -241,12 +235,6 @@ export class Lowering {
     /** A namespace access: a member read through the module's namespace, or a call of one through it, its arguments as written, the member spanning the namespace's name to its own and the call the access. */
     #lowerNamespaceAccess(access) {
         const [namespaceName, , nameToken, ...rest] = access.children;
-
-        // A namespace no value is, so a member whose name the text lacks is a hole of no receiver.
-        if (nameToken.missing === true) {
-            return this.#span({ kind: 'hole' }, access);
-        }
-
         const receiver = this.#span({ kind: 'namespace', name: namespaceName.value }, namespaceName);
         const member = { kind: 'memberAccess', receiver, name: SyntaxTree.wordOf(nameToken, this.#text) };
 
@@ -326,14 +314,6 @@ export class Lowering {
         const optional = isEveryOptional || SyntaxTree.isOptionalAccess(first.type);
         const optionalProperty = optional ? { optional } : {};
         let node;
-
-        // A member whose name a tolerant reading's text lacks is a hole of its receiver, which a tool reads the receiver's type from, its arguments left out.
-        if (second.missing === true && (part.kind === 'dot-property-access' || part.kind === 'member-call')) {
-            node = { kind: 'hole', receiver, ...optionalProperty };
-            this.#spans.set(node, { start, end: SyntaxTree.endOf(part) });
-
-            return node;
-        }
 
         switch (part.kind) {
             case 'extension-access':
@@ -433,15 +413,6 @@ export class Lowering {
         }
 
         this.#localNames = enclosingLocalNames;
-
-        // An object of no field, which a tolerant reading's text alone gives, is a hole.
-        if (objectFields.length === 0) {
-            const hole = { kind: 'hole' };
-
-            this.#spans.set(hole, { start, end: SyntaxTree.endOf(object) });
-
-            return hole;
-        }
 
         if (locals.length > 0) {
             node.locals = locals;

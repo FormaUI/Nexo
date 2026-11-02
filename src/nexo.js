@@ -1,35 +1,25 @@
 /**
  * Nexo — a general-purpose, embeddable language whose domain each application defines: reads, validates and writes source and definitions, creates the modules that declare a vocabulary and the registries a host resolves scripts against,
- * binds values, and evaluates a resolved script for its host, describing its result; reads text being written for tooling, never throwing for any text; and says which build it is and which specification it follows
+ * binds values, and evaluates a resolved script for its host, describing its result; and says which build it is and which specification it follows
  */
 
-import { Completion } from './language/Completion.mjs';
 import { DefinitionValidator } from './language/DefinitionValidator.mjs';
 import { DefinitionWriter } from './language/DefinitionWriter.mjs';
 import { Evaluator } from './language/Evaluator.mjs';
-import { Hover } from './language/Hover.mjs';
 import { Imports } from './language/Imports.mjs';
 import { LanguageResolver } from './language/LanguageResolver.mjs';
 import { NexoError, NexoErrors } from './language/NexoError.mjs';
 import { ParameterBindings } from './language/ParameterBindings.mjs';
 import { ParsedTexts } from './language/ParsedTexts.mjs';
 import { ResultPath } from './language/ResultPath.mjs';
-import { SourceFormatter } from './language/SourceFormatter.mjs';
-import { SYNTAX_NODE_KINDS, SyntaxTree } from './language/SyntaxTree.mjs';
-import { TextReading } from './language/TextReading.mjs';
-import { TOKEN_TYPES, Tokenizer } from './language/Tokenizer.mjs';
 import { Versions } from './language/Versions.mjs';
 import { Declarations } from './language/vocabulary/Declarations.mjs';
 import { NexoModule } from './language/vocabulary/NexoModule.mjs';
 import { NexoRegistry } from './language/vocabulary/NexoRegistry.mjs';
 import { Vocabulary } from './language/vocabulary/Vocabulary.mjs';
-import { ObjectUtils } from './common/ObjectUtils.mjs';
 
 /** The parameter bindings each bindings object a registry's `createBindings` created stands for. @type {WeakMap<object, ParameterBindings>} */
 const PARAMETER_BINDINGS = new WeakMap();
-
-/** The registry each registry `createRegistry` created stands for, which tooling resolves a text against. @type {WeakMap<object, NexoRegistry>} */
-const REGISTRIES = new WeakMap();
 
 /** The imports a host supplies in a call's options, as a definition records them, checked as a definition's are; none where it supplies none. */
 const suppliedImportsOf = options => Imports.createSuppliedImports(options?.imports);
@@ -227,7 +217,8 @@ const resolutionOf = (registry, definition, parameterBindings) => {
  */
 const createRegistry = modules => {
     const registry = new NexoRegistry([Vocabulary.module, ...modules]);
-    const created = Object.freeze({
+
+    return Object.freeze({
         registerModule: module => {
             registry.registerModule(module);
         },
@@ -248,102 +239,7 @@ const createRegistry = modules => {
             return resolutionOf(registry, definition, getParameterBindings(registry, bindings) ?? new ParameterBindings(registry, bindings ?? {}));
         },
     });
-
-    REGISTRIES.set(created, registry);
-
-    return created;
 };
-
-/** The text a tooling operation reads, refused where it is no text (NEXO2645), which is a misuse of the API, never a text's diagnostic. */
-const toolingTextOf = text => {
-    if (typeof text !== 'string') {
-        throw NexoErrors.structure('NEXO2645', "What tooling reads is a script's source", {});
-    }
-
-    return text;
-};
-
-/**
- * What a tooling operation resolves a text against: the registry its options give, one `createRegistry` created (NEXO2647), or none, and the types they declare for the bindings, a plain object of notations by
- * binding name (NEXO2020).
- */
-const toolingVocabularyOf = options => {
-    const given = options?.registry;
-    const registry = given === undefined || given === null ? null : REGISTRIES.get(given);
-
-    if (registry === undefined) {
-        throw NexoErrors.structure('NEXO2647', "A tooling operation's registry is one nexo.createRegistry created", {});
-    }
-
-    const types = options?.types ?? {};
-
-    if (!ObjectUtils.isPlainObject(types)) {
-        throw NexoErrors.structure('NEXO2020', "The types tooling's options declare are a plain object of bindings' names and the types declared for them", {});
-    }
-
-    return { registry, types };
-};
-
-/**
- * A registry of Nexo's own vocabulary alone, which tooling reads a text against where its options give none; it is never given a module, so it stays as it was made, and no host sees it.
- * @type {NexoRegistry | null}
- */
-let ownRegistry = null;
-
-/** The registry a tooling operation that reads what a text reaches reads it against: the one its options give, and otherwise Nexo's own vocabulary alone. */
-const reachingRegistryOf = registry => registry ?? (ownRegistry ??= new NexoRegistry([Vocabulary.module]));
-
-/** The offset a tooling operation asks at, a whole number from the text's start to its end, refused otherwise (NEXO2648). */
-const toolingOffsetOf = (text, offset) => {
-    if (!Number.isInteger(offset) || offset < 0 || offset > text.length) {
-        throw NexoErrors.structure('NEXO2648', `An offset tooling asks at is a whole number from 0 to the text's length, ${text.length}`, {});
-    }
-
-    return offset;
-};
-
-/**
- * Tooling: text being written read tolerantly, never throwing for any text, as an editor reads it: its tokens, its syntax tree and every diagnostic of its syntax, its structure and, against a registry and the types
- * of its bindings, its resolution, each the code, the kind, the message and the location a strict operation's error would have; and the text laid out as it was written.
- */
-const tooling = Object.freeze({
-    tokenTypes: TOKEN_TYPES,
-    nodeKinds: SYNTAX_NODE_KINDS,
-    scan: text => {
-        const source = toolingTextOf(text);
-
-        return Object.freeze(Tokenizer.scan(source).map(token => SyntaxTree.createTokenView(token, source)));
-    },
-    parse: (text, options) => {
-        const reading = new TextReading(toolingTextOf(text), suppliedImportsOf(options));
-
-        return Object.freeze({ tree: SyntaxTree.createNodeView(reading.tree, reading.text), diagnostics: Object.freeze(reading.syntaxDiagnostics.map(error => reading.createDiagnostic(error))) });
-    },
-    getDiagnostics: (text, options) => {
-        const source = toolingTextOf(text);
-        const supplied = suppliedImportsOf(options);
-        const { registry, types } = toolingVocabularyOf(options);
-
-        return Object.freeze(new TextReading(source, supplied).getDiagnostics(registry, types));
-    },
-    format: (text, options) => SourceFormatter.format(toolingTextOf(text), suppliedImportsOf(options)),
-    getCompletions: (text, offset, options) => {
-        const source = toolingTextOf(text);
-        const at = toolingOffsetOf(source, offset);
-        const supplied = suppliedImportsOf(options);
-        const { registry, types } = toolingVocabularyOf(options);
-
-        return new Completion(source, at, supplied, reachingRegistryOf(registry), types).complete();
-    },
-    getHover: (text, offset, options) => {
-        const source = toolingTextOf(text);
-        const at = toolingOffsetOf(source, offset);
-        const supplied = suppliedImportsOf(options);
-        const { registry, types } = toolingVocabularyOf(options);
-
-        return Hover.describe(source, at, supplied, reachingRegistryOf(registry), types);
-    },
-});
 
 /** The declaration helpers, each creating a declaration as a module declares it, a member with no receiver of its own, since where it stands gives it one. */
 const declarations = Object.freeze({
@@ -373,7 +269,6 @@ export const nexo = Object.freeze({
     declarations,
     createRegistry: (modules = []) => createRegistry(modules),
     paths,
-    tooling,
     info: Object.freeze({ versions: Object.freeze({ implementation: Versions.implementation, language: Versions.language, definition: Versions.definition }) }),
 });
 

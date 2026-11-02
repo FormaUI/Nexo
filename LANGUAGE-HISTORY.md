@@ -7,6 +7,19 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-19"></a>
+
+## `1.0.0-beta.19`
+
+*November 2, 2026 · definition format 38*
+
+**Runtime**
+
+- The tooling of `1.0.0-beta.16` to `1.0.0-beta.18`, `nexo.tooling` and its tooling contract, is withdrawn until it is designed, as [decisions](docs/decisions.md#d48) records. Its first draft is kept on the `tooling-draft` branch. The runtime is that of `1.0.0-beta.15` again.
+- NEXO2647 and NEXO2648, which only that tooling raised, are [retired](spec/runtime/errors.md#runtime-retired-codes).
+
+**Breaking:** `nexo.tooling` is gone. No release carried it.
+
 <a id="v1-0-0-beta-18"></a>
 
 ## `1.0.0-beta.18`
@@ -15,9 +28,9 @@ Each entry says what its version breaks:
 
 **Runtime**
 
-- [Completion](spec/runtime/tooling.md#tooling-completion): `nexo.tooling.getCompletions` answers what a script can reach at an offset, each completion with what it inserts and the range it replaces: the names in scope where a value stands, the members a receiver's type selects after `.`, the extension members that apply to it after `:`, a namespace's members after its `.`, and the modules and their types after `import`. It offers only what the script's imports make available, an internal declaration never.
-- [Hover](spec/runtime/tooling.md#tooling-hover): `nexo.tooling.getHover` answers what the name at an offset reads: a member's declaration, its signature and its qualified name, or a name in scope, a script parameter, `it`, `root` or a namespace, each with the type it gives there.
-- [Structure errors](spec/runtime/errors.md#runtime-structure-errors): an offset that is no whole number from 0 to its text's length is refused (NEXO2648).
+- [Completion](https://github.com/FormaUI/Nexo/blob/76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e/spec/runtime/tooling.md#tooling-completion): `nexo.tooling.getCompletions` answers what a script can reach at an offset, each completion with what it inserts and the range it replaces: the names in scope where a value stands, the members a receiver's type selects after `.`, the extension members that apply to it after `:`, a namespace's members after its `.`, and the modules and their types after `import`. It offers only what the script's imports make available, an internal declaration never.
+- [Hover](https://github.com/FormaUI/Nexo/blob/76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e/spec/runtime/tooling.md#tooling-hover): `nexo.tooling.getHover` answers what the name at an offset reads: a member's declaration, its signature and its qualified name, or a name in scope, a script parameter, `it`, `root` or a namespace, each with the type it gives there.
+- [Structure errors](https://github.com/FormaUI/Nexo/blob/76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e/spec/runtime/errors.md#runtime-structure-errors): an offset that is no whole number from 0 to its text's length is refused (NEXO2648).
 
 **Breaking:** nothing.
 
@@ -29,7 +42,7 @@ Each entry says what its version breaks:
 
 **Runtime**
 
-- [Formatting](spec/runtime/tooling.md#tooling-formatting): `nexo.tooling.format` lays a text out as it was written, beside `nexo.format`'s canonical text. It keeps each token as the text spells it, each string's written form among them, every comment and every line break, a run of blank lines as one. It indents each line by the constructs open at its start and spaces the tokens of a line as canonical text does. The text it gives reads back as the same definition, and a text that breaks the grammar is answered as it is.
+- [Formatting](https://github.com/FormaUI/Nexo/blob/76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e/spec/runtime/tooling.md#tooling-formatting): `nexo.tooling.format` lays a text out as it was written, beside `nexo.format`'s canonical text. It keeps each token as the text spells it, each string's written form among them, every comment and every line break, a run of blank lines as one. It indents each line by the constructs open at its start and spaces the tokens of a line as canonical text does. The text it gives reads back as the same definition, and a text that breaks the grammar is answered as it is.
 
 **Breaking:** nothing.
 
@@ -41,9 +54,9 @@ Each entry says what its version breaks:
 
 **Runtime**
 
-- [Tooling](spec/runtime/tooling.md): `nexo.tooling` reads text being written, and never throws for any text. `scan` answers its tokens and their trivia. `parse` answers its syntax tree, recovered where the text breaks the grammar, and its syntax diagnostics. `getDiagnostics` answers every diagnostic of its syntax, its bindings' types, its structure and, against a registry, its resolution, each with the range of text it stands at. `tokenTypes` and `nodeKinds` list what a token and a node are.
-- [Tolerant reading](spec/runtime/errors.md#diagnostics-tolerant-reading): a strict reading's error is a tolerant one's first diagnostic, and a tolerant reading goes on to report every diagnostic it can.
-- [Structure errors](spec/runtime/errors.md#runtime-structure-errors): a tooling operation refuses a registry `nexo.createRegistry` did not create (NEXO2647), and what is no text (NEXO2645), as `nexo.parse` does.
+- [Tooling](https://github.com/FormaUI/Nexo/blob/76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e/spec/runtime/tooling.md): `nexo.tooling` reads text being written, and never throws for any text. `scan` answers its tokens and their trivia. `parse` answers its syntax tree, recovered where the text breaks the grammar, and its syntax diagnostics. `getDiagnostics` answers every diagnostic of its syntax, its bindings' types, its structure and, against a registry, its resolution, each with the range of text it stands at. `tokenTypes` and `nodeKinds` list what a token and a node are.
+- [Tolerant reading](https://github.com/FormaUI/Nexo/blob/76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e/spec/runtime/errors.md#diagnostics-tolerant-reading): a strict reading's error is a tolerant one's first diagnostic, and a tolerant reading goes on to report every diagnostic it can.
+- [Structure errors](https://github.com/FormaUI/Nexo/blob/76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e/spec/runtime/errors.md#runtime-structure-errors): a tooling operation refuses a registry `nexo.createRegistry` did not create (NEXO2647), and what is no text (NEXO2645), as `nexo.parse` does.
 
 **Breaking:** nothing.
 

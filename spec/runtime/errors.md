@@ -4,7 +4,7 @@
 
 <a id="errors-and-diagnostics"></a>
 
-A **diagnostic** describes one problem with a script, a definition, a binding or a module: what is wrong, and where. An **error** is how a strict operation reports one: it throws a `NexoError`, whose `code` identifies the condition, as [codes](#diagnostics-codes) set out, whose `kind` is the category of the failure and whose `location` says where it stands, and stops there. Every public operation of an implementation is strict: reading text, validating a definition, binding, registering a module, resolving and evaluating each throw their first diagnostic as an error. [Tooling](tooling.md) reads text tolerantly instead, and answers every diagnostic without throwing, as [tolerant reading](#diagnostics-tolerant-reading) sets out.
+A **diagnostic** describes one problem with a script, a definition, a binding or a module: what is wrong, and where. An **error** is how a strict operation reports one: it throws a `NexoError`, whose `code` identifies the condition, as [codes](#diagnostics-codes) set out, whose `kind` is the category of the failure and whose `location` says where it stands, and stops there. Every public operation of an implementation is strict: reading text, validating a definition, binding, registering a module, resolving and evaluating each throw their first diagnostic as an error. Tooling reads text tolerantly instead, and keeps every diagnostic without throwing, as [tolerant reading](#diagnostics-tolerant-reading) sets out.
 
 Invalid syntax, an invalid definition or binding, an invalid script, an invalid module and an evaluation failure are errors, of the kinds `syntax`, `structure`, `validation`, `module` and `evaluation`, each raised at its stage:
 
@@ -71,7 +71,7 @@ A **location** says where a failure stands by one group of fields, never two, th
 - **A position counts from the text's start.** `offset` counts the text's UTF-16 code units from 0, and `line` and `column` count from 1. Each line break, LF, CRLF or a lone CR, begins a line, so CRLF begins one, its two characters both counted in the offset.
 - **An unnamed indexer and a mapping** have no name, so a module error names an unnamed indexer `[]` as its `declaration`, and a mapping by its key. Two unnamed indexers that collide (NEXO4068) stand at the declaration key `kind`.
 - **A node without text of its own** is positioned at the nearest node enclosing it that has some, its `pointer` still its own.
-- **A failure of the API's use that stands nowhere** carries an empty location, `{}`: imports a host supplies that are refused, `NEXO2008`, bindings or their options that are not a plain object, `NEXO2020`, bindings another registry made, `NEXO2024`, bindings of another resolution key, `NEXO2025`, a resolution no longer current, `NEXO2040`, a pointer that is no JSON Pointer, `NEXO2643`, reading what is not a script's source, `NEXO2645`, a result path of another shape, `NEXO2646`, a tooling operation's registry no `createRegistry` created, `NEXO2647`, an offset outside the text it asks at, `NEXO2648`, and evaluating an evaluator from within its own evaluation, `NEXO5010`.
+- **A failure of the API's use that stands nowhere** carries an empty location, `{}`: imports a host supplies that are refused, `NEXO2008`, bindings or their options that are not a plain object, `NEXO2020`, bindings another registry made, `NEXO2024`, bindings of another resolution key, `NEXO2025`, a resolution no longer current, `NEXO2040`, a pointer that is no JSON Pointer, `NEXO2643`, reading what is not a script's source, `NEXO2645`, a result path of another shape, `NEXO2646`, and evaluating an evaluator from within its own evaluation, `NEXO5010`.
 
 An evaluation error fails the entire result and is delivered to the host in its place.
 
@@ -114,10 +114,8 @@ An evaluation error fails the entire result and is delivered to the host in its 
 | `NEXO2528` | A script parameter a text writes alone where a local or an object field of its name is in scope | A structure error naming the parameter |
 | `NEXO2643` | A location asked for by a pointer that is not a JSON Pointer | A structure error |
 | `NEXO2644` | A location asked for at a pointer the definition holds nothing at | A structure error naming the pointer |
-| `NEXO2645` | Reading what is not a script's source, by `nexo.parse` or a [tooling](tooling.md) operation | A structure error |
+| `NEXO2645` | Reading what is not a script's source | A structure error |
 | `NEXO2646` | A result path that is no list, or holds an item that is neither a name nor a whole number that is not negative, given to `nexo.paths.validate`, `resolution.typeAt` or `nexo.paths.valueAt` | A structure error naming the item or the path |
-| `NEXO2647` | A [tooling](tooling.md) operation given a registry `nexo.createRegistry` did not create | A structure error |
-| `NEXO2648` | A [tooling](tooling.md) operation asked at an offset that is no whole number from 0 to its text's length | A structure error naming the text's length |
 
 <a id="module-errors"></a>
 
@@ -279,11 +277,7 @@ A module whose declarations break the declaration contract, a type or a member n
 
 ## Tolerant reading
 
-Tooling reads text that is still being written, so it reads tolerantly, as [tooling](tooling.md) sets out: it never throws for any text, and answers each diagnostic a strict operation would throw, `{ code, kind, message, location, range }`, the range the text it stands at.
-
-- **Tokens.** Text that is not a token becomes an invalid token holding its diagnostic, `{ code, message, offset }`, and reading goes on after it, so the tokens cover the whole text whatever it holds.
-- **One reader.** A strict reading meets the same diagnostic and throws it as an error, so a diagnostic says the same thing whichever way it is reached, and a strict reading's error is a tolerant one's first diagnostic.
-- **Recovery.** A tolerant reading goes on past each diagnostic, so it may report further diagnostics, as [codes](#diagnostics-codes) set out; the [design](../../docs/nexo-design.md#the-syntax-tree) sets out how the syntax tree builds on it.
+Tooling reads text that is still being written, so it reads tolerantly: text that is not a token becomes an invalid token holding its diagnostic, `{ code, message, offset }`, and reading goes on after it, so the tokens cover the whole text whatever it holds. A strict reading meets the same diagnostic and throws it as a syntax error. One reader serves both, so a diagnostic says the same thing whichever way it is reached; the [design](../../docs/nexo-design.md#the-syntax-tree) sets out how the syntax tree builds on it.
 
 <a id="runtime-retired-codes"></a>
 
@@ -293,6 +287,8 @@ A code of the runtime's conditions leaves its table only by being retired here, 
 
 | Code | Condition | Retired in |
 | --- | --- | --- |
+| `NEXO2647` | A tooling operation given a registry `nexo.createRegistry` did not create, withdrawn with the tooling of `1.0.0-beta.16` to `1.0.0-beta.18` | `1.0.0-beta.19` |
+| `NEXO2648` | A tooling operation asked at an offset outside its text, withdrawn with the tooling of `1.0.0-beta.16` to `1.0.0-beta.18` | `1.0.0-beta.19` |
 | `NEXO2023` | A declared binding type that is not a reference type, which a declared data type, captured, now is | `1.0.0-alpha.36` |
 | `NEXO4004` | A type whose name begins with no capital letter, a casing that is a convention and never enforced | `1.0.0-alpha.34` |
 | `NEXO4005` | A module whose name begins with no capital letter, a casing that is a convention and never enforced | `1.0.0-alpha.34` |

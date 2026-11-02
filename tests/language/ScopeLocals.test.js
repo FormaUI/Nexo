@@ -41,13 +41,4 @@ describe('ScopeLocals', () => {
 
         expect([scope.has('a'), scope.get('a')]).toEqual([true, undefined]);
     });
-
-    it('answers every name in scope with what it holds, a name added later hiding one of its spelling, as a copy', () => {
-        const scope = scopeOf(['a', 'b', 'a'], scopeOf(Array.from({ length: 20 }, (_, index) => `n${index}`)));
-        const { entries } = scope;
-
-        expect([entries.size, entries.get('a'), entries.get('b'), entries.get('n19')]).toEqual([22, 'a2', 'b1', 'n1919']);
-        entries.delete('a');
-        expect(scope.has('a')).toBe(true);
-    });
 });

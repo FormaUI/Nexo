@@ -15,11 +15,6 @@ const expectSyntaxCode = (code, texts, parse = nexo.parse) => {
 
 describe('the codes of syntax errors', () => {
     describe('the parser', () => {
-        it("gives NEXO1000 to text that ends after a collection expression's comma, where a value or the closing bracket stands", () => {
-            expectSyntaxCode('NEXO1000', ['[10,', '["coffee" = 3,', '{ sizes = [10, 20,']);
-            expect(errorThrownBy(() => nexo.parse('[10,'))).toMatchObject({ message: 'Expected a value, found the end of the source (line 1, column 5)', location: { offset: 4 } });
-        });
-
         it('gives NEXO1000 to text that does not follow the syntax', () => {
             expectSyntaxCode('NEXO1000', [
                 'let f = function(1) 1 end return f',

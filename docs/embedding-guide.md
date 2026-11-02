@@ -126,45 +126,6 @@ reads; // ['price', 'discount', 'completed']
 
 Only the reads an evaluation reaches are reported: a branch not taken reports nothing, and each evaluation reports the branch it took. The [design](nexo-design.md#evaluation) sets out every hook, maintained members' samples among them.
 
-## Read text being written
-
-An editor reads a script while it is being written. `nexo.tooling` reads any text without throwing, and answers what a strict operation would refuse as diagnostics, each with the range of text it stands at:
-
-```js
-const text = '{\n    price = product:price,\n    cut = product:discont(code),\n    label = product.\n}';
-
-nexo.tooling.getDiagnostics(text, { registry, types: { product: 'String', code: 'String' }, imports: ['Shop'] })
-    .map(({ code, range }) => [code, range]);
-// [['NEXO1000', { start: 83, end: 84 }], ['NEXO3062', { start: 39, end: 60 }]]
-```
-
-- **Every stage reads what it can.** The syntax tree is recovered where the text breaks the grammar, so `product.`, which lacks its member's name, still lets the rest of the script be checked.
-- **One diagnostic for one mistake.** A part the text lacks, and a node that fails, reads as a value of `Any` from then on, so nothing that holds it is reported again.
-- **No host code runs.** A binding is declared by its type alone, as `createBindings` declares one, and holds no value.
-
-`nexo.tooling.scan` answers the tokens a highlighter colors, and `nexo.tooling.parse` the syntax tree, which holds every character of the text. `nexo.tooling.format` lays a text out as it was written, keeping its comments, its strings and its line breaks, where `nexo.format` writes canonical text:
-
-```js
-const written = "{\n  label = 'it''s',   // shown as written\n  cut=product:discount(code)\n}";
-
-nexo.tooling.format(written); // "{\n    label = 'it''s', // shown as written\n    cut = product:discount(code)\n}"
-nexo.format(written);         // '{\n    label = "it\'s",\n    cut = product:discount(code)\n}'
-```
-
-An editor completes a name being written, and describes the one under the pointer. Each completion says what it inserts and the range of text it replaces:
-
-```js
-const typing = '{ price = product:pr }';
-const read = { registry, types: { product: 'String' }, imports: ['Shop'] };
-
-nexo.tooling.getCompletions(typing, 20, read).map(({ insert, range, detail }) => [insert, range, detail]);
-// [['price', { start: 18, end: 20 }, 'price: Price'], ['discount', { start: 18, end: 20 }, 'discount(code: String): Number']]
-nexo.tooling.getHover('product:discount(code)', 10, { ...read, types: { product: 'String', code: 'String' } });
-// { name: 'discount', kind: 'function', range: { start: 8, end: 16 }, detail: 'discount(code: String): Number', qualifiedName: 'String.discount', type: 'Number' }
-```
-
-Completion offers only what the script reaches: the names in scope where a value stands, the members the receiver's type selects after `.`, the extension members after `:`, and the members of a namespace its imports give. It offers each one, whatever is written so far, and an editor filters them by the word being written. [Tooling](../spec/runtime/tooling.md) sets out what each answers.
-
 ## Handle errors
 
 Every failure is a `NexoError` with the code of its condition, a `kind` and the location it concerns:

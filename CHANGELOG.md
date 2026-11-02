@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.18` · definition format 38*
+*Unpublished · language `1.0.0-beta.19` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -32,8 +32,3 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - NEXO3045, NEXO3065, NEXO4021 and NEXO4067, catalogued and never raised, are retired.
 - `NexoError` exposes the four factories it declares alone; `NexoError.syntax` and `NexoError.locate`, never declared, are gone.
 - `resolution.typeAt` and `nexo.paths.valueAt` refuse a path of another shape, NEXO2646, as `nexo.paths.validate` does, a path that is no list among it; `valueAt` steps to an object field a value holds and a list's item alone.
-- `nexo.tooling` reads text being written without throwing: `scan`, `parse` and `getDiagnostics`, with `tokenTypes` and `nodeKinds`. `nexo.d.ts` declares its tokens, its tree and its diagnostics.
-- `nexo.parse('[10,')`, and any text that ends after a collection expression's comma, is refused with NEXO1000, where a `TypeError` escaped.
-- `nexo.tooling.format` lays a text out as it was written: its comments, its strings' written forms and its line breaks kept, its lines indented and its tokens spaced as canonical text does.
-- `nexo.tooling.getCompletions` offers what a script can reach at an offset, and `nexo.tooling.getHover` describes the name there, its signature, its qualified name and its type.
-- A diagnostic standing at a key of a node that holds a hole, as an extension access's marks, is left out with the node's.

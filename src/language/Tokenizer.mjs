@@ -692,8 +692,7 @@ export class Tokenizer {
 
         if (form.isBlock ? start >= form.contentEnd : this.#text[start] === form.quote && !(form.isRaw && this.#text[start + 1] === form.quote)) {
             this.#modes.pop();
-            // An interpolation a tolerant reading read past a block's closing delimiter, as invalid tokens of its own, leaves the block closed where it stands, so no token goes back over text read already.
-            this.#offset = form.isBlock ? Math.max(form.closingEnd, start) : start + 1;
+            this.#offset = form.isBlock ? form.closingEnd : start + 1;
 
             return { type: 'interpolated-string-end', start, end: this.#offset, quote: form.quote, delimiter: form.length };
         }

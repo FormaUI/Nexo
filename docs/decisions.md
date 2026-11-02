@@ -648,60 +648,15 @@ Forty decisions were taken while implementing the declarations, member selection
   - A string's characters iterate as steps, so `validate('rooms')` passed: a path is a list, and one that is none is of another shape.
 - **Declined:** Leaving the check to `validate` alone, as the specification said: a host that forgets it gets an answer for a path that names nothing, and the check costs a pass over a few steps.
 
-<a id="d45"></a>
+<a id="d48"></a>
 
-## D45 — Tooling reads text through holes, and never throws for any text
-
-*November 1, 2026*
-
-- **Kind:** Runtime contract.
-- **Decision:** `nexo.tooling` reads text being written. `scan` answers its tokens, `parse` its syntax tree and syntax diagnostics, and `getDiagnostics` every diagnostic of its syntax, its bindings' types, its structure and, given a registry, its resolution. The language advances to `1.0.0-beta.16`.
-  - **Recovery** stands a token the text lacks missing, and skips what a construct can't read to what it, or a construct around it, awaits. Once it reaches what a construct around it awaits, the constructs between close with what they lack and record nothing more, so one break gives one diagnostic.
-  - **A hole** is a part the text lacks, or a node whose validation or resolution failed. Every later stage reads it as a value of `Any`, and a diagnostic at a hole, or at a node holding one, is left out.
-  - **Bindings** are declared by their types alone, and hold no value.
-  - **A refused import** leaves out the resolution's other diagnostics, since what the script's names read depends on its imports.
-- **Why:**
-  - The status planned a tolerant API over the lossless tree and the tolerant tokenizer, both built and internal, and the design called for recovery that gives a tree and useful diagnostics without cascades.
-  - A hole lets every stage go on past a failure without a node kind in the definition format: no definition a strict operation answers holds one, so the format's contract is unchanged.
-  - Each stage recovers where it raises its own failures: the parser at the values and the elements of what it reads, validation and resolution at each node. Their strict paths keep their code, so a strict reading's error is a tolerant one's first diagnostic.
-  - Tooling runs no host code. A host knows its bindings' types without their values, and binding a value asks the modules' `typeOf`.
-- **Declined:**
-  - A node kind for a failure in the definition format, which every consumer of definitions would meet.
-  - Resolving again for each diagnostic, a hole at each failure found, which costs a resolution for each diagnostic; resolution recovers in one pass instead.
-  - Taking bindings' values: a fixed argument or a computed name a binding's value would settle is refused as one no value settles, which the specification states.
-  - Reading options a host misuses: a registry no `createRegistry` created, types that are no plain object and supplied imports that break their rules are refused, as every operation refuses its misuse. Any text is read.
-
-<a id="d46"></a>
-
-## D46 — Formatting keeps a text's tokens, comments and line breaks
+## D48 — Tooling waits for its design
 
 *November 2, 2026*
 
-- **Kind:** Runtime contract.
-- **Decision:** `nexo.tooling.format` keeps each token as the text spells it, every comment, and every line break where the text puts one, a run of blank lines kept as one. It lays out what stands between tokens alone: each line indented by the constructs open at its start, a line that continues a value a level more, and the tokens of a line spaced as canonical text spaces them. A text that breaks the grammar is answered as it is. The language advances to `1.0.0-beta.17`.
-- **Why:**
-  - The status planned formatting that keeps a text's source form, each string's form among it, which canonical text can't: it writes from the definition, which records no comment and no spelling.
-  - Line structure gives a line break meaning: where one may stand, where one must and where none may. A layout that keeps the text's line breaks satisfies it by construction, and its text reads back as the same definition, which no change to a line break promises.
-  - The layout's rules are canonical text's own, so canonical text is formatted as it is, and a text formatted once is formatted as it is again.
+- **Kind:** Process.
+- **Decision:** The tooling built in languages `1.0.0-beta.16` to `1.0.0-beta.18`, tolerant reading, diagnostics, source-preserving formatting, completion and hover, is withdrawn from `main` until the owner designs it. Its commits are reverted, and the work is kept on the `tooling-draft` branch as a draft for that design. The language advances to `1.0.0-beta.19`, so no version names two contracts.
+- **Why:** The status listed tooling as next, in a few bullets, and it was built from them without a design the owner had made. Its contract, a public API and a specification document, is the owner's to shape.
 - **Declined:**
-  - Laying the text out as canonical text does and placing its comments back in it: that joins and breaks lines the author chose, leaves a comment no place where a construct it stood in is written on one line, and must satisfy line structure anew.
-  - Normalizing what the tokens spell, a raw string to a string or a redundant parenthesis away: canonical text does that, and this formatting is the one that keeps them.
-  - Formatting a text that breaks the grammar, whose constructs' extents a tolerant reading guesses, so its indentation would be a guess too.
-
-<a id="d47"></a>
-
-## D47 — Completion offers what resolution would accept, read through a probe
-
-*November 2, 2026*
-
-- **Kind:** Runtime contract.
-- **Decision:** `nexo.tooling.getCompletions` writes a probe, a name of one character, in place of the word at the offset, and reads the text with it. The node the probe stands for, a value or a member's name, is a hole, which the tolerant resolution records the scope and the receiver of. It offers the names in that scope, and the members the registry's own selector selects for the receiver's type among those the script's imports make available. `nexo.tooling.getHover` answers the declaration resolution used at a name, its signature and its qualified name, and the type the resolution recorded there. The language advances to `1.0.0-beta.18`.
-- **Why:**
-  - The status planned completion that offers only the declarations a script can reach, and the design called for joining a position in the text to what resolution knows of it. Resolution already decides what a script reaches: its imports, its scopes and member selection.
-  - A probe makes the text read where the word being written is incomplete, as `room.` lacks its member's name, so resolution reaches the place and records exactly what it would check there.
-  - Hover is the same join read the other way: the declaration a name selected, which the design's syntax-to-meaning bullet describes.
-- **Declined:**
-  - Reading scopes and members from the syntax tree apart from resolution, a second account of the rules that would drift from them.
-  - Filtering completions by the word written so far: a tool matches them its own way, and the range each replaces says what is written.
-  - Offering keywords, which are no declarations.
-  - Offering type names after `as` and `to`: a type's name is no value, so no probe stands for it, and the import's types are offered after `import`.
+  - Keeping it on `main` as a draft, which would leave an undesigned contract in the specification.
+  - Discarding it, which would lose work a design may reuse.

@@ -77,8 +77,4 @@ describe('DefinitionWriter', () => {
         expect(DefinitionWriter.quote({ kind: 'memberAccess', receiver: { kind: 'memberAccess', receiver, name: 'readings', extension: {} }, name: 'first', extension: {} })).toBe('x:readings:first');
         expect(DefinitionWriter.quote({ kind: 'memberAccess', receiver: { kind: 'namespace', name: 'if' }, name: 'open' }, new Set(['if']))).toBe('@if.open');
     });
-
-    it("quotes a hole, a part a tolerant reading's text lacks, as an ellipsis, after its receiver where it is a member's name, as a diagnostic quotes the expression holding it", () => {
-        expect(DefinitionWriter.quote({ kind: 'arithmetic', operator: '+', left: { kind: 'hole', receiver: parameter('room') }, right: { kind: 'hole' } })).toBe('room.… + …');
-    });
 });

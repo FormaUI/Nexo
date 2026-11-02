@@ -1,6 +1,6 @@
 // How a TypeScript host uses Nexo, which the declarations must accept; the declarations test compiles this file.
 import { nexo, NexoError } from '../../src/nexo.js';
-import type { NexoCompletion, NexoDiagnostic, NexoHover, NexoModuleContents, NexoMemberDeclaration, NexoOperatorDeclaration, NexoRegistry, NexoSyntaxNode, NexoToken } from '../../src/nexo.js';
+import type { NexoModuleContents, NexoMemberDeclaration, NexoOperatorDeclaration, NexoRegistry } from '../../src/nexo.js';
 
 const { createPropertyDeclaration: property } = nexo.declarations;
 
@@ -52,15 +52,4 @@ const hostCall = registry.resolve('nothing', { nothing: null }).hostCall;
 const candidates: readonly NexoMemberDeclaration[] = hostCall === null ? [] : hostCall.candidates;
 const callPointer: string | undefined = hostCall?.pointer;
 
-// An editor reads text being written: its tokens, its tree and every diagnostic, each with the range it stands at.
-const tokens: readonly NexoToken[] = nexo.tooling.scan('shelf.count');
-const tree: NexoSyntaxNode = nexo.tooling.parse('shelf.', { imports: ['Pantry'] }).tree;
-const diagnostics: readonly NexoDiagnostic[] = nexo.tooling.getDiagnostics('shelf.cuont', { registry, types: { shelf: 'Pantry.Shelf' } });
-const squiggles: number[] = diagnostics.flatMap(diagnostic => (diagnostic.range === undefined ? [] : [diagnostic.range.start, diagnostic.range.end]));
-const laidOut: string = nexo.tooling.format('shelf.count // kept', { imports: ['Pantry'] });
-const offered: readonly NexoCompletion[] = nexo.tooling.getCompletions('shelf.', 6, { registry, types: { shelf: 'Pantry.Shelf' }, imports: ['Pantry'] });
-const inserted: string[] = offered.map(completion => `${completion.insert} at ${completion.range.start}`);
-const described: NexoHover | null = nexo.tooling.getHover('shelf.count', 7, { registry, types: { shelf: 'Pantry.Shelf' }, imports: ['Pantry'] });
-const signature: string | undefined = described?.detail;
-
-export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer, tokens, tree, squiggles, laidOut, inserted, signature };
+export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer };
