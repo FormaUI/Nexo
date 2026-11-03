@@ -77,7 +77,7 @@ Written inside an object expression, `root` refers to the outermost object being
 
 - **Aliases and functions.** An alias, as `let r = root`, retains the set of object fields available where it was declared, even when used later. A function that uses `root` itself captures the object fields available where the function is declared, while a function parameter given `root` receives those available where the call passes it.
 - **No extra work.** `root.bar` reuses the value already computed for `bar`, and nothing is evaluated again; its metadata is that object field's.
-- **Not part of a result.** A reference to the object root may be held in a local, passed to a function and returned from one, but cannot itself be included in the script's result data: `{ copy = root }` is a validation error. Read an object field instead, as `root.bar`.
+- **Not part of a result.** A reference to the object root may be held in a local, passed to a function and returned from one, but cannot itself be included in the script's result data: `{ copy = root }` is a validation error. Read an object field instead, as `root.bar`. Nor is it given to a member's value parameter (NEXO3071), which takes data, or chosen beside a value of `Any`, which holds values alone.
 
 <a id="locals-object-root-references"></a>
 
@@ -85,7 +85,7 @@ Written inside an object expression, `root` refers to the outermost object being
 
 A function's result keeps the object fields of the reference it returns. After `let identity = function(value) value end`, `identity(root).a` reads `a` wherever `a` is available where the call passes `root`, and `{ copy = identity(root) }` is refused as `{ copy = root }` is.
 
-Where a conditional or `??` can give either of two references, both must refer to the same object root with the same object fields available; nullability combines as usual, so `if wide then root else null end` gives a reference that can be null, whose object fields are read with `?.`. Any other pair is a validation error, as branches of different types are.
+Where a conditional or `??` can give either of two references, both must refer to the same object root with the same object fields available; nullability combines as usual, so `if wide then root else null end` gives a reference that can be null, whose object fields are read with `?.`. Any other pair is a validation error, as branches of different types are, a reference beside a value of `Any` among them.
 
 <a id="null"></a>
 

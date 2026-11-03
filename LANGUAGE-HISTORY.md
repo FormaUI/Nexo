@@ -7,6 +7,24 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-24"></a>
+
+## `1.0.0-beta.24`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [A value of `Any`](spec/language/expressions.md#logical-expressions-negations-and-groups-type) may hold false, so where it is falsey it is still of `Any`: `value and 5` is of `Any`, and a computed name it may give is refused as one that can be false, NEXO3013.
+- [An object expression following a value of `Any`](spec/language/collections.md) applies to that value once, a list it holds among them, as its resolution types it.
+- A function or `root` is never chosen beside a value of `Any`, and `root` is never given to a member's value parameter, NEXO3071.
+
+**Breaking:**
+
+- `value and x`, where `value` is of `Any`, was typed as `x` and could give false; it is of `Any`. Give it a fallback or test it where one type is needed.
+- An object expression following a value of `Any` that holds a list answered a list of objects while typed as one object; it answers one object. A module whose member answers a list declares its result as one, `List<Any>` where its items vary, so an object expression following it applies to each item.
+- A conditional or `??` choosing between a function or `root` and a value of `Any`, and `root` given to a value parameter, are refused. Each failed at evaluation, or gave a host an object of Nexo's own.
+
 <a id="v1-0-0-beta-23"></a>
 
 ## `1.0.0-beta.23`

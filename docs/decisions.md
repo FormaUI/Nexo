@@ -716,3 +716,22 @@ Forty decisions were taken while implementing the declarations, member selection
   - `0123` was read as `0` and `123`, and refused as "nothing follows a body's result". `1e` was read as `1` and a member `e`, and refused with advice to write `1.e`. Neither says what is wrong.
   - Refusing every number a letter follows, as JavaScript does, would refuse `1else`, which the longest match reads today.
 - **Declined:** Refusing a number any letter follows, which would break texts accepted today for a diagnostic alone.
+
+<a id="d52"></a>
+
+## D52 — A value of `Any` is one value, which may be false
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:**
+  - A value of `Any` may hold false, so its falsey part is `Any`, and `Any?` where it can be null.
+  - An object expression following a value of `Any` applies to it once, whatever it holds, as its resolution types it.
+  - A function and `root` merge with nothing but their own kind, so neither is chosen beside a value of `Any`, and `root` is given to no member's value parameter.
+- **Why:**
+  - Typing a falsey value of `Any` as never made `value and 5` a `Number` that evaluated to false, and let a computed name that could be false reach evaluation, which threw a TypeError.
+  - Resolution typed an object expression after a value of `Any` as one object, while evaluation projected a list, so a script's type and its value disagreed.
+  - `Any` holds values. A function or `root` merged into it reached a host's implementation, or a result, where evaluation overflowed the stack copying Nexo's own objects.
+- **Declined:**
+  - Typing an object expression after a value of `Any` as `Any`, which would keep projecting lists, but lose the object's type wherever the value is no list, the common case.
+  - Typing the falsey part of `Any` as `Boolean`, which would refuse `value and 5` where its value is used, though `Any` is checked when it is evaluated.

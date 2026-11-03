@@ -105,19 +105,19 @@ export class TypeChecker {
 
         const isNullable = firstType.isNullable || secondType.isNullable;
 
-        // `Any` holds a value of any type.
-        if (firstType.kind === 'any' || secondType.kind === 'any') {
-            return isNullable ? Type.any.toNullable() : Type.any;
-        }
-
-        // Object roots merge where they identify one object expression and read the same fields, and with nothing else.
+        // Object roots merge where they identify one object expression and read the same fields, and with nothing else, `Any` included, which holds values alone.
         if (firstType.kind === 'objectRoot' || secondType.kind === 'objectRoot') {
             return firstType.toNonNullable().equals(secondType.toNonNullable()) ? (isNullable ? firstType.toNullable() : firstType.toNonNullable()) : null;
         }
 
-        // Function types merge into one that may be any of their functions, and with nothing else.
+        // Function types merge into one that may be any of their functions, and with nothing else, `Any` included.
         if (firstType.kind === 'function' || secondType.kind === 'function') {
             return firstType.kind === secondType.kind ? Type.createFunctionType([...firstType.functions, ...secondType.functions], isNullable) : null;
+        }
+
+        // `Any` holds a value of any type.
+        if (firstType.kind === 'any' || secondType.kind === 'any') {
+            return isNullable ? Type.any.toNullable() : Type.any;
         }
 
         // Two reference types of one hierarchy merge to the nearest supertype they share, and of two hierarchies to none.

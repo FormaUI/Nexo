@@ -1913,10 +1913,13 @@ export class Evaluator {
             return this.#compileConstruction(node, resolution, fields, localNames);
         }
 
+        // It applies to each item only where its resolution projects a list; a value of Any is one value, a list it holds among them, as its resolution typed it.
+        const isProjection = resolution?.kind === 'projection';
+
         return (evaluator, context) => {
             const value = hasTarget ? evaluateSource(evaluator, context) : context;
 
-            if (!(hasTarget && Array.isArray(value))) {
+            if (!(hasTarget && isProjection)) {
                 return value === null && hasTarget ? null : evaluator.#applyFields(node, fields, localNames, value);
             }
 

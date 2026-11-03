@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.23` · definition format 38*
+*Unpublished · language `1.0.0-beta.24` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -42,3 +42,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A computed property name read from a function parameter or a function is refused with NEXO3014, rather than throwing a TypeError. A refused candidate's arguments no longer make the argument around them an implicit body.
 - A function local a test narrowed not to be null is called. A reference bound to a value of `Any` is called, its receiver checked as it was created, and among several functions a bound reference takes the arguments the call writes, located where they are written, its call with none no longer throwing a TypeError.
 - `[].flatten` is a `List<Never>`.
+- A value of `Any` may be false: `value and x` is of `Any`, and a computed name it may give is refused. An object expression following a value of `Any` gives one object, as its type says. A function or `root` chosen beside a value of `Any`, or `root` given to a value parameter, is refused rather than failing at evaluation.

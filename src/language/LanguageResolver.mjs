@@ -683,9 +683,9 @@ export class LanguageResolver {
         return type.kind === 'null' ? Type.never : type.toNonNullable();
     }
 
-    /** The type a value of the type has where it is falsey: a Boolean where it is one, null where it can be null, and never where it is always truthy. */
+    /** The type a value of the type has where it is falsey: a Boolean where it is one, `Any` where it is one, which may hold false, null where it can be null, and never where it is always truthy. */
     static #falseyPartOf(type) {
-        if (type.kind === 'named' && type.name === 'Boolean') {
+        if ((type.kind === 'named' && type.name === 'Boolean') || type.kind === 'any') {
             return type;
         }
 
@@ -2455,12 +2455,12 @@ export class LanguageResolver {
             : { names: new Set(), canBeNull: possible.canBeNull, canBeFalse: possible.canBeFalse, canBeOther: false };
     }
 
-    /** The falsey values a value can give, of its falsey values' types, which no name is: false where one is a Boolean and null where one can be null. */
+    /** The falsey values a value can give, of its falsey values' types, which no name is: false where one is a Boolean or of `Any`, and null where one can be null. */
     static #falseyPossibleOf(values) {
         return {
             names: new Set(),
             canBeNull: values.some(({ type }) => type.kind === 'null' || type.isNullable),
-            canBeFalse: values.some(({ type }) => type.kind === 'named' && type.name === 'Boolean'),
+            canBeFalse: values.some(({ type }) => type.kind === 'any' || (type.kind === 'named' && type.name === 'Boolean')),
             canBeOther: false,
         };
     }
@@ -3452,8 +3452,14 @@ export class LanguageResolver {
     #requireArgumentType(result, expected, parameter, declaration, pointer, { allowsCheck = false } = {}) {
         const actual = result.type;
 
-        if (LanguageResolver.#heldReferenceOf(actual) === 'function') {
+        const held = LanguageResolver.#heldReferenceOf(actual);
+
+        if (held === 'function') {
             this.#fail('NEXO3071', `The argument '${parameter.name}' of '${NexoModule.writtenNameOf(declaration)}' takes a value, and a function is none: a function is passed to a local function, or to a parameter its member declares to take one`, pointer);
+        }
+
+        if (held === 'objectRoot') {
+            this.#fail('NEXO3071', `The argument '${parameter.name}' of '${NexoModule.writtenNameOf(declaration)}' takes a value, and root, the object being built, is none: read its fields, as root.name`, pointer);
         }
 
         const assignability = parameter.nulls === 'propagate' ? (actual.kind === 'null' ? 'assignable' : this.#typeChecker.assignabilityOf(actual.toNonNullable(), expected.toNonNullable())) : this.#typeChecker.assignabilityOf(actual, expected);

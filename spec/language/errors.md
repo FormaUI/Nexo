@@ -189,7 +189,7 @@ In this document:
 | `NEXO3070` | A call whose functions give no one type | A validation error naming the function |
 | `NEXO3034` | A call that reaches a function within its own call, through a function passed to it | A validation error |
 | `NEXO3035` | An object field or a result that would hold a function | A validation error |
-| `NEXO3071` | A function given to a member's value parameter | A validation error |
+| `NEXO3071` | A function or `root` given to a member's value parameter | A validation error |
 | `NEXO3036` | A function given to a function parameter of another number of parameters, of parameters that do not take the callback contract's arguments, or of a result of another type | A validation error naming the parameter |
 | `NEXO3072` | A function that may be null given to a function parameter | A validation error naming the parameter |
 | `NEXO3073` | A value that is not a function given to a function parameter, as a Boolean local | A validation error naming the parameter |

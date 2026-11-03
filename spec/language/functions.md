@@ -82,7 +82,7 @@ A reference to a function the script declares holds the function's [captured sco
 
 A conditional or a coalescing operator may choose between function references, as `let pick = if metered then shortfall else surplus end` does: a call of `pick` is checked against each function it may be, and their results merge by the rules [branches](expressions.md#conditionals) follow, a call whose functions give no one type a validation error. A value that may be null is never called; bind a reference to call in its place first, as `let call = pick ?? surplus` does.
 
-A function reference is used within the expression, and the expression's result holds data alone: an object field or a result that would hold one is a validation error, and one is never compared, interpolated, converted or given to a member's value parameter.
+A function reference is used within the expression, and the expression's result holds data alone: an object field or a result that would hold one is a validation error, and one is never compared, interpolated, converted or given to a member's value parameter. Nor is one chosen beside a value of `Any`, which holds values alone: `if metered then shortfall else value end` is refused where `value` is of `Any`, as branches of different types are.
 
 <a id="functions-module-functions"></a>
 <a id="functions-module-references"></a>

@@ -32,6 +32,7 @@ A **list**, a `List<T>`, holds items of type `T` in order.
 
 - A list keeps the order of its source: a member that makes a list says where its order comes from, and a bound list keeps its host's; `where`, and an object expression following a list, keep its items in that order.
 - An object expression following a list applies to each item and answers a list of the same length, in the same order; an item that is null answers null at its position, so over a list whose items can be null it answers a list of objects that can be null: `xs { a = 1 }` over a `List<Device?>` is a `List<{ a: Number }?>`.
+- A value of `Any` is one value, so an object expression following one applies to it once, whatever it holds, as resolution types it: following a list of `Any`, its `it` is the list, and `{ n = it.count }` reads its count.
 - A member following a list is a member of the list itself, as [list members](#collections-list-members) set out: `room.devices.count` counts the room's devices.
 
 <a id="collections-dictionaries-and-pairs"></a>

@@ -407,7 +407,7 @@ The values that can reach a place:
 
 - **Of `and`:** the falsey values of its left operand, and every value of its right operand.
 - **Of `or`:** the truthy values of its left operand, and every value of its right operand.
-- **Of an operand:** a value that can be null gives null where it is falsey, and itself without null where it is truthy. A Boolean gives false where it is falsey and true where it is truthy. Any other value is truthy only.
+- **Of an operand:** a value that can be null gives null where it is falsey, and itself without null where it is truthy. A Boolean gives false where it is falsey and true where it is truthy. A value of `Any` may hold false, so where it is falsey it is still of `Any`: `value and 5` is of `Any` where `value` is. Any other value is truthy only.
 - **Of fixed operands,** literals and bound parameters, the one that decides: `true and "value"` is a `String`.
 
 So, where `metered` is a `Boolean`:

@@ -307,6 +307,23 @@ describe('LanguageResolver', () => {
             expect(refusalOf('{ v = room.anyDevice(property?.any(it) ?? false) }', [])).toMatchObject({ code: 'NEXO3073' });
         });
 
+        it('types a value of Any where it is falsey as Any, which may hold false, refusing a computed name it may give as one that can be false', () => {
+            expect(String(resolveWith([probe], '{ a = Probe.give(false) and 5 }').resolution.type)).toBe('{ a: Any }');
+            expect(evaluate('{ a = Probe.give(false) and 5 }')).toEqual({ a: false });
+            expect(refusalOf('room.[Probe.give(false) and "name"]')).toMatchObject({ code: 'NEXO3013', kind: 'validation' });
+        });
+
+        it('refuses a function or root chosen beside a value of Any, and root given to a value parameter', () => {
+            expect(refusalOf('do\n    let f = function() 1 end\n    return if metered then f else Probe.give(1) end\nend')).toMatchObject({ code: 'NEXO3041' });
+            expect(refusalOf('{ a = 1, b = if metered then root else Probe.give(1) end }')).toMatchObject({ code: 'NEXO3041' });
+            expect(refusalOf('{ a = 1, b = Probe.give(root) }')).toMatchObject({ code: 'NEXO3071', message: expect.stringContaining('root, the object being built, is none'), location: { pointer: '/expression/objectFields/1/value/arguments/0' } });
+        });
+
+        it('applies an object expression following a value of Any to that value once, a list it holds among them, as its resolution types it', () => {
+            expect(String(resolveWith([probe], '{ v = Probe.give([1, 2]) { n = it.count } }').resolution.type)).toBe('{ v: { n: Any } }');
+            expect(evaluate('{ v = Probe.give([1, 2]) { n = it.count } }')).toEqual({ v: { n: 2 } });
+        });
+
         it('binds the type parameter of a member a never meets to a never, so an empty list flattens', () => {
             expect(String(resolveWith([], '{ a = [].flatten, b = [[]].flatten }').resolution.type)).toBe('{ a: List<Never>, b: List<Never> }');
         });

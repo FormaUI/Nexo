@@ -133,6 +133,13 @@ describe('TypeChecker', () => {
             expect(merge('List<Never>', 'List<Number>')).toBe('List<Number>');
         });
 
+        it('answers no type for a function or an object root and Any, which holds values alone', () => {
+            const functionType = Type.createFunctionType([{}]);
+            const rootType = Type.createObjectRootType({}, new Map());
+
+            expect([checker.merge(functionType, Type.any), checker.merge(Type.any, functionType), checker.merge(rootType, Type.any), checker.merge(Type.any.toNullable(), rootType)]).toEqual([null, null, null, null]);
+        });
+
         it('answers Any for Any and any type, nullable where either can be null', () => {
             expect(merge('Any', 'Number')).toBe('Any');
             expect(merge('Any', 'Number?')).toBe('Any?');
