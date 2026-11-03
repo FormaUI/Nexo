@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.22` · definition format 38*
+*Unpublished · language `1.0.0-beta.23` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -38,3 +38,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - Reading text no longer hangs on an interpolated block whose closing delimiter has no indentation and a line of which starts with an interpolation, and reads text full of invalid characters in linear time, stopping at the first.
 - A character outside the Basic Multilingual Plane that is no token is reported whole. A malformed number, a conditional or `do` block used as a left operand, a `let` or `return` where a value stands, and a `to` before a keyword each give a diagnostic that says what is wrong.
 - A cast whose qualified type ends in a keyword is read inside an optional enclosed access.
+- Every definition validation accepts writes canonical text that reads back as itself: a negation of a numeric literal is the literal however it is written, and a cast of a negative number or an extension access on a namespace is refused.

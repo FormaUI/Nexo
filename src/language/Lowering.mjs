@@ -148,14 +148,14 @@ export class Lowering {
                 return this.#span(range, child);
             }
             case 'arithmetic-negation': {
-                // An arithmetic negation of a numeric literal is the negative literal, negative zero included, as the text writes it.
-                const [, operand] = children;
+                // An arithmetic negation of a numeric literal is the negative literal, negative zero included, a grouped one and a negative one among them, as `-(5)` and `- -5` are.
+                const operand = this.#lower(children[1]);
 
-                if (SyntaxTree.isToken(operand) && operand.type === 'literal' && typeof operand.value === 'number') {
+                if (operand.kind === 'literal' && typeof operand.value === 'number') {
                     return this.#span({ kind: 'literal', value: -operand.value }, child);
                 }
 
-                return this.#span({ kind: 'arithmeticNegation', operand: this.#lower(operand) }, child);
+                return this.#span({ kind: 'arithmeticNegation', operand }, child);
             }
             case 'coalescing':
                 return this.#span({ kind: 'coalescing', value: this.#lower(children[0]), fallback: this.#lower(children[2]) }, child);

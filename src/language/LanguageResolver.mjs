@@ -1728,11 +1728,8 @@ export class LanguageResolver {
             return this.#resolveExtensionNames(node, pointer, scope);
         }
 
+        // Validation refuses an extension access on a namespace, so one read through a namespace is an ordinary access.
         if (access.receiver.kind === 'namespace') {
-            if (access.extension !== undefined) {
-                this.#fail('NEXO3026', `'${access.receiver.name}' is a module's namespace, whose members are read after a dot, and no extension extends a namespace`, extensionPointer);
-            }
-
             return this.#resolveThroughNamespace(node, pointer, scope);
         }
 
@@ -1867,10 +1864,6 @@ export class LanguageResolver {
         const [first] = names;
         const receiverNode = first.access.receiver;
         const optional = first.access.optional === true ? { optional: true } : {};
-
-        if (receiverNode.kind === 'namespace') {
-            this.#fail('NEXO3026', `'${receiverNode.name}' is a module's namespace, whose members are read after a dot, and no extension extends a namespace`, `${first.pointer}/extension`);
-        }
 
         const receiver = this.#resolveNode(receiverNode, `${first.pointer}/receiver`, scope);
         const receiverType = receiver.kind === 'value' ? receiver.type.toNonNullable() : null;

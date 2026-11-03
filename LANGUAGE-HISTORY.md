@@ -7,6 +7,20 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-23"></a>
+
+## `1.0.0-beta.23`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- [A negation of a numeric literal](spec/runtime/definition.md) is the negative literal however it is grouped or negated again, so `-(5)` reads as `-5`, and validation folds a definition's negation of a literal as reading text does. Every definition then writes text that reads back as itself.
+- A cast whose receiver is a negative number, which no text writes, is refused, NEXO2002.
+- An extension access on a namespace is refused at validation, NEXO2520, rather than at resolution, NEXO3026, since its text reads otherwise.
+
+**Breaking:** a definition holding `arithmeticNegation` of a numeric literal is validated as the literal, and one holding a cast of a negative number or an extension access on a namespace is refused at validation. Neither wrote text that read back as itself; write the literal, and a member read after `.` for a namespace.
+
 <a id="v1-0-0-beta-22"></a>
 
 ## `1.0.0-beta.22`

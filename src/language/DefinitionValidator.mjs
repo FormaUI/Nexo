@@ -359,8 +359,16 @@ export class DefinitionValidator {
                     left: this.#validateNode(node.left, `${pointer}/left`, contextAvailability),
                     right: this.#validateNode(node.right, `${pointer}/right`, contextAvailability),
                 });
-            case 'arithmeticNegation':
-                return Object.freeze({ kind: 'arithmeticNegation', operand: this.#validateNode(node.operand, `${pointer}/operand`, contextAvailability) });
+            case 'arithmeticNegation': {
+                const operand = this.#validateNode(node.operand, `${pointer}/operand`, contextAvailability);
+
+                // A numeric literal negated is the negative literal, as text reads one, so a negation has one definition whatever wrote it.
+                if (operand.kind === 'literal' && typeof operand.value === 'number') {
+                    return Object.freeze({ kind: 'literal', value: -operand.value });
+                }
+
+                return Object.freeze({ kind: 'arithmeticNegation', operand });
+            }
             case 'fromEndIndex':
                 return Object.freeze({ kind: 'fromEndIndex', offset: this.#validateNode(node.offset, `${pointer}/offset`, contextAvailability) });
             case 'range': {
@@ -616,7 +624,10 @@ export class DefinitionValidator {
             }
         }
 
-        return CAST_RECEIVER_KINDS.has(receiver.kind) && !(receiver.kind === 'object' && receiver.context !== undefined);
+        // A negative number is a negation in text, which only parentheses make a receiver, and a cast's receiver is never a group.
+        const isNegativeNumber = receiver.kind === 'literal' && typeof receiver.value === 'number' && (receiver.value < 0 || Object.is(receiver.value, -0));
+
+        return CAST_RECEIVER_KINDS.has(receiver.kind) && !(receiver.kind === 'object' && receiver.context !== undefined) && !isNegativeNumber;
     }
 
     /** Validates an optional chain: the chain whose optional accesses end at it, at least one of them, since a chain with none is the chain alone. */
@@ -1021,6 +1032,10 @@ export class DefinitionValidator {
 
         if (node.optional === true) {
             this.#fail('NEXO2522', "A namespace is never null, so a member is read through it after '.', and never optionally", `${pointer}/optional`);
+        }
+
+        if (node.extension === true || node.continues === true) {
+            this.#fail('NEXO2520', "No extension extends a namespace, whose members are read after '.', as Home.member", pointer);
         }
 
         return Object.freeze({ kind: 'namespace', name: namespace.name });

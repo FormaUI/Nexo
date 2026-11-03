@@ -61,6 +61,10 @@ describe('the structure codes of a definition', () => {
 
     it('NEXO2002: a cast whose operand text could not write', () => {
         expectNexoError(refusalOf({ kind: 'cast', type: 'Light', operand: { kind: 'arithmetic', operator: '+', left: parameter('a'), right: parameter('b') } }), 'NEXO2002', 'structure');
+        // A negative number is a negation in text, which no cast takes as its receiver, alone or with members after it.
+        expectNexoError(refusalOf({ kind: 'cast', type: 'Light', operand: literal(-1) }), 'NEXO2002', 'structure');
+        expectNexoError(refusalOf({ kind: 'cast', type: 'Light', operand: { kind: 'memberAccess', receiver: literal(-0), name: 'abs' } }), 'NEXO2002', 'structure');
+        expect(nexo.validate(definitionOf({ kind: 'cast', type: 'Light', operand: literal(1) }, [])).expression.operand).toEqual(literal(1));
     });
 
     it('NEXO2003: a conditional or a do block that is the receiver of a chain', () => {
@@ -210,6 +214,8 @@ describe('the structure codes of a definition', () => {
         expectNexoError(refusalOf(namespace('Home'), home), 'NEXO2520', 'structure');
         expect(refusalOf(namespace('Home'), home).message).toContain("write '~Home' for the script parameter of that name");
         expectNexoError(refusalOf({ kind: 'indexerAccess', receiver: namespace('Home'), argument: literal(0) }, home), 'NEXO2520', 'structure');
+        // An extension access on a namespace writes text that reads otherwise, `Home:x`, so no definition holds one.
+        expectNexoError(refusalOf({ kind: 'memberAccess', receiver: namespace('Home'), name: 'x', extension: true }, home), 'NEXO2520', 'structure');
     });
 
     it("NEXO2521: a namespace's member named by a computed property access", () => {

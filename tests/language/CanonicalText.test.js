@@ -116,6 +116,17 @@ describe('canonical text', () => {
         expect(nexo.format(text, { imports: [{ module: 'Measurements', alias: 'Measures' }, { module: 'Home', type: 'Sensor' }] })).toBe('import HomeLight = Home.Light\n\nMeasures.reading');
     });
 
+    it('reads a numeric literal negated as the negative literal, grouped or negated again, and writes a negation a definition gives as that literal, so each reads back as the same definition', () => {
+        expect(['-5', '-(5)', '- -5', '--5', '-(-5)'].map(text => nexo.parse(text).expression)).toEqual([-5, -5, 5, 5, 5].map(value => ({ kind: 'literal', value })));
+        expect(Object.is(nexo.parse('-(0)').expression.value, -0)).toBe(true);
+
+        const negation = { version: nexo.info.versions.definition, imports: [], expression: { kind: 'arithmeticNegation', operand: { kind: 'literal', value: 5 } } };
+
+        expect(nexo.validate(negation).expression).toEqual({ kind: 'literal', value: -5 });
+        expect(nexo.parse(nexo.format(negation)).expression).toEqual({ kind: 'literal', value: -5 });
+        expect(nexo.parse('-x').expression).toEqual({ kind: 'arithmeticNegation', operand: { kind: 'scriptParameter', name: 'x' } });
+    });
+
     it('keeps an expression with no block in it on one line, however deeply nested', () => {
         const text = 'room { lit = it.devices.where(d => d.active() and not d.dimmed).count + (it.climate?.temperature ?? 0) * 2, name = $"{it.name}!" }';
 

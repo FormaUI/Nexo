@@ -220,7 +220,8 @@ describe('extension access', () => {
 
             const definition = { version: 38, imports: [{ module: 'Home' }], expression: first({ kind: 'namespace', name: 'Home' }, 'find') };
 
-            expect(refusal(definition)).toMatchObject({ code: 'NEXO3026', location: { pointer: '/expression/extension' } });
+            // No text writes an extension access on a namespace, so validation refuses the definition before resolution reads it.
+            expect(refusal(definition)).toMatchObject({ code: 'NEXO2520', kind: 'structure', location: { pointer: '/expression' } });
         });
 
         it('refuses a receiver outside the extension\'s target, and one that can be null with \':\', giving \'?:\', which answers null for a null receiver without evaluating the arguments', () => {

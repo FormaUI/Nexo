@@ -48,7 +48,7 @@ Each node is an object whose `kind` says what it is:
 | `and`, `or` | `operands`, two or more expressions | A logical expression |
 | `not` | `operand`, the expression it negates | A negation |
 | `arithmetic` | `operator`, one of `+`, `-`, `*`, `/` and `%`, and `left` and `right`, its operands | An arithmetic operation |
-| `arithmeticNegation` | `operand`, the number it negates | An arithmetic negation of a number; a numeric literal negated is the negative literal |
+| `arithmeticNegation` | `operand`, the number it negates | An arithmetic negation of a number; a numeric literal negated is the negative literal, grouped or negated again, so `-(5)` reads as `-5` and a definition's negation of `5` is validated as `-5` |
 | `fromEndIndex` | `offset`, the expression giving its offset from the end | An index from the end, `^n` |
 | `range` | `start` and `end`, each the expression of a boundary, left out where the range leaves it out | A range, `start..end` |
 
