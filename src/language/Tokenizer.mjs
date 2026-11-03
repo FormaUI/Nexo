@@ -73,28 +73,29 @@ export class Tokenizer {
         return new Tokenizer(text).#readAll();
     }
 
-    /** Reads every token of the text, ending with an `end` token, refusing the first text that is no token with its diagnostic. */
+    /** Reads every token of the text, ending with an `end` token, refusing the first text that is no token with its diagnostic, and reading nothing after it. */
     tokenize() {
-        const tokens = this.#readAll();
-
-        for (const token of tokens) {
-            if (token.type === 'invalid') {
-                throw NexoErrors.syntax(token.diagnostic.code, token.diagnostic.message, this.#text, token.diagnostic.offset);
-            }
-        }
-
-        return tokens;
+        return this.#readAll(true);
     }
 
-    #readAll() {
+    /** Reads every token of the text, ending with an `end` token; a strict reading throws at the first invalid token. Each token but the last moves past some text, so reading always ends. */
+    #readAll(isStrict = false) {
         /** @type {Token[]} */
         const tokens = [];
 
         for (let token = this.#read(); ; token = this.#read()) {
+            if (isStrict && token.type === 'invalid') {
+                throw NexoErrors.syntax(token.diagnostic.code, token.diagnostic.message, this.#text, token.diagnostic.offset);
+            }
+
             tokens.push(token);
 
             if (token.type === 'end') {
                 return tokens;
+            }
+
+            if (token.end <= token.start) {
+                throw new Error(`The tokenizer read a ${token.type} token that moves past no text, at offset ${token.start}`);
             }
         }
     }
@@ -234,8 +235,8 @@ export class Tokenizer {
         }
 
         // A `?` or a `!` that whitespace parts from the rest of its operator is that operator written apart.
-        const following = /^\s+(\S)/.exec(this.#text.slice(start + 1))?.[1];
-        const preceding = /(\S)\s+$/.exec(this.#text.slice(0, start))?.[1];
+        const following = this.#characterPastSpace(start + 1, 1);
+        const preceding = this.#characterPastSpace(start - 1, -1);
         const operator = character === '?' && ['.', '[', ':', '?'].includes(following) ? `?${following}`
             : character === '?' && preceding === '(' ? '(?'
             : character === '!' && following === '=' ? '!='
@@ -250,7 +251,21 @@ export class Tokenizer {
             return this.#readInvalidToken(start, start + 1, 'NEXO1509', "Unexpected '!': an inequality is written '!=', and a negation 'not'", start);
         }
 
-        return this.#readInvalidToken(start, start + 1, 'NEXO1000', `Unexpected '${character}'`, start);
+        // A character outside the Basic Multilingual Plane is one character, two code units long.
+        const unexpected = String.fromCodePoint(this.#text.codePointAt(start));
+
+        return this.#readInvalidToken(start, start + unexpected.length, 'NEXO1000', `Unexpected '${unexpected}'`, start);
+    }
+
+    /** The character past the whitespace that runs from the offset in the direction, a step of 1 or -1, where at least one whitespace character stands there; undefined otherwise, or where the text ends first. */
+    #characterPastSpace(offset, step) {
+        let index = offset;
+
+        while (index >= 0 && index < this.#text.length && /\s/.test(this.#text[index])) {
+            index += step;
+        }
+
+        return index !== offset && index >= 0 && index < this.#text.length ? this.#text[index] : undefined;
     }
 
     /**
@@ -697,7 +712,8 @@ export class Tokenizer {
             return { type: 'interpolated-string-end', start, end: this.#offset, quote: form.quote, delimiter: form.length };
         }
 
-        if (!isLineStart && this.#text[start] === '{' && this.#text[start + 1] !== '{') {
+        // At a block's line start the margin is removed first, so a brace there opens an interpolation only where the margin is empty.
+        if ((!isLineStart || form.margin === '') && this.#text[start] === '{' && this.#text[start + 1] !== '{') {
             this.#modes.push({ kind: 'interpolation', depth: 0, isFirst: true });
             this.#offset = start + 1;
 
@@ -754,16 +770,26 @@ export class Tokenizer {
         return { character: String.fromCodePoint(codePoint), end: UNICODE_ESCAPE.lastIndex };
     }
 
+    /**
+     * Reads the number a digit at the offset starts, written as in JSON: a zero a digit follows, as in `0123`, and an exponent with no digits, as in `1e` or `1e+`, make the run invalid, which a reading of the
+     * number alone would split into a number and the name or the number after it. An `e` that starts a longer name is that name, as the longest match reads `1else`.
+     */
     #readNumber(start) {
         NUMBER.lastIndex = start;
+        NUMBER.test(this.#text);
 
-        if (!NUMBER.test(this.#text)) {
-            return this.#readInvalidToken(start, start + 1, 'NEXO1000', 'A number is written as in JSON', start);
+        const end = NUMBER.lastIndex;
+        const malformed = /[0-9]+|[eE](?:[+-]|(?![A-Za-z0-9]))/y;
+
+        malformed.lastIndex = end;
+
+        if (malformed.test(this.#text)) {
+            return this.#readInvalidToken(start, malformed.lastIndex, 'NEXO1000', 'A number is written as in JSON: no zero leads its digits, and an exponent has digits of its own', start);
         }
 
-        this.#offset = NUMBER.lastIndex;
+        this.#offset = end;
 
-        return { type: 'literal', value: Number(this.#text.slice(start, this.#offset)), start, end: this.#offset };
+        return { type: 'literal', value: Number(this.#text.slice(start, end)), start, end };
     }
 
     /** Reads an invalid token over the text from the start to the end, advancing the offset to its end, where reading goes on, with the code, the message and the offset its diagnostic gives. */

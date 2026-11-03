@@ -7,6 +7,22 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-22"></a>
+
+## `1.0.0-beta.22`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [Numbers](spec/language/lexical-structure.md#tokens-and-whitespace-numbers-and-the-minus-sign) are written as in JSON. A zero a digit follows and an exponent with no digits are refused over their whole run, NEXO1000, rather than read as two tokens and refused later.
+- A conditional or a `do` block an operator follows, as in `if a then 1 else 2 end + 1`, is refused with NEXO1027 at the block, as a right operand is.
+- An extension call's arguments are enclosed, so a line may break before an operator within them, as within any call's.
+- A value that starts the line after a body's local is the body's to refuse, NEXO1031, as a name there is.
+- The examples of NEXO1053, NEXO1036 and NEXO2011 match the codes raised: `device as Light.brightness` casts to a qualified type.
+
+**Breaking:** nothing a script relied on. Texts refused before are refused with the codes above, and an extension call's arguments take a line break they refused.
+
 <a id="v1-0-0-beta-21"></a>
 
 ## `1.0.0-beta.21`

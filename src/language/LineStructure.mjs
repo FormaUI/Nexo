@@ -346,6 +346,12 @@ export class LineStructure {
             case 'member-call':
             case 'namespace-access':
                 return index > CALL_OPENINGS[node.kind];
+            case 'extension-access': {
+                // An extension call's opening parenthesis follows its member's name, qualified or not, so its arguments start after it wherever it stands.
+                const opening = node.children.findIndex(candidate => SyntaxTree.isToken(candidate) && candidate.type === '(');
+
+                return opening !== -1 && index > opening;
+            }
             case 'conditional-expression': {
                 const previous = node.children[index - 1];
 

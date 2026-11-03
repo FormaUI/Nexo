@@ -93,6 +93,9 @@ describe('the codes of syntax errors', () => {
 
         it('gives NEXO1010 to a keyword where a value stands', () => {
             expectSyntaxCode('NEXO1010', ['1 + as', '{ a = to }', 'to Number', 'a + then', 'if a then end']);
+            // A `to` a construct's keyword follows names a local, which the keyword's refusal gives the lexical reference for.
+            expect(errorThrownBy(() => nexo.parse('let to = 1\nreturn to and x')).message).toContain("Found 'to', a keyword: write '@to'");
+            expect(errorThrownBy(() => nexo.parse('to Number')).message).toContain("write 'it to Number'");
             expect(errorThrownBy(() => nexo.parse('{ a = to }')).message).toContain("Found 'to', a keyword: write '@to' for the local, object field, conditional binding or function parameter of that name");
             expect(errorThrownBy(() => nexo.parse('import to = Home\nto.rooms')).message).toContain("write '@to' for the local, object field, conditional binding or function parameter of that name, or, where none is in scope, the namespace the script's import gives that name");
         });
@@ -187,6 +190,8 @@ describe('the codes of syntax errors', () => {
 
         it('gives NEXO1025 to a cast whose target no text writes', () => {
             expectSyntaxCode('NEXO1025', ['a to String as Light', '(if a then b else c end) as Light', '(a.b) as Light', '(?((a.b) as Light).c)', '(?((a ?? b).c as Light).d)', '(try a as Device).b as Light']);
+            // A cast's qualified type may end in a keyword, which tells nothing of the group that holds the cast.
+            expect(nexo.parse('(?((x as M.end) as T).y)').expression.chain.receiver).toEqual({ kind: 'cast', type: 'T', operand: { kind: 'cast', type: 'M.end', operand: { kind: 'scriptParameter', name: 'x' } } });
         });
 
         it('gives NEXO1026 to a string where a cast or a conversion names its type', () => {
@@ -195,6 +200,8 @@ describe('the codes of syntax errors', () => {
 
         it('gives NEXO1027 to a conditional or a do block used ungrouped as a condition or an operand', () => {
             expectSyntaxCode('NEXO1027', ['if if a then b else c end then 1 else 2 end', '1 + if a then b else c end', '1 + do 1 end']);
+            expectSyntaxCode('NEXO1027', ['if a then 1 else 2 end + 1', 'do 1 end ?? 3', 'if a then 1 else 2 end as T', 'if a then 1 else 2 end and b', 'do 1 end..2', 'let x = do 1 end + 1\nreturn x']);
+            expect(errorThrownBy(() => nexo.parse('f(if a then 1 else 2 end + 1)'))).toMatchObject({ code: 'NEXO1027', message: expect.stringContaining('(if … then … else … end)'), location: { line: 1, column: 3 } });
         });
 
         it('gives NEXO1028 to a conditional or a do block that is the receiver of a chain', () => {
@@ -215,6 +222,8 @@ describe('the codes of syntax errors', () => {
 
         it('gives NEXO1032 to a local declaration or a return where a value stands', () => {
             expectSyntaxCode('NEXO1032', ['a.b(let x = 1)', 'a.b(return 1)', '1 + return 2']);
+            expect(errorThrownBy(() => nexo.parse('f(let y = 1)')).message).toContain("'let' declares a local, which stands in a body before its result");
+            expect(errorThrownBy(() => nexo.parse('f(return 1)')).message).toContain("'return' gives a body's result");
         });
 
         it('gives NEXO1033 to return among the fields', () => {
@@ -286,6 +295,8 @@ describe('the codes of syntax errors', () => {
 
         it('gives NEXO1503 to a name an argument follows after a space, written as a member without its receiver', () => {
             expectSyntaxCode('NEXO1503', ['count "x"', 'count 1']);
+            // A body's local ends at a line break, so a value starting the next line is the body's to refuse, as a name there is.
+            expect(errorThrownBy(() => nexo.parse('let a = b\n"x"\nreturn a'))).toMatchObject({ code: 'NEXO1031', location: { line: 2, column: 1 } });
         });
 
         it('gives NEXO1504 to a local written after a field of its object expression', () => {
@@ -310,8 +321,37 @@ describe('the codes of syntax errors', () => {
             expect(nexo.parse('let a = 1 // one\rreturn a').expression.result).toEqual({ kind: 'local', name: 'a' });
         });
 
-        it('gives NEXO1000 to text that is no token', () => {
-            expectSyntaxCode('NEXO1000', ['a # b']);
+        it('gives NEXO1000 to text that is no token, a character outside the Basic Multilingual Plane named whole', () => {
+            expectSyntaxCode('NEXO1000', ['a # b', 'x + 😀']);
+            expect(errorThrownBy(() => nexo.parse('x + 😀')).message).toContain("Unexpected '😀'");
+            expect(Tokenizer.scan('x 😀').map(token => [token.type, token.start, token.end])).toEqual([['identifier', 0, 1], ['invalid', 2, 4], ['end', 4, 4]]);
+        });
+
+        it('gives NEXO1000 to a number not written as in JSON, a zero a digit follows or an exponent with no digits, over its whole run, while an e that starts a longer name is that name', () => {
+            expectSyntaxCode('NEXO1000', ['0123', '00', '1e', '1e+', '1E-', '1e + 2']);
+            expect(errorThrownBy(() => nexo.parse('0123'))).toMatchObject({ message: expect.stringContaining('A number is written as in JSON'), location: { line: 1, column: 1 } });
+            expect([nexo.parse('1e5').expression, nexo.parse('1.e3').expression, nexo.parse('if x then 1else 2 end').expression.consequent]).toEqual([
+                { kind: 'literal', value: 100000 },
+                { kind: 'memberAccess', receiver: { kind: 'literal', value: 1 }, name: 'e3' },
+                { kind: 'literal', value: 1 },
+            ]);
+        });
+
+        it('reads text that holds many characters that are no token in time linear in its length, a strict reading stopping at the first', () => {
+            const text = '# '.repeat(40000);
+            const start = performance.now();
+
+            expect(Tokenizer.scan(text).length).toBe(40001);
+            expectSyntaxCode('NEXO1000', [text]);
+            expect(performance.now() - start).toBeLessThan(1000);
+        });
+
+        it('reads an interpolation that starts a line of a block whose margin is empty, as it reads one after a margin', () => {
+            const interpolated = { kind: 'interpolatedString', parts: [{ kind: 'expression', expression: { kind: 'scriptParameter', name: 'x' } }] };
+
+            expect([nexo.parse('$"""\n{x}\n"""').expression, nexo.parse("$'''\n{x}\n'''").expression, nexo.parse('$"""\n    {x}\n    """').expression]).toEqual([interpolated, interpolated, interpolated]);
+            expect(nexo.parse('$"""\n{{x}}\n"""').expression).toEqual({ kind: 'interpolatedString', parts: [{ kind: 'text', value: '{x}' }] });
+            expect(Tokenizer.scan('$"""\n{x}\n"""').map(token => token.type)).toEqual(['interpolated-string-start', 'interpolation-start', 'identifier', 'interpolation-end', 'interpolated-string-end', 'end']);
         });
 
         it('gives NEXO1509 to a lone exclamation mark', () => {

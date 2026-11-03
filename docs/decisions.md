@@ -703,3 +703,16 @@ Forty decisions were taken while implementing the declarations, member selection
   - Carrying a logical expression's values through a local, which would accept `let level = c and fee` before `level or 0`. A local's type is settled at its declaration, so reading it never depends on how its initializer is written.
   - Testing the values of an arrow function given as a predicate for truthiness alone. A function's result is a value used, as every function's is.
   - Typing a fixed operand by its value rather than its declared type, which would change the type of scripts accepted before.
+
+<a id="d51"></a>
+
+## D51 — A malformed number is one invalid token
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:** A number is written as in JSON. Where a zero is followed by a digit, or an exponent has no digits, the whole run is one invalid token, NEXO1000, "A number is written as in JSON". An `e` that starts a longer name is that name, by the longest match, so `1else` stays `1` and `else`, and `1ex` stays a member written without its dot, NEXO1011.
+- **Why:**
+  - `0123` was read as `0` and `123`, and refused as "nothing follows a body's result". `1e` was read as `1` and a member `e`, and refused with advice to write `1.e`. Neither says what is wrong.
+  - Refusing every number a letter follows, as JavaScript does, would refuse `1else`, which the longest match reads today.
+- **Declined:** Refusing a number any letter follows, which would break texts accepted today for a diagnostic alone.

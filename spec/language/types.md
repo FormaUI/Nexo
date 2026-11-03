@@ -425,7 +425,7 @@ Its target is a receiver and the members after it, a coalescing operator in pare
 
 ### How a cast binds
 
-A cast binds looser than access, so a call receives it only through a group: `(room.device(name) as Light)?.dim({ to = 40 })` dims the cast. A chain continues from a cast only through a group, `(room.device(name) as Light)?.brightness`, and a cast takes another as its target only in one, `(thing as Device) as Light`, so `device as Light.brightness` and `a as Device as Light` are syntax errors.
+A cast binds looser than access, so a call receives it only through a group: `(room.device(name) as Light)?.dim({ to = 40 })` dims the cast. A chain continues from a cast only through a group, `(room.device(name) as Light)?.brightness`, and a cast takes another as its target only in one, `(thing as Device) as Light`, so `device as Light?.brightness`, `device as Light[0]` and `a as Device as Light` are syntax errors, while `device as Light.brightness` casts to the type `brightness` of the module the script imports as `Light`.
 
 <a id="casts-in-an-optional-enclosed-access"></a>
 

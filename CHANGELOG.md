@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.21` · definition format 38*
+*Unpublished · language `1.0.0-beta.22` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -35,3 +35,6 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A text that ends inside a collection, as `[10,`, is refused with NEXO1000, where a `TypeError` escaped `nexo.parse`.
 - A function the host invokes takes function parameters: its prepared call gives the host each function argument as a kept function, which it calls later in the context preparation found, until it disposes the call with `dispose()`, after which a call fails with NEXO5051. NEXO4056 refuses an expression or a predicate parameter alone.
 - An `and` or an `or` is typed where its value is used, by the values that reach it, so `c and fee or 0` is a `Number`. A condition, `not`, another `and` or `or`, and a predicate written as an expression of `it` test its truthiness alone. NEXO3040 refuses values of no one type where the value is used, and a conditional binding whose truthy values are of none.
+- Reading text no longer hangs on an interpolated block whose closing delimiter has no indentation and a line of which starts with an interpolation, and reads text full of invalid characters in linear time, stopping at the first.
+- A character outside the Basic Multilingual Plane that is no token is reported whole. A malformed number, a conditional or `do` block used as a left operand, a `let` or `return` where a value stands, and a `to` before a keyword each give a diagnostic that says what is wrong.
+- A cast whose qualified type ends in a keyword is read inside an optional enclosed access.

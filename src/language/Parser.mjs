@@ -158,14 +158,21 @@ export class Parser {
         return this.#take();
     }
 
-    /** Reads an expression: a conditional, a do block, or a simple value expression; a function stands as a local's initializer alone. */
+    /**
+     * Reads an expression: a conditional, a do block, or a simple value expression; a function stands as a local's initializer alone. A conditional or a do block an operator follows is that operator's left operand,
+     * which parentheses enclose, as they enclose a right one.
+     */
     #parseExpression() {
-        if (this.#isKeyword('if')) {
-            return this.#parseConditionalExpression([this.#take()]);
-        }
+        if (this.#isKeyword('if') || this.#isKeyword('do')) {
+            const start = this.#token.start;
+            const isConditional = this.#isKeyword('if');
+            const block = isConditional ? this.#parseConditionalExpression([this.#take()]) : this.#parseDoExpression();
 
-        if (this.#isKeyword('do')) {
-            return this.#parseDoExpression();
+            if (OPERATOR_TOKENS.has(this.#token.type) || this.#token.type === '..' || ['and', 'or', 'as', 'to'].some(keyword => this.#isKeyword(keyword))) {
+                throw this.#createSyntaxError('NEXO1027', isConditional ? 'A conditional that is an operand is enclosed in parentheses: write (if … then … else … end)' : 'A do block that is an operand is enclosed in parentheses: write (do … end)', start);
+            }
+
+            return block;
         }
 
         return this.#parseSimpleValueExpression();
@@ -1065,17 +1072,28 @@ export class Parser {
                     return false;
                 }
 
-                // The type's name after `as`, and after `to` below, may be any word, a keyword among them, which tells nothing of the group.
+                // The type's name after `as`, and after `to` below, may be any word, a keyword among them, qualified or not, which tells nothing of the group.
                 holdsAs = true;
-                index++;
+                index = this.#lastOfTypeName(index + 1);
             } else if (depth === 1 && token.type === 'keyword') {
-                index++;
+                index = this.#lastOfTypeName(index + 1);
             } else if (token.type === 'end') {
                 return false;
             }
         }
 
         return false;
+    }
+
+    /** The index of the last token of the type's name the token at the index starts: the word itself, or, for a qualified name, the last word after its dots. */
+    #lastOfTypeName(index) {
+        let last = index;
+
+        while (this.#tokens[last + 1]?.type === '.' && this.#tokens[last + 2] !== undefined && this.#isWord(this.#tokens[last + 2])) {
+            last += 2;
+        }
+
+        return last;
     }
 
     /** Reads the member expressions after a receiver within an optional enclosed access, every one of them optional, and answers the receiver followed by them, as `children`, and how many follow it, as `accessCount`; the member chain node is its caller's to build. */
@@ -1105,7 +1123,8 @@ export class Parser {
         const token = this.#token;
         const next = this.#nextToken;
 
-        if (this.#startsConversion()) {
+        // A `to` a keyword of a construct's structure follows, as `then` or `and`, names a local rather than converting, which the keyword's own refusal below says.
+        if (this.#startsConversion() && !(next.type === 'keyword' && (STRUCTURAL_KEYWORDS.has(next.value) || next.value === 'and' || next.value === 'or'))) {
             throw this.#createSyntaxError('NEXO1010', `'to' converts the value written before it: write 'it to ${this.#text.slice(next.start, next.end)}' to convert the implicit parameter`, token.start);
         }
 
@@ -1123,7 +1142,10 @@ export class Parser {
                 return this.#parseFunctionCall(written);
             }
 
-            if (token.type === 'identifier' && next.spaced && ARGUMENT_STARTS.has(next.type)) {
+            // A body's local ends at a line break, so what the next line starts is the body's to read, as a name after an operand is.
+            const endsLocal = this.#bodyLocalsBeingRead > 0 && Tokenizer.holdsLineBreak(this.#text, token.end, next.start);
+
+            if (token.type === 'identifier' && next.spaced && ARGUMENT_STARTS.has(next.type) && !endsLocal) {
                 throw this.#createSyntaxError('NEXO1503', `'${token.value}' follows no receiver: write 'it.${token.value}(…)' for a member of the implicit parameter`, token.start);
             }
         }
@@ -1152,7 +1174,15 @@ export class Parser {
                     // A keyword an import gives a module as its local name reads that namespace after `@` where no local of its name is in scope.
                     const binding = this.#namespaceNames.has(token.value) ? `, or, where none is in scope, the namespace the script's import gives that name` : '';
 
-                    throw this.#createSyntaxError(declares ? 'NEXO1032' : 'NEXO1010', `Found '${token.value}', a keyword: write '@${token.value}' for the local, object field, conditional binding or function parameter of that name${binding}`, token.start);
+                    if (declares) {
+                        const message = token.value === 'let'
+                            ? "'let' declares a local, which stands in a body before its result, never where a value stands: declare the local before the expression that reads it"
+                            : "'return' gives a body's result, which ends a body, never where a value stands: write the value itself here";
+
+                        throw this.#createSyntaxError('NEXO1032', message, token.start);
+                    }
+
+                    throw this.#createSyntaxError('NEXO1010', `Found '${token.value}', a keyword: write '@${token.value}' for the local, object field, conditional binding or function parameter of that name${binding}`, token.start);
                 }
 
                 throw this.#createUnexpectedTokenError('NEXO1010', 'a value');

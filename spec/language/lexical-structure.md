@@ -72,6 +72,8 @@ Spaces and tabs may appear between the tokens of an access expression without ch
 
 A number token has no sign. `-` is always an operator: arithmetic negation or subtraction.
 
+A number is written as in JSON. A zero a digit follows, as in `0123`, and an exponent with no digits, as in `1e` or `1e+`, are invalid over their whole run (NEXO1000). An `e` that starts a longer name is that name, by the longest match, so `1else` is `1` and `else`.
+
 | Text | Meaning |
 | --- | --- |
 | `-5` or `- 5` | Negate 5 |

@@ -67,7 +67,7 @@ describe('LineStructure', () => {
 
     describe('operator expressions', () => {
         it('take a line break before an operator where the expression is enclosed, in a group, an argument, a key or a condition', () => {
-            const texts = ['(a\n    + b)', 'room.device(a\n    ?? b)', 'rooms[a\n    - 1]', 'if a\n    and b then\n    1\nelse\n    2\nend', '(a\n    * b\n    + c)', '(not a\n    and b)'];
+            const texts = ['(a\n    + b)', 'room.device(a\n    ?? b)', 'rooms[a\n    - 1]', 'if a\n    and b then\n    1\nelse\n    2\nend', '(a\n    * b\n    + c)', '(not a\n    and b)', 'x:f(a\n    + b)', 'x:M.E.f(a\n    + b)'];
 
             texts.forEach(text => expect(() => nexo.parse(text), text).not.toThrow());
         });

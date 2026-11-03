@@ -59,7 +59,7 @@ In this document:
 | `NEXO1022` as syntax, `NEXO2523` as structure | `try` before anything but one cast or one conversion, before two of them, as `try a to String to Number`, or before another `try` | A syntax error giving the grouped form, `try (a to String) to Number`, in text, and a structure error in a definition |
 | `NEXO1023` | An attempt as a cast's target, as `(try a as Device) as Light` | A syntax error |
 | `NEXO1024` | Casts chained without a group, as `a as Device as Light` | A syntax error giving the grouped form, `(thing as Device) as Light` |
-| `NEXO1053` | A chain continuing a cast without a group, as `device as Light.brightness` | A syntax error giving the grouped form, `(device as Light).brightness` |
+| `NEXO1053` | A chain continuing a cast without a group, as `device as Light?.brightness` | A syntax error giving the grouped form, `(device as Light)?.brightness` |
 | `NEXO1025` as syntax, `NEXO2002` as structure | A cast whose target is none text could write: a group other than a coalescing operator or an optional enclosed access, or a chain an object expression continues | A syntax error in text, and a structure error at the target in a definition |
 | `NEXO1026` | A string where a cast or a conversion names its type, as `device as "Light"` | A syntax error giving the type's name written bare, `device as Light` |
 | `NEXO1027` | A conditional or a `do` block used as a condition or an operand without a group | A syntax error giving the grouped form |
@@ -75,7 +75,7 @@ In this document:
 | `NEXO1034` as syntax, `NEXO2004` as structure | A function that is not a local's initializer | A syntax error in text, and a structure error in a definition |
 | `NEXO1057` as syntax, `NEXO2027` as structure | An arrow function that is neither a local's initializer nor an argument, a list's item, a dictionary's value and an indexer's key among them | A syntax error in text, saying an item, a value or a key is data where one stands there, and a structure error in a definition |
 | `NEXO1035` as syntax, `NEXO2005` as structure | A regular function written directly as an argument | A syntax error in text, and a structure error in a definition: `A function declared with 'function' cannot appear directly as an argument. Bind it to a local and pass its name, or use an arrow function.` |
-| `NEXO1036` as syntax, `NEXO2006` as structure | An arrow function whose body is not a simple expression | A syntax error in text, and a structure error in a definition, saying its body is a simple expression |
+| `NEXO1036` as syntax, `NEXO2006` as structure | An arrow function whose body declares a local, gives a result with `return`, or is another arrow function, as `x => let y = …` | A syntax error in text, and a structure error in a definition, saying its body is a simple expression; a `do` block or a full conditional there is `NEXO2011` |
 | `NEXO1037` | A line break written in an inline string, raw or not and interpolated or not | A syntax error at the line break, suggesting `\n` or a block |
 | `NEXO1038` | A block whose opening delimiter has anything after it on its line | A syntax error naming the delimiter |
 | `NEXO1058` | A block that is never closed | A syntax error naming the delimiter |
@@ -117,7 +117,7 @@ In this document:
 
 | Code | Situation | Result |
 | --- | --- | --- |
-| `NEXO2011` | A `do` block, a conditional binding, or a conditional beyond an if branch and an else branch of simple values, within an argument, an indexer's key, a computed property access or an interpolation | A structure error naming the part, which a local holds first |
+| `NEXO2011` | A `do` block, a conditional binding, or a conditional beyond an if branch and an else branch of simple values, where a [simple expression](expressions.md#simple-expressions) stands: an argument, an indexer's key, a computed property access, an interpolation, a collection's item, a dictionary's value, or an arrow function's body | A structure error naming the part, which a local holds first |
 | `NEXO2012` | A lexical reference, or a definition's local, that no local, object field, conditional binding or function parameter in scope answers | A structure error: `No local, object field, conditional binding or function parameter named 'it' is in scope. Use '~it' to read the script parameter.` |
 | `NEXO2013` | A name read before a local of its name declared later in its scope, or a local's initializer reading the local itself, as `{ let n = n }` | A structure error, never a read of the script parameter of that name |
 | `NEXO2014` | A conditional binding's initializer reading the binding's own name, as `if let k = k`, where nothing else of that name is in scope | A structure error suggesting `~k` |
