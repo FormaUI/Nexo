@@ -885,3 +885,45 @@ Forty decisions were taken while implementing the declarations, member selection
   - Every other operation a value of `Any` takes part in is checked as it is evaluated: a member it reads, arithmetic, ordering, an interpolation, an equality. Refusing its conversion at resolution was the one exception, so `value to String` was refused whatever the value turned out to be.
   - The selection is the one a known type gets, made from the actual type, as a deferred member's is.
 - **Declined:** Answering null within `try` where no conversion applies, which would hide a value of a type nothing converts, as resolution refuses the conversion of a known one.
+
+<a id="d63"></a>
+
+## D63 — A computed name reads alike through a namespace however it is written
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:** A computed property access after a namespace's name is read by its chain, as one after `@` and the name is. `Home.["rooms"]` is `Home.rooms`, and `Home.[p]` is refused at its name, NEXO2521.
+- **Why:**
+  - A string literal that is a Nexo name is the name written wherever a computed property access stands, so `@Home.["rooms"]` already read `Home.rooms`.
+  - The same access written without `@` was a syntax error, NEXO1000, expecting an identifier: one form, two readings.
+- **Declined:** Refusing `@Home.["rooms"]` instead, which would make a literal name mean something through a namespace that it means nowhere else, and which its definition, the same as `Home.rooms`'s, can't tell apart.
+
+<a id="d64"></a>
+
+## D64 — Every string a script holds is well-formed
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:** A surrogate standing alone in a string's literal text, raw or not, is a syntax error, NEXO1049. A string a definition holds as a value, a literal's, an interpolated string's text and a dictionary's key, holding one is a structure error, NEXO2000.
+- **Why:**
+  - An escape naming a surrogate was already refused, but the character itself was read into the value, so the rule depended on how it was written.
+  - Canonical text then wrote ill-formed text, which a UTF-8 file can't hold, so a script saved and read back changed.
+  - The specification said only a host can give a string holding one; this makes that true.
+- **Declined:**
+  - Escaping a lone surrogate in canonical text, which would need an escape the language refuses everywhere else.
+  - Refusing one in a comment, which holds no value and which canonical text never writes.
+
+<a id="d65"></a>
+
+## D65 — Canonical text lays out the arguments after a block on lines of their own
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:** Where a call's argument or a list's item follows one ending in a block's `end`, canonical text writes each on a line of its own, a level within its brackets, which close on the line after the last. A last item that spans lines keeps its lines after the opening, `items.map(x => {`.
+- **Why:**
+  - Only closing punctuation follows a block's `end` on its line, so the next argument starts a line.
+  - It started that line at the call's own indentation, `end,` then `2)`, which reads as though the argument stood outside the call.
+- **Declined:** Laying out every call that spans lines one argument per line, which would break the common form whose last argument is an object or a function, `items.map(x => {`.
