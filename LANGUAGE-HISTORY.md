@@ -5,6 +5,7 @@ Each version of the Nexo language, newest first, with what it changed. A languag
 - **A version collects the changes made between two releases.** The first change to either contract after a [release](CHANGELOG.md) opens the next version's entry, which reads *Unreleased*, and each later change joins it. The release that first implements the version dates it, and fixes it.
 - **Versions before `1.0.0-beta.40` advanced with each change,** before Nexo's first release, each dated by the day the specification first described it.
 - **Each change stands in the first version whose implementation follows it,** named by the section of the specification that states it now.
+- **From `1.0.0-beta.1` on, an entry leads with examples** of what its version changed: a script's in a `nexo` block, a host's in a `js` block, each line's comment saying what it does at that version and what it did before. The list below them is the reference.
 
 Each entry says what its version breaks:
 
@@ -16,6 +17,11 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.40`
 
 *Unreleased · definition format 38*
+
+```nexo
+1.e3  // NEXO3001, now saying to write 1e3; only that e3 is no member before
+1e3   // 1000, as before
+```
 
 **Language**
 
@@ -33,6 +39,24 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```nexo
+f(                // now: each argument on its own line, a level within
+    if c then
+        {
+            a = 1,
+            b = 2
+        }
+    else
+        null
+    end,
+    2             // before: "2)" on the line after "end,", at the call's indentation
+)
+items.map(x => {  // a last argument spanning lines opens here, as before
+    a = 1,
+    b = 2
+})
+```
+
 **Runtime**
 
 - [Canonical text](spec/runtime/definition.md#definition) lays a call's arguments and a list's items out on lines of their own, a level within their brackets, where one follows an item ending in a block's `end`, where it wrote the next on the line after `end` at the call's own indentation, `end,` then `2)`. A last item spanning lines keeps its lines after the opening, `items.map(x => {`.
@@ -44,6 +68,17 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.38`
 
 *November 3, 2026 · definition format 38*
+
+```js
+const lone = { version: 38, imports: [], expression: { kind: 'literal', value: '\uD83D' } };
+
+nexo.parse('"\uD83D"');        // NEXO1049; read into the string before
+nexo.parse("'\uD83D'");        // NEXO1049 in a raw string too
+nexo.parse('"\uD83D\uDE00"');  // "😀", one character, as before
+nexo.parse('"\\u{D83D}"');     // NEXO1049, as before
+nexo.parse('a + \uD83D');      // NEXO1000, now saying it is a lone surrogate
+nexo.validate(lone);           // NEXO2000; passed before
+```
 
 **Language**
 
@@ -61,6 +96,14 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```nexo
+value to List<Number>       // NEXO1026, saying to name the type bare; NEXO1019 before
+device as Light?            // NEXO1000, now saying a cast answers null itself
+room.device(name) as Light  // a Light?, null where no device is
+a to Number < b             // a comparison, as before
+f(a to Number<b, c>d)       // two arguments, each a comparison, as before
+```
+
 **Language**
 
 - [Type arguments after the type a cast or a conversion names](spec/language/types.md#casts-target-type), `value to List<Number>`, are refused saying the type is named bare, NEXO1026, where they were read as comparisons and refused as a chain turning its direction, NEXO1019. Angle brackets that read as comparisons stay comparisons: `a to Number < b`, and `f(a to Number<b, c>d)`, two arguments.
@@ -74,6 +117,15 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```js
+const shelves = nexo.createModule('shelves', { types: [{ name: 'List', kind: 'structured', members: [createPropertyDeclaration('size', 'Number')] }] });
+const registry = nexo.createRegistry([shelves]);
+
+registry.createBindings({ shelf: { size: 1 } }, { types: { shelf: 'List' } });          // NEXO2037, naming List<T> or shelves.List; Nexo.List before
+registry.createBindings({ shelf: { size: 1 } }, { types: { shelf: 'shelves.List' } });  // the module's List
+registry.createBindings({ shelf: [1] }, { types: { shelf: 'List<Number>' } });          // Nexo's List
+```
+
 **Language**
 
 - [A diagnostic listing several types of one name](spec/language/types.md#types-type-identity) writes one of Nexo's generic types by its name and its type parameters, `List<T>`, where it gave `Nexo.List`, a name that writes no type: a declared binding's `List`, where a module declares a `List`, is refused naming `List<T> or shelves.List`.
@@ -85,6 +137,11 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.35`
 
 *November 3, 2026 · definition format 38*
+
+```nexo
+Home.["rooms"]  // Home.rooms, as @Home.["rooms"] is; NEXO1000 before
+Home.[p]        // NEXO2521, as @Home.[p] is; NEXO1000 before
+```
 
 **Language**
 
@@ -98,6 +155,12 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```js
+nexo.createModule('charts', { members: [{ name: 5, kind: 'property', result: 'Number' }] });  // NEXO4523, located in no declaration; in '5' before
+nexo.createModule('charts', { members: [{ kind: 'property', result: 'Number' }] });           // NEXO4002, located in no declaration; in 'undefined' before
+nexo.createRegistry({ name: 'list' });                                                        // NEXO4546, located at {}; in the module '[object Object]' before
+```
+
 **Runtime**
 
 - [A module error names](spec/runtime/errors.md#validation-diagnostics) a module, a type or a declaration only by a name that is a string. One named by another value, or by none, leaves that field out, where it was named by a string made of the value, `'5'`, `'[object Object]'` or `'undefined'`.
@@ -110,6 +173,21 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.33`
 
 *November 3, 2026 · definition format 38*
+
+```nexo
+// Probe.give(value) answers its argument as a value of Any
+Probe.give("12") to Number      // 12, by String to Number; NEXO3022 before
+Probe.give(5) to String         // "5", by Number to String
+Probe.give("x") to String       // "x", already a String
+Probe.give(true) to Number      // NEXO5053: no conversion takes a Boolean to a Number
+try Probe.give(true) to Number  // NEXO5053, even within try
+```
+
+```js
+const resolution = registry.resolve('Probe.give(5) to String', bindings, { imports: ['Probe'] });
+
+resolution.getCandidateDeclarations();  // Probe.give, then Number to String and Boolean to String; isOverestimate: true
+```
 
 **Language**
 
@@ -126,6 +204,16 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.32`
 
 *November 3, 2026 · definition format 38*
+
+```js
+registry.createBindings({ device: lamp }, { typez: { device: 'Home.Device' } });  // NEXO2048; left out before, typing a Light
+registry.createBindings({ device: lamp }, { types: { device: 'Home.Device' } });  // a Device
+registry.createBindings({ device: lamp }, { types: { device: 5 } });              // NEXO2044; NEXO2036 before
+evaluator.evaluate({ beforeinvoke: request => [] });                              // NEXO2048; never called before
+evaluator.evaluate({ afterEvaluation: 'done' });                                  // NEXO2048; NEXO5009 before
+nexo.createModule('Lamps', { typeOf: () => undefined, types });                   // binding a lamp, NEXO5002; answer null instead
+nexo.parse('f(1)(2)');                                                            // NEXO1055, now saying to call it through a name
+```
 
 **Runtime**
 
@@ -144,6 +232,16 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```js
+const nest = depth => Array.from({ length: depth }).reduce(inner => ({ inner }), 1);
+const call = registry.resolve('watching.watch()', {}, { imports: ['watching'] }).createEvaluator({}).prepareHostCall();
+
+registry.createBindings({ d: nest(1000) });   // binds, as before
+registry.createBindings({ d: nest(1001) });   // NEXO2047; bound before
+registry.createBindings({ d: nest(10000) });  // NEXO2047; a RangeError before
+call.project({ a: 1 }).value;                 // { a: 1 }, watch declared Any; NEXO5015 before
+```
+
 **Runtime**
 
 - [Data nests at most 1,000 levels](spec/runtime/bindings.md#runtime-bindings-nesting): data a host binds nesting deeper is refused, NEXO2047, a value a host call supplies, NEXO5015, a value of `Any` a deferred access types, and a result holding such data, NEXO5052, rather than each overflowing the stack as a RangeError.
@@ -156,6 +254,15 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.30`
 
 *November 3, 2026 · definition format 38*
+
+```js
+const updates = { changes: 'observable', reads: 'fresh', observations: [{ type: 'change', of: { argument: 'expression' } }] };
+const fixed = { fixed: true, selects: 'type', selector: 'event' };
+
+createFunctionDeclaration('total', 'Number', { updates, parameters: [createExpressionParameterDeclaration('Number')] });  // NEXO4055 in a module; accepted before
+createValueParameterDeclaration('type', 'String', { ...fixed, default: 'change' });                                       // NEXO4072 in a module; before, a script leaving it out was refused
+createValueParameterDeclaration('type', 'String', fixed);                                                                 // required, as Home's on declares it
+```
 
 **Runtime**
 
@@ -172,6 +279,16 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```js
+const resolution = registry.resolve('{ prices = ["tea" = 2] }');
+
+resolution.typeAt(['prices', 'entries', 0, 'value']);                          // 'Number?'; NEXO3602 before
+nexo.getLocation(nexo.parse('{ a = 1 }'), '/expression/objectFields/length');  // NEXO2644; the root's location before
+nexo.createRegistry(null);                                                     // NEXO4546; a TypeError before
+registry.getImplementation(null);                                              // undefined; a TypeError before
+registry.getImplementation({ impl: () => 1 });                                 // undefined; its impl before
+```
+
 **Runtime**
 
 - [`resolution.typeAt`](spec/runtime/resolution.md#runtime-result-paths) steps from a dictionary to its `entries` and from a pair to its `key` and `value`, as a result exports them, so every path `valueAt` reads, `typeAt` types.
@@ -186,6 +303,19 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.28`
 
 *November 3, 2026 · definition format 38*
+
+```js
+const sum = n => Array.from({ length: n }, (_, i) => `x${i}`).join(' + ');
+const looped = { kind: 'not', operand: null };
+looped.operand = looped;
+
+nexo.parse(sum(256));                                             // reads, as before
+nexo.parse(sum(257));                                             // NEXO2046, 257 terms; read before        
+nexo.parse(`(${sum(150)}) + (${sum(150)})`);                      // reads: group a long chain
+nexo.parse(`${'('.repeat(300)}1${')'.repeat(300)}`);              // NEXO1072 at column 257; read before
+nexo.parse(`${'('.repeat(1000)}1${')'.repeat(1000)}`);            // NEXO1072; a RangeError before
+nexo.validate({ version: 38, imports: [], expression: looped });  // NEXO2000, holds itself; a RangeError before
+```
 
 **Language**
 
@@ -203,6 +333,15 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```js
+const resolution = registry.resolve('limit * 2', { limit: 50 });
+
+registry.createBindings({ limit: 50 }).resolutionKey;                        // 'limit:Nexo.Number'; 'limit:Nexo.Number=50' before
+resolution.createEvaluator({ limit: 51 }).evaluate().value;                  // 102, the resolution shared; NEXO2025 before
+registry.resolve('row', { row: { 'night-mode': true } }).type;               // '{ "night-mode": Boolean }'; unquoted before
+registry.createBindings({ secret }, { types: { secret: 'Vault.Secret' } });  // NEXO2036, Secret internal; accepted before
+```
+
 **Runtime**
 
 - [A resolution key](spec/runtime/bindings.md) holds the values that can decide a resolution, strings, Booleans and null, and no number, so bindings that differ in their numbers alone share a resolution.
@@ -216,6 +355,20 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.26`
 
 *November 3, 2026 · definition format 38*
+
+```js
+const maintained = { changes: 'observable', reads: 'maintained', observations: [{ type: 'reading', of: 'receiver' }] };
+
+createPropertyDeclaration('temperature', 'Number', { updates: maintained });   // its module refused, NEXO4071; accepted before
+createPropertyDeclaration('temperature', 'Number?', { updates: maintained });  // accepted
+evaluator.evaluate({ beforeInvoke: () => ({ pending: true }) });               // NEXO5009 at a member not maintained; read as null before
+evaluator.evaluate({ beforeInvoke: () => 5 });                                 // NEXO5009, 5 its cause; ignored or NEXO5007 before
+```
+
+```nexo
+sensor.temperature > 20         // NEXO3039, a Number? now; NEXO5501 while pending before
+(sensor.temperature ?? 0) > 20  // false while pending
+```
 
 **Runtime**
 
@@ -233,6 +386,19 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.25`
 
 *November 3, 2026 · definition format 38*
+
+```nexo
+[1e+308, 1e+308].sum(it)      // NEXO5020; Infinity before
+[1e+308, 1e+308].average(it)  // 1e+308; Infinity before
+0.sequence(4294967296)        // NEXO5035; NEXO5007 before
+[-0].min(it)                  // 0; -0 before
+```
+
+```js
+const levels = new Map([[heater, 1], [porch, 2]]);
+
+registry.createBindings({ levels }, { types: { levels: 'Dictionary<Light?, Number>' } });  // NEXO2045, two thermostats, both null; kept the last before
+```
 
 **Language**
 
@@ -254,6 +420,14 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```nexo
+// value is a value of Any
+value and 5                               // of Any, as value is; a Number before
+room.[value and "name"]                   // NEXO3013; a TypeError before where value was false
+value { v = it }                          // { v: [1, 2] }, value holding [1, 2]; [{ v: 1 }, { v: 2 }] before
+if metered then shortfall else value end  // NEXO3041, shortfall a function; a RangeError before
+```
+
 **Language**
 
 - [A value of `Any`](spec/language/expressions.md#logical-expressions-negations-and-groups-type) may hold false, so where it is falsey it is still of `Any`: `value and 5` is of `Any`, and a computed name it may give is refused as one that can be false, NEXO3013.
@@ -272,6 +446,18 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```js
+const literal = value => ({ kind: 'literal', value });
+const home = expression => ({ version: 38, imports: [{ module: 'Home' }], expression });
+const namespace = { kind: 'namespace', name: 'Home' };
+
+nexo.parse('-(5)').expression;                                                                       // literal(-5); a negation of literal(5) before
+nexo.format('- -5');                                                                                 // '5'; '-(-5)' before
+nexo.validate(home({ kind: 'arithmeticNegation', operand: literal(5) })).expression;                 // literal(-5); kept as a negation before
+nexo.validate(home({ kind: 'cast', type: 'Light', operand: literal(-1) }));                          // NEXO2002; accepted before, its text refused
+nexo.validate(home({ kind: 'memberAccess', receiver: namespace, name: 'rooms', extension: true }));  // NEXO2520; NEXO3026 at resolution before
+```
+
 **Runtime**
 
 - [A negation of a numeric literal](spec/runtime/definition.md) is the negative literal however it is grouped or negated again, so `-(5)` reads as `-5`, and validation folds a definition's negation of a literal as reading text does. Every definition then writes text that reads back as itself.
@@ -285,6 +471,20 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.22`
 
 *November 3, 2026 · definition format 38*
+
+```nexo
+0123                          // NEXO1000 at 0123; NEXO1055 at 123 before
+1e                            // NEXO1000; NEXO1011 at e before
+if a then 1 else 2 end + 1    // NEXO1027 at if; NEXO1055 at + before
+(if a then 1 else 2 end) + 1  // the block grouped, as before
+
+x:f(a                         // one call; NEXO1042 at + before
+    + b)
+
+let a = b                     // NEXO1031 at "x"; NEXO1503 at b before
+"x"
+return a
+```
 
 **Language**
 
@@ -302,6 +502,13 @@ Each entry says what its version breaks:
 
 *November 3, 2026 · definition format 38*
 
+```nexo
+light.active() and light.brightness or 0                                // a Number; NEXO3040 before
+if light.active() then light.brightness else 0 end                      // the same value, the brightness never false or null
+if let level = light.active() and device.battery then level else 0 end  // binds a Number; NEXO3040 before
+light.active() and light.brightness                                     // NEXO3040, false or a Number, as before
+```
+
 **Language**
 
 - [The type of a logical expression](spec/language/expressions.md#logical-expressions-negations-and-groups-type): `and` and `or` mean the same in every expression, and their values share a type only where the value is used. A condition, the operand of `not`, an operand of another `and` or `or`, and a predicate written as an expression of `it` test truthiness alone, and a conditional binding binds the truthy values. So `light.active() and light.brightness or 0` is a `Number`: the false that selects `0` reaches nothing. NEXO3040 refuses values of no one type where the value is used, and a conditional binding whose truthy values are of none.
@@ -314,6 +521,17 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.20`
 
 *November 2, 2026 · definition format 38*
+
+```js
+const when = createFunctionParameterDeclaration('when', 'Boolean', ['Home.Room']);
+const follow = createFunctionDeclaration('follow', undefined, { invokedBy: 'host', parameters: [when] });
+const call = registry.resolve('sensor:follow(room => room.occupied())', bindings, { imports }).createEvaluator(bindings).prepareHostCall();
+
+call.args.when(living);   // true, the host calling it; follow's module NEXO4056 before
+call.args.when(bedroom);  // false
+call.dispose();           // ends the kept function
+call.args.when(living);   // NEXO5051
+```
 
 **Language**
 
@@ -332,6 +550,10 @@ Each entry says what its version breaks:
 
 *November 2, 2026 · definition format 38*
 
+```js
+nexo.tooling;  // undefined; the tooling of 1.0.0-beta.16 to 1.0.0-beta.18 before
+```
+
 **Runtime**
 
 - The tooling of `1.0.0-beta.16` to `1.0.0-beta.18`, `nexo.tooling` and its tooling contract, is withdrawn until it is designed, as [decisions](docs/decisions.md#d48) records. Its first draft is kept on the `tooling-draft` branch. The runtime is that of `1.0.0-beta.15` again.
@@ -344,6 +566,15 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.18`
 
 *November 2, 2026 · definition format 38*
+
+```js
+const options = { registry, types: { room: 'Home.Room', device: 'Home.Device' }, imports: ['Home', 'Energy'] };
+
+nexo.tooling.getCompletions('device:', 7, options).map(c => c.name);  // ['meter', 'power', 'usage']
+nexo.tooling.getCompletions('', 0, options).map(c => c.name);         // ['device', 'room', 'Energy', 'Home']
+nexo.tooling.getHover('room.devices', 7, options).detail;             // 'devices: List<Device>'
+nexo.tooling.getHover('room', 9, options);                            // NEXO2648
+```
 
 **Runtime**
 
@@ -359,6 +590,14 @@ Each entry says what its version breaks:
 
 *November 2, 2026 · definition format 38*
 
+```js
+const text = "{\nname = 'lamp',   // the light\n\n\nlevel=1e3\n}";
+
+nexo.tooling.format(text);     // "{\n    name = 'lamp', // the light\n\n    level = 1e3\n}"
+nexo.format(text);             // '{\n    name = "lamp",\n    level = 1000\n}', as before
+nexo.tooling.format('f(  a');  // 'f(  a', which breaks the grammar
+```
+
 **Runtime**
 
 - [Formatting](https://github.com/FormaUI/Nexo/blob/76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e/spec/runtime/tooling.md#tooling-formatting): `nexo.tooling.format` lays a text out as it was written, beside `nexo.format`'s canonical text. It keeps each token as the text spells it, each string's written form among them, every comment and every line break, a run of blank lines as one. It indents each line by the constructs open at its start and spaces the tokens of a line as canonical text does. The text it gives reads back as the same definition, and a text that breaks the grammar is answered as it is.
@@ -370,6 +609,15 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.16`
 
 *November 1, 2026 · definition format 38*
+
+```js
+const options = { registry, types: { room: 'Home.Room' }, imports: ['Home'] };
+
+nexo.tooling.scan('a + # b').map(token => token.type);                                        // ['identifier', '+', 'invalid', 'identifier', 'end']
+nexo.tooling.parse('f(a').diagnostics.map(d => d.code);                                       // ['NEXO1000'], its tree closed by a missing ')'
+nexo.tooling.getDiagnostics('{ a = room.wieght, b = room.nmae }', options).map(d => d.code);  // ['NEXO3001', 'NEXO3001']; resolve throws the first
+nexo.tooling.getDiagnostics('a', { registry: {} });                                           // NEXO2647
+```
 
 **Runtime**
 
@@ -385,6 +633,16 @@ Each entry says what its version breaks:
 
 *November 1, 2026 · definition format 38*
 
+```js
+const resolution = registry.resolve('{ rows = [1, 2] }');
+const { value } = resolution.createEvaluator().evaluate();
+
+resolution.typeAt(['rows', -1]);                // NEXO2646; 'Number?' before
+nexo.paths.valueAt(value, ['rows', 1.5]);       // NEXO2646; null before
+nexo.paths.validate('rooms');                   // NEXO2646; accepted before
+nexo.paths.valueAt(value, ['rows', 'length']);  // null; 2 before
+```
+
 **Runtime**
 
 - [Result paths](spec/runtime/resolution.md#runtime-result-paths): `resolution.typeAt` and `nexo.paths.valueAt` refuse a path of another shape, as `nexo.paths.validate` does (NEXO2646), where they read it as given: `typeAt` read a negative or a fractional number as an index, and `valueAt` answered null for both.
@@ -398,6 +656,14 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.14`
 
 *November 1, 2026 · definition format 38*
+
+```nexo
+// value is a value of Any, holding a room
+value.glow               // NEXO5012, as before
+value:Device.usage       // NEXO5043; NEXO5012 before
+value.device("lamp", 2)  // NEXO5046; NEXO5012 before
+value.device()           // NEXO5047; NEXO5012 before
+```
 
 **Language**
 
@@ -416,6 +682,16 @@ Each entry says what its version breaks:
 
 *November 1, 2026 · definition format 38*
 
+```nexo
+[[1], [1]].distinct.count              // NEXO3083; 2 before
+people.distinct                        // NEXO3083; compared by identity before
+people.distinctBy(it.id)               // compare by a key instead
+people.contains(person)                // NEXO3083; false before, by identity
+people.any(it.id == person.id)         // true: compare by a key instead
+people.indexWhere(it.id == person.id)  // 1, in place of indexOf(person)
+shelf.item("rows").distinct            // NEXO5042: a value of Any holding objects
+```
+
 **Language**
 
 - [List members](spec/language/collections.md#collections-list-members): key equality compares values of a key type alone. `contains`, `indexOf` and `distinct` compare items of one, and `distinctBy` keys of one, and anything else is refused where it is resolved (NEXO3083), as `toDictionary` and `groupBy` already refused a key of another type. The evaluator compared objects, lists and structured values by identity, which key equality defines for none of them, so `[[1], [1]].distinct.count` was 2.
@@ -428,6 +704,17 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.12`
 
 *November 1, 2026 · definition format 38*
+
+```js
+// the codes are nexo.createModule's
+createPropertyDeclaration('cost', 'Number', { updates, impl, internal: true })                          // internal; public before
+createFunctionDeclaration('dim', 'Number', { invokedBy: 'host', updates })                              // NEXO4030; updates dropped before
+createFunctionDeclaration('dim', 'Number', { invokedBy: 'host' })                                       // write this instead
+createValueParameterDeclaration('kind', 'String', { selects: 'type', selector: 'event' })               // NEXO4542; selects dropped before
+createValueParameterDeclaration('kind', 'String', { fixed: true, selects: 'type', selector: 'event' })  // write this instead
+createValueParameterDeclaration('name', 'String', { context: 'item' })                                  // NEXO4030; taken before
+createPredicateParameterDeclaration({ nulls: 'accept' })                                                // takes a null item; options ignored before
+```
 
 **Runtime**
 
@@ -447,6 +734,12 @@ Each entry says what its version breaks:
 
 *November 1, 2026 · definition format 38*
 
+```js
+{ name: 'by', kind: 'value', type: 'Number' }                 // required, nulls 'propagate'; NEXO4536 before
+{ name: 'by', kind: 'value', type: 'Number', default: 1 }     // optional; NEXO4536 before
+{ name: 'by', kind: 'value', type: 'Number', nulls: 'drop' }  // NEXO4536, as before
+```
+
 **Runtime**
 
 - [Parameter declaration keys](spec/runtime/members.md#members-parameter-declaration-keys): a parameter may leave out `required`, which is then `true` unless it declares a `default`, and `nulls`, which is then `propagate`, as [null arguments](spec/language/members.md#nullability-a-null-argument-follows-the-parameter) describe a parameter its declaration says nothing of. Creating a module refused a parameter leaving out either (NEXO4536), which now refuses a value of them it doesn't take alone.
@@ -459,6 +752,13 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.10`
 
 *November 1, 2026 · definition format 38*
+
+```js
+// a parameter of a member of an extension of List<T>
+createValueParameterDeclaration('fallback', 'T', { default: 0 })       // NEXO4548 on registration; taken before
+createValueParameterDeclaration('fallback', 'T?', { default: null })   // write this instead
+createValueParameterDeclaration('fallback', 'Number', { default: 0 })  // or a concrete type
+```
 
 **Language**
 
@@ -475,6 +775,19 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.9`
 
 *November 1, 2026 · definition format 38*
+
+```js
+{ name: 'Number', kind: 'structured', members }                       // a type of the module Units
+createPropertyDeclaration('count', 'Nexo.Number', { updates, impl })  // Nexo's Number; NEXO4047 before
+createPropertyDeclaration('count', 'Number', { updates, impl })       // Units' Number, as before
+registry.createBindings(values, { types: { count: 'Nexo.Number' } })  // Nexo's Number; NEXO2036 before
+registry.createBindings(values, { types: { count: 'Number' } })       // NEXO2037, now giving Nexo.Number
+```
+
+```nexo
+"12" to Number       // 12, by Nexo's Number, as before
+"12" to Nexo.Number  // NEXO3004, no longer giving import Nexo
+```
 
 **Language**
 
@@ -494,6 +807,12 @@ Each entry says what its version breaks:
 
 *November 1, 2026 · definition format 38*
 
+```js
+const { metadata } = registry.resolve('shelf.item("lamp").power', {}, { imports: ['shelf'] }).createEvaluator().evaluate();
+
+metadata.tolerance  // 1, as power declares; null before
+```
+
 **Runtime**
 
 - [Result metadata](spec/runtime/evaluation.md#runtime-results): a member a value of `Any` selects as it is evaluated describes its value as a member resolution selects does, with the tolerance it declares and an origin of that selection. Its value had no tolerance, so a host compared it exactly.
@@ -505,6 +824,15 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.7`
 
 *November 1, 2026 · definition format 38*
+
+```js
+const definition = nexo.parse('shelf.item("lamp").power', { imports: ['shelf'] });
+const first = registry.resolve(definition).createEvaluator().evaluate();
+registry.registerModule(garage);                 // declares a typeOf: the first resolution is stale
+const again = registry.resolve(definition).createEvaluator().evaluate();
+
+again.metadata.origin === first.metadata.origin  // true; false before
+```
 
 **Runtime**
 
@@ -518,6 +846,12 @@ Each entry says what its version breaks:
 
 *November 1, 2026 · definition format 38*
 
+```nexo
+@Home  // NEXO2520, now giving ~Home
+~Home  // the script parameter Home
+Home   // NEXO1506, giving @Home and ~Home, as before
+```
+
 **Runtime**
 
 - [Structure errors](spec/runtime/errors.md#runtime-structure-errors): a namespace standing where a value does, as `@Home` reads where no local of its name is in scope, is refused, NEXO2520, giving `~Home` for the script parameter of its name, as a module's name standing alone is, NEXO1506.
@@ -529,6 +863,13 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.5`
 
 *November 1, 2026 · definition format 38*
+
+```js
+{ name: 'Any', kind: 'structured', members }                           // a type of Garage; rename it to keep Nexo's
+createPropertyDeclaration('part', 'Any', { updates, impl })            // Garage's Any; Nexo's before
+createPropertyDeclaration('parts', 'List', { updates, impl })          // NEXO4070 on registration; NEXO4512 on creation before
+createPropertyDeclaration('parts', 'List<Number>', { updates, impl })  // write this instead
+```
 
 **Language**
 
@@ -549,6 +890,11 @@ Each entry says what its version breaks:
 
 *November 1, 2026 · definition format 38*
 
+```nexo
+shelf.item("lamp").book()             // NEXO3092 as it resolves; NEXO5013 as evaluated before
+(shelf.item("lamp") as Light).book()  // the host call book, as before
+```
+
 **Language**
 
 - [Deferred member selection](spec/language/types.md#types-any-deferred-selection): an access on a value of `Any` whose every candidate is a host call is refused as it resolves (NEXO3092), since no evaluation could select a member. It was refused as it was evaluated (NEXO5013), which still refuses one whose selection is a host call among other candidates.
@@ -561,6 +907,14 @@ Each entry says what its version breaks:
 
 *November 1, 2026 · definition format 38*
 
+```js
+const { hostCall } = registry.resolve('light?.dim({ to = 40 })', { light: null }, { imports: ['Home'] });
+
+hostCall.pointer      // '/expression/chain'; not answered before
+hostCall.declaration  // null, as before: light's type is unknown
+hostCall.candidates   // [Light's dim]; not answered before
+```
+
 **Runtime**
 
 - [Host calls](spec/runtime/host-calls.md#runtime-host-calls): a resolution's host call answers its `pointer`, where it stands, and its `candidates`: its declaration alone, or, while its receiver's type is unknown, every declaration that takes the call as it is written. A host that tells its host calls apart by keys of its own reads what a call on a null receiver requests there, as DOMQL tells a subscription from an execution, instead of repeating the language's lookup.
@@ -572,6 +926,13 @@ Each entry says what its version breaks:
 ## `1.0.0-beta.2`
 
 *November 1, 2026 · definition format 38*
+
+```js
+const error = NexoError.module('SHOP4001', 'A shelf declares no size', { module: 'Shop', declaration: 'shelf' });
+
+error.kind     // 'module'; the factory was undeclared before
+error.message  // "A shelf declares no size (in the module 'Shop', in the declaration 'shelf')"
+```
 
 **Runtime**
 

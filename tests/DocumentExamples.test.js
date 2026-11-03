@@ -54,7 +54,8 @@ const SUPPLIED = Object.freeze({ dim: 40, on: Object.freeze({ at: 12, strength: 
 /**
  * Each document's examples, in order: what each is about, whether each of its lines is an example of its own, the context it is written in, and what resolving and evaluating it against the examples' home gives where its
  * document states it: its value, the kind of error that refuses it, or, for a host call, what its projection gives for the value its host supplies. Every example reads as a definition and gives its canonical text again,
- * and every one resolves against the examples' vocabulary with the host's imports and evaluates, a host call prepared and, where its host supplies values, projected.
+ * and every one resolves against the examples' vocabulary with the host's imports and evaluates, a host call prepared and, where its host supplies values, projected. The language history is none of them: each of its
+ * examples shows what a line did at its version and before it, which a later version may change, so each was run at its version's commit when its entry was written.
  */
 const DOCUMENTS = {
     'spec/README.md': [],
@@ -155,7 +156,6 @@ const DOCUMENTS = {
     'docs/embedding-guide.md': [],
     'docs/features-status.md': [],
     'docs/decisions.md': [],
-    'LANGUAGE-HISTORY.md': [],
 };
 
 /** What the example gives against the examples' home: its value, or, for a host call, its prepared call and the projection of the value its host supplies, where it supplies values. */

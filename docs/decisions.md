@@ -995,3 +995,18 @@ Forty decisions were taken while implementing the declarations, member selection
   - The language history links each change to the section that states it now, so renaming a section broke links no one saw.
   - DOMQL links into Nexo at the release it pins, so a broken anchor here breaks DOMQL's documents too.
 - **Declined:** Allowing a link to any past commit, which would let a link meant to be current go stale unnoticed.
+
+<a id="d70"></a>
+
+## D70 — A history entry leads with examples of what changed
+
+*November 3, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:** From `1.0.0-beta.1` on, each entry of the [language history](../LANGUAGE-HISTORY.md) leads with examples of what its version changed: a script's in a `nexo` block, a host's in a `js` block. Each line's comment says what it does at that version and what it did before. The entry's list follows them as the reference. Each example is run at its version's commit and at the one before it when its entry is written; the gate doesn't run them.
+- **Why:**
+  - The list states each change precisely, but a reader migrating needs the line to write.
+  - Running the examples at each version's commit found eight entries, and a table of the specification, that misstated what changed.
+- **Declined:**
+  - Running the history's examples in the gate against the current language, which would make a record of the past change with later versions.
+  - Examples for the entries before the beta, which record redesigns no host migrates across, made before the beta promised guidance on migrating.
