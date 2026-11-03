@@ -231,6 +231,9 @@ describe('the module error codes', () => {
 
         it('NEXO4053: a host call written as an indexer', () => {
             expectModuleCode(creating({ members: [indexerDeclaration({ invokedBy: 'host', updates: undefined })] }), 'NEXO4053');
+            // An indexer is refused as a host call before the keys a host call takes none of, which removing would only lead to this refusal.
+            expectModuleCode(creating({ members: [indexerDeclaration({ invokedBy: 'host' })] }), 'NEXO4053');
+            expectModuleCode(creating({ members: [indexerDeclaration({ invokedBy: 'host', impl: () => 1, updates: undefined })] }), 'NEXO4053');
         });
 
         it('NEXO4056: a host call taking an expression or a predicate parameter', () => {

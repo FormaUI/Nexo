@@ -924,20 +924,20 @@ export class NexoModule {
     }
 
     /**
-     * Refuses what a host call cannot take: updates, since it is never evaluated; an implementation, since its host invokes it; an indexer's kind, since it is a function; and an expression or a predicate parameter, a body of
-     * each item of a list the call follows, whose argument its host could keep neither as a value nor as a function of its own contract.
+     * Refuses what a host call cannot take: an indexer's kind, since it is a function, which no other key it declares makes one, so it is refused first; updates, since it is never evaluated; an implementation, since its
+     * host invokes it; and an expression or a predicate parameter, a body of each item of a list the call follows, whose argument its host could keep neither as a value nor as a function of its own contract.
      */
     static #validateHostInvokedFunction(member, parameters, name, fail) {
+        if (member.kind === 'indexer') {
+            fail('NEXO4053', 'A function the host invokes is written as a function call, never as an indexer', name, 'invokedBy');
+        }
+
         if (member.updates !== undefined) {
             fail('NEXO4030', 'Its host invokes it, and the evaluator never evaluates it, so it declares no updates', name, 'updates');
         }
 
         if (member.impl !== undefined) {
             fail('NEXO4030', 'Its host invokes it, so its module gives Nexo no implementation of it', name, 'impl');
-        }
-
-        if (member.kind === 'indexer') {
-            fail('NEXO4053', 'A function the host invokes is written as a function call, never as an indexer', name, 'invokedBy');
         }
 
         const unprepared = parameters.find(parameter => parameter.kind !== 'value' && parameter.kind !== 'function');

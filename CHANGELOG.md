@@ -65,3 +65,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A string holding a surrogate standing alone, in a script's text or a definition, is refused, NEXO1049 or NEXO2000, rather than read into a value canonical text would write as ill-formed text.
 - `format` writes a call's arguments and a list's items each on a line of its own, a level within, where one follows a block's `end`, rather than the next one back at the call's indentation.
 - `1.e3` is refused saying a number's exponent follows its digits directly, `1e3`, where it said only that `e3` is no member.
+- An indexer declared `invokedBy: 'host'` is refused as one, NEXO4053, before the `updates` or `impl` it declares, NEXO4030, whose removal led only to that refusal.
