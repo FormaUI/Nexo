@@ -968,3 +968,17 @@ Forty decisions were taken while implementing the declarations, member selection
   - A date for 1.0, which says nothing about whether the contracts are settled.
   - Making tooling a requirement, which would hold 1.0 for an addition.
   - Refusing every feature without exception, which would hold 1.0 for the one its own requirement, real use, turns out to need.
+
+<a id="d68"></a>
+
+## D68 — The embedding guide leads with code, which the gate runs
+
+*November 3, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:** Each section of the [embedding guide](embedding-guide.md) leads with its code, and the rules the code relies on follow it as a list. The gate runs the guide's JavaScript in order, as a host would, and checks each value its comments state. The guide shows a host call too.
+- **Why:**
+  - A reader learns the API from the code, and the rules read best once the code shows what they concern.
+  - The guide's examples were never run, and its prose had gone stale in one place: a resolution is no longer keyed by its bindings' numbers.
+  - A host call is how DOMQL subscribes and executes, and the guide showed none.
+- **Declined:** Testing a copy of the guide's code, which would check the copy rather than what a reader reads.
