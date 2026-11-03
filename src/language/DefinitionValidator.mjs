@@ -1054,7 +1054,7 @@ export class DefinitionValidator {
         }
 
         if (typeof node.name !== 'string') {
-            this.#fail('NEXO2521', "A namespace's member is named after its dot, as home.rooms is, and never through brackets", `${pointer}/name`);
+            this.#fail('NEXO2521', `A member is read through the namespace '${namespace.name}' by the name it is declared by, and by no computed name`, `${pointer}/name`);
         }
 
         if (node.optional === true) {

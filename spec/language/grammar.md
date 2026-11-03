@@ -144,6 +144,9 @@ value                         = "it" | "root" | literal
 
 namespace-access              = namespace-name "." member-name
                                 [ "(" [ argument-list ] ")" ]
+                              | namespace-name
+                                (* followed by a computed property access,
+                                   which its chain reads *)
                               (* no indexer access is written through a namespace *)
 namespace-name                = identifier
                               (* a namespace where the script's imports
@@ -267,7 +270,7 @@ The grammar uses several terms more narrowly than the prose:
 | `import-declaration` | An import: its alias and `=` where it gives one, then its source, a registered module's name, and a dot and a type's local name where it imports one type |
 | `namespace-name` | An identifier naming a module's namespace where a value stands, or qualifying a type's or an extension's name: the local name the script's imports give a module, its own or an alias |
 | `module-name` | An identifier naming a registered module by its own name, as an import's source names the module it imports from |
-| `namespace-access` | A module member read, a function reference, or a qualified form called, through a module's namespace; a script importing no module has none |
+| `namespace-access` | A module member read, a function reference, or a qualified form called, through a module's namespace, or the namespace a computed property access reads through; a script importing no module has none |
 | `extension-access` | An extension member read with `:` or `?:` and its names, which [reading an access's names](extensions.md#extensions-reading-names) reads as the member alone, through its extension, or through that extension's module, any later ones ordinary accesses of its answer; a call's arguments follow the last name, and a named indexer's key follows as an `indexer-access`, as after a `dot-property-access` |
 | `type-name` | The name of the type a cast or a conversion names, written bare: its local name, any identifier, a reserved word included, as a member's name is after `.`, qualified by the local name the script's imports give its module and a dot where written so; a qualified name parses alike whatever the script imports, and resolution decides whether the script imports the module |
 | `input` | What a chain can start from |

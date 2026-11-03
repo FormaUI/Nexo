@@ -1212,11 +1212,16 @@ export class Parser {
 
     /**
      * Reads a namespace access: a module's name, its dot and the name of one of the module's members, and the arguments of a call through it where parentheses follow. A namespace is never null and has no indexer,
-     * so only `.` follows it, and a module's local name alone, which reads no value, gives the forms that read the local and the script parameter of its name.
+     * so only `.` follows it, and a module's local name alone, which reads no value, gives the forms that read the local and the script parameter of its name. A computed property access after it is read by the chain,
+     * as one after `@` and its name is, so the namespace access is its name alone.
      */
     #parseNamespaceAccess() {
         const namespaceName = this.#take();
         const name = namespaceName.value;
+
+        if (this.#token.type === '.' && this.#nextToken.type === '[') {
+            return Parser.#node('namespace-access', [namespaceName]);
+        }
 
         if (this.#token.type !== '.') {
             const isOptional = this.#token.type === '?.';

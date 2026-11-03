@@ -35,7 +35,7 @@ The examples are read as their host reads them, which supplies imports of `Home`
 
 ## Namespaces
 
-A module's namespace is how a script reaches what the module declares: in a script [importing](#scripts-imports) the module, the local name its import gives it, a dot and the name of one of its declarations, as `Home.rooms` and `Home.device(room, "lamp")` are, and the qualifier of one of its extensions' names, as `device:Energy.Device.usage` writes it.
+A module's namespace is how a script reaches what the module declares: in a script [importing](#scripts-imports) the module, the local name its import gives it, a dot and the name of one of its declarations, as `Home.rooms` and `Home.device(room, "lamp")` are, and the qualifier of one of its extensions' names, as `device:Energy.Device.usage` writes it. A [computed property access](members.md#computed-property-access) through a namespace reads as one through any receiver does, written after the namespace's name or after `@` and it alike: a string literal that is a Nexo name is the name written, so `Home.["rooms"]` is `Home.rooms`, and any other name is refused (NEXO2521).
 
 <a id="namespaces-module-members"></a>
 

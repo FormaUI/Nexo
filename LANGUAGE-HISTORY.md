@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-35"></a>
+
+## `1.0.0-beta.35`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [A computed property access through a namespace](spec/language/modules.md#namespaces) reads as one after `@` and the namespace's name does: `Home.["rooms"]` is `Home.rooms`, as `@Home.["rooms"]` was, where it was a syntax error, NEXO1000, and `Home.[p]` is refused as `@Home.[p]` is, NEXO2521.
+
+**Breaking:** nothing. A text refused before reads.
+
 <a id="v1-0-0-beta-34"></a>
 
 ## `1.0.0-beta.34`

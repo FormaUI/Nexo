@@ -232,10 +232,17 @@ export class Lowering {
         }
     }
 
-    /** A namespace access: a member read through the module's namespace, or a call of one through it, its arguments as written, the member spanning the namespace's name to its own and the call the access. */
+    /**
+     * A namespace access: a member read through the module's namespace, or a call of one through it, its arguments as written, the member spanning the namespace's name to its own and the call the access; or the
+     * namespace alone, which a computed property access its chain reads follows.
+     */
     #lowerNamespaceAccess(access) {
         const [namespaceName, , nameToken, ...rest] = access.children;
         const receiver = this.#span({ kind: 'namespace', name: namespaceName.value }, namespaceName);
+
+        if (nameToken === undefined) {
+            return receiver;
+        }
         const member = { kind: 'memberAccess', receiver, name: SyntaxTree.wordOf(nameToken, this.#text) };
 
         this.#spans.set(member, { start: SyntaxTree.startOf(namespaceName), end: SyntaxTree.endOf(nameToken) });

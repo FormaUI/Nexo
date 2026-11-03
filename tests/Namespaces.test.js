@@ -171,6 +171,16 @@ describe('module members', () => {
         expect(errorThrownBy(() => resolve('word.open'))).toBeInstanceOf(NexoError);
         expect(errorThrownBy(() => resolve('shop.nothing'))).toMatchObject({ kind: 'validation', message: expect.stringContaining("The module 'shop' declares no member 'nothing'") });
     });
+
+    it('are read by a computed name that is a Nexo name, written after the namespace as after @ and its name, and refuse any other computed name', () => {
+        expect(evaluate('{ a = shop.["open"], b = @shop.["open"] }').value).toEqual({ a: true, b: true });
+        expect(nexo.parse('shop.["open"]', { imports: ['shop'] }).expression).toEqual(nexo.parse('shop.open', { imports: ['shop'] }).expression);
+        expect(nexo.format('shop.["open"]', { imports: ['shop'] })).toBe('shop.open');
+
+        for (const text of ['shop.[word.text]', '@shop.[word.text]', 'shop.["no-name"]']) {
+            expect(errorThrownBy(() => resolve(text))).toMatchObject({ code: 'NEXO2521', kind: 'structure', location: { pointer: '/expression/name' }, message: expect.stringContaining("through the namespace 'shop' by the name it is declared by") });
+        }
+    });
 });
 
 describe('qualified forms', () => {
