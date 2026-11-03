@@ -187,6 +187,27 @@ describe('host calls', () => {
     });
 });
 
+describe('the lineage a projection reads', () => {
+    const watching = nexo.createModule('home', {
+        types: [
+            { name: 'Motion', kind: 'structured', members: dataPropertyDeclarations({ at: 'Number' }) },
+            extensionDeclaration('Watches', 'String', [createFunctionDeclaration('watch', 'Motion', { invokedBy: 'host' })]),
+        ],
+    });
+    const registry = nexo.createRegistry([watching]);
+    const values = { light: 'hall', people: [{ n: 'a' }, { n: 'b' }] };
+    const projected = text => registry.resolve(text, values, { imports: ['home'] }).createEvaluator(values).prepareHostCall().project({ at: 1 });
+    const sourcesOf = record => record.sources.map(source => source.value);
+
+    it('is the lineage the locals before its call recorded, as an evaluation reads its own, its items\' earliest sources however often it projects them', () => {
+        const names = projected('let names = people { name = it.n }\nreturn light:watch() { at = it.at, names = names }').metadata.objectFields.names;
+        const labels = projected('let names = people { name = it.n }\nreturn light:watch() { labels = names { label = it.name } }').metadata.objectFields.labels;
+
+        expect(sourcesOf(names)).toEqual([{ n: 'a' }, { n: 'b' }]);
+        expect(labels.provenance.map(source => source.value)).toEqual([{ n: 'a' }, { n: 'b' }]);
+    });
+});
+
 describe('prepared calls', () => {
     /** An evaluator of the text against a registry holding the home's module, with the home's bindings and the environment given, and the registry itself. */
     const evaluatorOf = (text, { values = bindings, env = { levels: {}, occupied: [] }, invoked = [] } = {}) => {

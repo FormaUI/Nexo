@@ -773,3 +773,18 @@ Forty decisions were taken while implementing the declarations, member selection
   - A function the member was given, kept by a host whose `beforeInvoke` answered pending or threw, stayed callable after its evaluation ended, outside the evaluator's guard.
 - **Declined:**
   - Typing a read of a maintained member as nullable whatever its declaration says, which would give a script a type its module never declared.
+
+<a id="d55"></a>
+
+## D55 — A compilation compiles through an evaluator of its own
+
+*November 3, 2026*
+
+- **Kind:** Implementation decision, measured.
+- **Decision:** The functions a resolved definition compiles to are compiled by an evaluator of the compilation's own, which holds empty bindings and an empty environment. A deferred access keeps the selections of the first 32 types it meets, and a value's metadata shares object records within its own description alone.
+- **Why:**
+  - The first evaluator to compile a resolution stayed reachable from the functions it compiled, which the compilation keeps for every evaluator, so its environment and its bindings lived as long as the resolution did.
+  - A deferred access kept a selection for every object shape it met through `Any`, without bound: 200,000 shapes kept about 210 MB.
+  - Object records shared across evaluations kept host values their sources held, past the evaluations that read them.
+- **Measured** in paired runs against the commit before it, eleven rounds: evaluating with a reused evaluator −3.7%, and with a new evaluator and new bindings for each evaluation +8% (about 3 µs), with no more allocation; the other cases are unchanged. The added cost comes with compiling through another evaluator, and is the price of releasing the host's values.
+- **Declined:** Compiling through the first evaluator and clearing its host values after it compiles, which would leave a function compiled later during that evaluator's own evaluations reading values cleared under it.

@@ -1,3 +1,5 @@
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
 import { describe, it, expect } from 'vitest';
 import { Evaluator } from '#nexo/language/Evaluator.mjs';
 import { LanguageResolver } from '#nexo/language/LanguageResolver.mjs';
@@ -107,6 +109,44 @@ describe('Evaluator', () => {
 
         expect(host.calls).toEqual(['ended:completed']);
         expect(invoked).toEqual([]);
+    });
+
+    it('keeps no evaluator, its bindings nor a host\'s value its metadata read alive once each is dropped, while the resolution it evaluated lives on', async () => {
+        setFlagsFromString('--expose-gc');
+
+        const collect = runInNewContext('gc');
+        const registry = new NexoRegistry([Vocabulary.module, createPrices([])]);
+        const definition = parseImporting(registry, '{ names = rooms { name = it.name }, size = rooms.count }');
+        const resolveFor = values => new LanguageResolver(registry, new ParameterBindings(registry, values), ParsedTexts.locationsOf(definition)).resolveDefinition(definition);
+        const resolved = resolveFor({ rooms: [{ name: 'hall' }] });
+        // Each round evaluates in a frame of its own, so nothing but Nexo could keep what it made alive.
+        const evaluateRound = round => {
+            const rooms = [{ name: `hall ${round}` }];
+            const bindings = new ParameterBindings(registry, { rooms });
+            const evaluation = new Evaluator(registry, resolved, bindings, { round }, ParsedTexts.locationsOf(definition)).evaluate();
+
+            expect(evaluation.metadata.objectFields.names.sources).toHaveLength(1);
+
+            return [new WeakRef(bindings), new WeakRef(rooms)];
+        };
+        const references = [0, 1, 2].flatMap(evaluateRound);
+
+        await new Promise(resolve => setTimeout(resolve, 0));
+        collect();
+
+        expect(references.map(reference => reference.deref() === undefined)).toEqual(references.map(() => true));
+        expect(resolved.type).not.toBeNull();
+    });
+
+    it('reads an access on a value of Any of every type it meets, past the selections it keeps', () => {
+        // Each list holds an object of a shape of its own, so each is a type of its own the access meets.
+        const shapes = new NexoModule('shapes', { members: [Declarations.createFunctionDeclaration('shape', 'Any', { updates: { changes: 'constant', reads: 'fresh' }, parameters: [Declarations.createValueParameterDeclaration('index', 'Number')], impl: ({ args }) => [{ [`key${args.index}`]: args.index }] })] });
+        const registry = new NexoRegistry([Vocabulary.module, shapes]);
+        const definition = parseImporting(registry, 'indexes.select(shapes.shape(it).count)');
+        const bindings = new ParameterBindings(registry, { indexes: Array.from({ length: 40 }, (_, index) => index) });
+        const resolved = new LanguageResolver(registry, bindings, ParsedTexts.locationsOf(definition)).resolveDefinition(definition);
+
+        expect(new Evaluator(registry, resolved, bindings, {}, ParsedTexts.locationsOf(definition)).evaluate().value).toEqual(Array.from({ length: 40 }, () => 1));
     });
 
     it('closes the functions a member is given however its invocation ends, its host answering it pending or throwing before it runs included', () => {

@@ -8,6 +8,7 @@ import { Dictionary } from './Dictionary.mjs';
 import { Index } from './Index.mjs';
 import { NexoErrors } from './NexoError.mjs';
 import { Pair } from './Pair.mjs';
+import { ParameterBindings } from './ParameterBindings.mjs';
 import { Range } from './Range.mjs';
 import { StructureTypes } from './StructureTypes.mjs';
 import { Type } from './Type.mjs';
@@ -75,6 +76,9 @@ const SELECTING_KINDS = new Set(['conditional', 'coalescing', 'and', 'or']);
 
 /** How many of the records an object expression gave last it keeps for objects whose fields give the same records to share. */
 const RECENT_FIELD_RECORDS = 4;
+
+/** The most selections a deferred access keeps, one for each actual type it meets first, so a value of Any meeting objects of ever new shapes keeps a bounded number. */
+const MAX_KEPT_SELECTIONS = 32;
 
 /** The samples of a call that reads none. */
 const NO_SAMPLES = Object.freeze([]);
@@ -150,11 +154,23 @@ export class Evaluator {
     /** The record a part with none of its own takes, indexed whole record → inherited record, made once for each whole and released with it. @type {WeakMap<object, object>} */
     static #inheritedRecordCache = new WeakMap();
 
-    /** The records each object expression gave last, the latest first, with the implicit parameter's record and the records of the fields each was made of, so an object whose fields give the same records shares one, as items that alternate between branches do. @type {WeakMap<object, { contextRecord: object | null, fields: object[], record: object }[]>} */
-    static #recentFieldRecords = new WeakMap();
+
+    /**
+     * The evaluator that compiles this evaluator's nodes, an evaluator of the compilation's own, which holds empty bindings and an empty environment, of the kinds an evaluator holds, so the functions it compiles, which the compilation keeps for every
+     * evaluator of its resolved definition, keep no host's values alive with it. It compiles for itself.
+     * @type {Evaluator}
+     */
+    #compiler;
 
     /** The functions this evaluator's nodes compile to. @type {Map<object, (evaluator: Evaluator, context: unknown) => unknown>} */
     #compiledFunctions;
+
+    /**
+     * The records each object expression gave last in the metadata being described, the latest first, with the implicit parameter's record and the records of the fields each was made of, so an object whose fields give
+     * the same records shares one, as items that alternate between branches do. It lasts as long as one description of a value's metadata, so a record, and a host's value a source in it holds, outlives neither.
+     * @type {WeakMap<object, { contextRecord: object | null, fields: object[], record: object }[]> | null}
+     */
+    #recentFieldRecords = null;
 
     /** The functions the arguments of this evaluator's members compile to, by each member's resolution. @type {Map<object, (evaluator: Evaluator, context: unknown) => object | null>} */
     #compiledArguments;
@@ -247,9 +263,13 @@ export class Evaluator {
         if (compilation === undefined || compilation.registry !== registry) {
             const { type } = resolvedDefinition;
 
-            compilation = { registry, functions: new Map(), arguments: new Map(), invocations: new Map(), checksResultData: type !== null && !registry.isData(type) };
+            compilation = { registry, functions: new Map(), arguments: new Map(), invocations: new Map(), checksResultData: type !== null && !registry.isData(type), compiler: null };
             Evaluator.#compilationCache.set(resolvedDefinition, compilation);
+            // The compiler is made once the compilation is kept, so it finds the compilation and compiles for itself.
+            compilation.compiler = new Evaluator(registry, resolvedDefinition, new ParameterBindings(registry), {}, locations);
         }
+
+        this.#compiler = compilation.compiler ?? this;
 
         this.#compiledFunctions = compilation.functions;
         this.#compiledArguments = compilation.arguments;
@@ -285,8 +305,13 @@ export class Evaluator {
         const { node, pointer, declaration } = hostCall;
         const resolution = this.#resolvedDefinition.resolutionOf(node);
         const objectFieldSelections = new WeakMap();
+        // The lineage of the lists the locals before the call make, which each projection reads as an evaluation reads its own, and adds the lineage of the lists it makes to, each released with its list.
+        const sourcesByList = new WeakMap();
+        const provenanceByList = new WeakMap();
 
         this.#objectFieldSelections = objectFieldSelections;
+        this.#sourcesByList = sourcesByList;
+        this.#provenanceByList = provenanceByList;
 
         const { terminalNode, localsFrame } = this.#evaluateLocalsBefore();
         // A qualified form's receiver is its first argument, and a module member has none, so nothing it lacks skips it.
@@ -333,6 +358,8 @@ export class Evaluator {
         if (declaration.result !== undefined) {
             call.project = (value, hooks = null) => {
                 this.#objectFieldSelections = objectFieldSelections;
+                this.#sourcesByList = sourcesByList;
+                this.#provenanceByList = provenanceByList;
 
                 return this.#evaluateForHost(hooks, () => this.#project(localsFrame, terminalNode, value));
             };
@@ -434,7 +461,7 @@ export class Evaluator {
                 outcome = { kind: isPending ? 'pending' : 'completed', value: result.value };
             }
 
-            return new Evaluation(result.value, isPending, () => this.#resolveRecord(result.node, result.value, result.identities, null));
+            return new Evaluation(result.value, isPending, () => this.#describeMetadata(result));
         } catch (error) {
             if (isTold) {
                 outcome = { kind: 'failed', error };
@@ -488,7 +515,7 @@ export class Evaluator {
         let compiledFunction = this.#compiledFunctions.get(node);
 
         if (compiledFunction === undefined) {
-            compiledFunction = this.#compileNode(node);
+            compiledFunction = this.#compiler.#compileNode(node);
             this.#compiledFunctions.set(node, compiledFunction);
         }
 
@@ -1073,6 +1100,10 @@ export class Evaluator {
      * declaration answering two types has two. The result type is the declaration's own, its type parameters bound for the call, which a null the call propagates or the types of other functions it may call never make wider.
      */
     #getCompiledInvocation(declaration, resultType, reliesOnAnswer = false) {
+        if (this.#compiler !== this) {
+            return this.#compiler.#getCompiledInvocation(declaration, resultType, reliesOnAnswer);
+        }
+
         let invocations = this.#compiledInvocations.get(declaration);
 
         if (invocations === undefined) {
@@ -1208,6 +1239,7 @@ export class Evaluator {
         // The selection made for each actual type the access meets, by the type's qualified text. It is kept with the compilation, which its resolved definition and its registry hold, and released with the resolved
         // definition. It stays valid while that resolution is current: its candidates were fixed at resolution and no registration changes a type's hierarchy, so only a module declaring a `typeOf`, which changes
         // the actual types values are found of, could change a selection, and such a registration makes the resolution stale, an access on a value of Any always recognizing. It saves selecting, binding the type parameters the receiver writes and compiling the parameters' checks at every evaluation.
+        // It keeps the selections for the first types the access meets alone, as many as `MAX_KEPT_SELECTIONS`, so the objects of ever new shapes a value of Any can hold grow it no further: another type is selected each time it is met.
         const selections = new Map();
 
         return (evaluator, context) => {
@@ -1249,7 +1281,10 @@ export class Evaluator {
 
         if (selection === undefined) {
             selection = this.#selectDeferred(node, candidates, receiverType);
-            selections.set(key, selection);
+
+            if (selections.size < MAX_KEPT_SELECTIONS) {
+                selections.set(key, selection);
+            }
         }
 
         if (selection.kind === 'failure') {
@@ -2450,7 +2485,7 @@ export class Evaluator {
         let evaluateArguments = this.#compiledArguments.get(resolution);
 
         if (evaluateArguments === undefined) {
-            evaluateArguments = this.#compileArguments(resolution);
+            evaluateArguments = this.#compiler.#compileArguments(resolution);
             this.#compiledArguments.set(resolution, evaluateArguments);
         }
 
@@ -2703,8 +2738,12 @@ export class Evaluator {
      * keeps, so it holds no source between evaluations.
      */
     #evaluateResult(node) {
-        this.#sourcesByList = new WeakMap();
-        this.#provenanceByList = new WeakMap();
+        // An evaluation starts its lineage afresh, and a projection continues the lineage its call was prepared with.
+        if (this.#projectionContext === null) {
+            this.#sourcesByList = new WeakMap();
+            this.#provenanceByList = new WeakMap();
+        }
+
         this.#selections = null;
 
         try {
@@ -2840,6 +2879,17 @@ export class Evaluator {
         }
 
         return value;
+    }
+
+    /** Describes a result's metadata from the identities its copy left, the records objects share kept for this description alone. */
+    #describeMetadata(result) {
+        this.#recentFieldRecords = new WeakMap();
+
+        try {
+            return this.#resolveRecord(result.node, result.value, result.identities, null);
+        } finally {
+            this.#recentFieldRecords = null;
+        }
     }
 
     /**
@@ -3013,11 +3063,11 @@ export class Evaluator {
         }
 
         // An object whose fields give the records a recent one did, as the items of a list mostly do, shares its record.
-        let recent = Evaluator.#recentFieldRecords.get(node);
+        let recent = this.#recentFieldRecords.get(node);
 
         if (recent === undefined) {
             recent = [];
-            Evaluator.#recentFieldRecords.set(node, recent);
+            this.#recentFieldRecords.set(node, recent);
         }
 
         for (const kept of recent) {
