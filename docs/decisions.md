@@ -982,3 +982,16 @@ Forty decisions were taken while implementing the declarations, member selection
   - The guide's examples were never run, and its prose had gone stale in one place: a resolution is no longer keyed by its bindings' numbers.
   - A host call is how DOMQL subscribes and executes, and the guide showed none.
 - **Declined:** Testing a copy of the guide's code, which would check the copy rather than what a reader reads.
+
+<a id="d69"></a>
+
+## D69 — The gate checks every link a document gives
+
+*November 3, 2026*
+
+- **Kind:** Process.
+- **Decision:** A test reads every Markdown document and checks each link it gives within Nexo: the document is there, and so is the anchor, an `<a id>` or a heading's as GitHub writes it. A link names a document as this commit holds it, the README's addresses on `main` among them. A link to a past commit is a record of the past, which the test names with what the commit holds, and reads from the history; CI checks out the whole history for it.
+- **Why:**
+  - The language history links each change to the section that states it now, so renaming a section broke links no one saw.
+  - DOMQL links into Nexo at the release it pins, so a broken anchor here breaks DOMQL's documents too.
+- **Declined:** Allowing a link to any past commit, which would let a link meant to be current go stale unnoticed.
