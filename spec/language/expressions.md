@@ -398,10 +398,10 @@ Each answers a value as it is, never copied or converted: `null and "value"` is 
 A logical expression can give values of several types. Which of them must share a type depends on where it stands:
 
 - **Where its truthiness is tested,** none need to. It is tested as a condition, as the operand of `not`, as an operand of another `and` or `or`, and as a predicate argument written as an expression of `it`.
-- **Where a conditional binding binds it,** its truthy values share a type, since the name is bound only where the value is truthy: `if let level = metered and device.battery then level else 0 end` binds a `Number`.
+- **Where a conditional binding binds it,** its truthy values share a type, since the name is bound only where the value is truthy: `if let level = light.active() and device.battery then level else 0 end` binds a `Number`.
 - **Wherever else it stands,** its value is used, and the values that can reach that place merge to one type, as [merging](types.md#types-assignability-and-merging) sets out. Values of no one type are a validation error (NEXO3040).
 
-Its value is used as a result, a function's result among them, a local's initializer, an object field, an argument other than a predicate's, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation. Parentheses group an expression and add no requirement of their own, so `(metered and light.brightness) or 0` is typed as `metered and light.brightness or 0` is.
+Its value is used as a result, a function's result among them, a local's initializer, an object field, an argument other than a predicate's, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation. Parentheses group an expression and add no requirement of their own, so `(light.active() and light.brightness) or 0` is typed as `light.active() and light.brightness or 0` is.
 
 The values that can reach a place:
 
@@ -410,21 +410,22 @@ The values that can reach a place:
 - **Of an operand:** a value that can be null gives null where it is falsey, and itself without null where it is truthy. A Boolean gives false where it is falsey and true where it is truthy. A value of `Any` may hold false, so where it is falsey it is still of `Any`: `value and 5` is of `Any` where `value` is. Any other value is truthy only.
 - **Of fixed operands,** literals and bound parameters, the one that decides: `true and "value"` is a `String`.
 
-So, where `metered` is a `Boolean`:
+So, where `light.active()` is a `Boolean` that evaluation alone decides, and `metered` a bound one:
 
 | Expression | Its type |
 | --- | --- |
-| `metered and light.brightness or 0` | A `Number`. Where `metered` is false, `or` selects `0`; where it is true, the brightness is a number. |
-| `metered and device.battery or 0` | A `Number`, though the battery is a `Number?`: a null battery selects `0` too. |
-| `metered and "metered" or 0` | Refused where its value is used (NEXO3040): `"metered"` and `0` both reach it. |
-| `metered and light.brightness`, as a result | Refused (NEXO3040): false and a number both reach it. |
-| `not (metered and light.brightness)` | A `Boolean`: `not` tests its operand's truthiness alone. |
-| `if metered and light.brightness then "lit" else "dark" end` | A `String`: the condition tests truthiness, and both branches are strings. |
-| `if metered then light.brightness else 0 end` | A `Number`: the branch selected gives the result. |
+| `light.active() and light.brightness or 0` | A `Number`. Where the light is inactive, `or` selects `0`; where it is active, the brightness is a number. |
+| `light.active() and device.battery or 0` | A `Number`, though the battery is a `Number?`: a null battery selects `0` too. |
+| `light.active() and "lit" or 0` | Refused where its value is used (NEXO3040): `"lit"` and `0` both reach it. |
+| `light.active() and light.brightness`, as a result | Refused (NEXO3040): false and a number both reach it. |
+| `metered and light.brightness`, as a result | A `Number`, where `metered` is bound true: a fixed operand decides. |
+| `not (light.active() and light.brightness)` | A `Boolean`: `not` tests its operand's truthiness alone. |
+| `if light.active() and light.brightness then "lit" else "dark" end` | A `String`: the condition tests truthiness, and both branches are strings. |
+| `if light.active() then light.brightness else 0 end` | A `Number`: the branch selected gives the result. |
 | `room.device(name) and 5` | A `Number?`. |
 | `name or "untitled"` | A `String`, where `name` is a string. |
 
-A local holds one type from its declaration. So `let level = metered and light.brightness` is refused, even where the next line reads `level or 0`; write `let level = metered and light.brightness or 0`, or a conditional.
+A local holds one type from its declaration. So `let level = light.active() and light.brightness` is refused, even where the next line reads `level or 0`; write `let level = light.active() and light.brightness or 0`, or a conditional.
 
 <a id="logical-expressions-negations-and-groups-not-a-conditional"></a>
 

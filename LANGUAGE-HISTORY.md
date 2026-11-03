@@ -129,7 +129,7 @@ Each entry says what its version breaks:
 
 **Runtime**
 
-- An operation given options or hooks holding a key it takes none of, `createBindings({ … }, { typez })` or `evaluate({ beforeinvoke })` among them, or a hook that is no function, refuses them, NEXO2048, where the key was left out silently.
+- An operation given options or hooks holding a key it takes none of, `createBindings({ … }, { typez })` or `evaluate({ beforeinvoke })` among them, or a hook that is no function, refuses them, NEXO2048, where a misspelled key was ignored and a hook that is no function failed as it was called, NEXO5009.
 - A `typeOf` answering nothing is a fault, NEXO5002, as one naming no type is, where it recognized nothing.
 - A conversion's `reject` answers its own attempt alone, and one kept and called once the operator has answered fails, NEXO5018 or NEXO5004, where it threw Nexo's own signal into the host's code.
 - A declared binding type that is no string is refused as no notation, NEXO2044.
@@ -149,7 +149,7 @@ Each entry says what its version breaks:
 - [Data nests at most 1,000 levels](spec/runtime/bindings.md#runtime-bindings-nesting): data a host binds nesting deeper is refused, NEXO2047, a value a host call supplies, NEXO5015, a value of `Any` a deferred access types, and a result holding such data, NEXO5052, rather than each overflowing the stack as a RangeError.
 - A host call whose result is declared `Any` is supplied a value of any type, captured as it is, where it refused every value.
 
-**Breaking:** data nesting deeper than 1,000 levels is refused; none could be evaluated before.
+**Breaking:** data nesting deeper than 1,000 levels is refused. Data of up to about 1,960 levels bound before, and deeper data overflowed the stack. Give such data fewer levels.
 
 <a id="v1-0-0-beta-30"></a>
 
@@ -176,7 +176,7 @@ Each entry says what its version breaks:
 
 - [`resolution.typeAt`](spec/runtime/resolution.md#runtime-result-paths) steps from a dictionary to its `entries` and from a pair to its `key` and `value`, as a result exports them, so every path `valueAt` reads, `typeAt` types.
 - [`getLocation`](spec/runtime/resolution.md#runtime-locations) takes pointers into the validated definition, and answers a location naming the node in the definition as its caller gave it; an array's parts are its entries at their indexes, so `length` is none, NEXO2644.
-- `nexo.createRegistry` refuses anything but a list of modules, NEXO4546, and `registry.getImplementation` answers undefined for anything no module it holds declares, rather than either throwing a TypeError.
+- `nexo.createRegistry` refuses anything but a list of modules, NEXO4546, and `registry.getImplementation` answers undefined for anything no module it holds declares. Each threw a TypeError for null, and `getImplementation` answered the `impl` of an object no module declares.
 - The type declarations type a declaration helper's options, so an inline `impl` reads its input typed, declare the `typeParameters` a module's stored declarations carry, and leave `createModule`'s contents and `createEvaluator`'s bindings optional, as they are.
 
 **Breaking:** nothing a host relied on. A pointer naming an array's `length` is refused, and `getImplementation` answers undefined for an object no module declares.
@@ -195,7 +195,7 @@ Each entry says what its version breaks:
 
 - [Structural validation](spec/runtime/definition.md) refuses a node that holds itself, and an array with no entry at an index, NEXO2000, which passed and then failed resolution or evaluation with a TypeError or a RangeError.
 
-**Breaking:** a script nesting deeper than 256 levels, a chain of more than 256 operators among them, is refused. Group a long chain, as `(a + b) + (c + d)` does.
+**Breaking:** a script nesting deeper than 256 levels is refused, NEXO1072, and so is a chain of more than 256 terms, NEXO2046. Group part of a long chain, as `a + b + (c + d)` does.
 
 <a id="v1-0-0-beta-27"></a>
 
@@ -225,7 +225,7 @@ Each entry says what its version breaks:
 
 **Breaking:**
 
-- A module declaring a member that reads maintained values with a result that can't be null is refused. Declare the result nullable, `Number?`, and give a script's reads of it a fallback, `(sensor:temperature ?? 0) > 20`.
+- A module declaring a member that reads maintained values with a result that can't be null is refused. Declare the result nullable, `Number?`, and give a script's reads of it a fallback, `(sensor.temperature ?? 0) > 20`.
 - A host whose `beforeInvoke` answered `{ pending: true }` for another member, or answered something else, fails its evaluation. Answer pending only for a member that reads maintained values.
 
 <a id="v1-0-0-beta-25"></a>
@@ -304,7 +304,7 @@ Each entry says what its version breaks:
 
 **Language**
 
-- [The type of a logical expression](spec/language/expressions.md#logical-expressions-negations-and-groups-type): `and` and `or` mean the same in every expression, and their values share a type only where the value is used. A condition, the operand of `not`, an operand of another `and` or `or`, and a predicate written as an expression of `it` test truthiness alone, and a conditional binding binds the truthy values. So `metered and light.brightness or 0` is a `Number`: the false that selects `0` reaches nothing. NEXO3040 refuses values of no one type where the value is used, and a conditional binding whose truthy values are of none.
+- [The type of a logical expression](spec/language/expressions.md#logical-expressions-negations-and-groups-type): `and` and `or` mean the same in every expression, and their values share a type only where the value is used. A condition, the operand of `not`, an operand of another `and` or `or`, and a predicate written as an expression of `it` test truthiness alone, and a conditional binding binds the truthy values. So `light.active() and light.brightness or 0` is a `Number`: the false that selects `0` reaches nothing. NEXO3040 refuses values of no one type where the value is used, and a conditional binding whose truthy values are of none.
 - [Not a conditional](spec/language/expressions.md#logical-expressions-negations-and-groups-not-a-conditional) is a note on behavior: `c and x or y` gives `y` where `x` is falsey, which a conditional doesn't.
 
 **Breaking:** nothing. Every script accepted before keeps its type, and some it refused are accepted.
@@ -438,7 +438,7 @@ Each entry says what its version breaks:
 
 **Breaking:**
 
-- A helper given an option its declaration doesn't take, as `parameters` or `invokedBy` for a property, `arguments` for a function without parameters, `updates` with `invokedBy: 'host'`, or `selects` without `fixed: true`, now writes it, and `createModule` refuses it (NEXO4030, NEXO4534, NEXO4542). Leave the option out, or give `fixed: true` where the parameter selects a type.
+- A helper given an option its declaration doesn't take, as `parameters` for a property, `arguments` for a function without parameters, `updates` with `invokedBy: 'host'`, or `selects` without `fixed: true`, now writes it, and `createModule` refuses it (NEXO4030, NEXO4534, NEXO4542). Leave the option out, or give `fixed: true` where the parameter selects a type.
 - A value parameter declaring `context` is refused (NEXO4030). Leave it out: only an expression and a predicate parameter declare one.
 
 <a id="v1-0-0-beta-11"></a>
@@ -520,7 +520,7 @@ Each entry says what its version breaks:
 
 **Runtime**
 
-- [Structure errors](spec/runtime/errors.md#runtime-structure-errors): a namespace standing where a value does, as `@Home` reads where no local of its name is in scope, is refused giving `~Home` for the script parameter of its name, as a module's name standing alone is (NEXO1506).
+- [Structure errors](spec/runtime/errors.md#runtime-structure-errors): a namespace standing where a value does, as `@Home` reads where no local of its name is in scope, is refused, NEXO2520, giving `~Home` for the script parameter of its name, as a module's name standing alone is, NEXO1506.
 
 **Breaking:** nothing.
 
