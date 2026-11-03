@@ -295,6 +295,28 @@ describe('LanguageResolver', () => {
             expect(refusalOf('if let fee = billing.overdue() and "late" or 0 then fee else 0 end')).toMatchObject({ code: 'NEXO3040', kind: 'validation', message: expect.stringContaining("What 'if let' binds is String or Number where it is truthy"), location: { pointer: '/expression/binding/value', line: 1, column: 14 } });
         });
 
+        it('is tested for its truthiness alone by the candidate that takes it as a predicate, and is a value for one that takes a value, in either order of the candidates', () => {
+            const picking = { updates: constantUpdates, impl: () => 1 };
+            const predicatePick = Declarations.createFunctionDeclaration('pick', 'Number', { ...picking, parameters: [Declarations.createPredicateParameterDeclaration()] });
+            const valuePick = Declarations.createFunctionDeclaration('pick', 'Number', { ...picking, parameters: [Declarations.createValueParameterDeclaration('count', 'Number')] });
+            const resolvePick = extensions => {
+                const picks = new NexoRegistry([Vocabulary.module, new NexoModule('billing', {
+                    types: extensions.map(([name, target, member]) => extensionDeclaration(name, target, [member])),
+                    members: [
+                        Declarations.createFunctionDeclaration('overdue', 'Boolean', { updates: constantUpdates, impl: () => true }),
+                        Declarations.createFunctionDeclaration('fee', 'Number', { updates: constantUpdates, impl: () => 10 }),
+                    ],
+                })]);
+                const definition = ParsedTexts.parse('missing?:pick(billing.overdue() and billing.fee())', [{ module: 'billing' }]);
+                const resolved = new LanguageResolver(picks, new ParameterBindings(picks, { missing: null }), ParsedTexts.locationsOf(definition)).resolveDefinition(definition);
+
+                return { type: String(resolved.type), candidates: resolved.getResolution('/expression/chain').candidates.length };
+            };
+
+            expect(resolvePick([['Lists', 'List<Number>', predicatePick], ['Booleans', 'Boolean', valuePick]])).toEqual({ type: 'Number?', candidates: 1 });
+            expect(resolvePick([['Booleans', 'Boolean', valuePick], ['Lists', 'List<Number>', predicatePick]])).toEqual({ type: 'Number?', candidates: 1 });
+        });
+
         it('settles its type at a local, which holds one type from its declaration, so a later or reads the local by its type alone', () => {
             expect(refusalOf('let candidate = billing.overdue() and billing.fee()\nreturn candidate or 0')).toMatchObject({ code: 'NEXO3040', kind: 'validation', location: { pointer: '/expression/locals/0/value', line: 1, column: 17 } });
             expect(refusalOf('let waived = billing.overdue() and false\nreturn waived or "late"')).toMatchObject({ code: 'NEXO3040', kind: 'validation', message: expect.stringContaining("What 'or' gives is true or String"), location: { line: 2, column: 8 } });

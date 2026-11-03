@@ -392,12 +392,23 @@ export class LanguageResolver {
     #decidingResults = new WeakMap();
 
     /**
-     * The nodes whose truthiness alone is tested where they stand, by the node: a condition, what a conditional binding binds, the operand of `not`, an operand of `and` or `or`, and a predicate's argument written as
-     * an expression of `it`. A logical expression among them gives values that need share no type, and every other is used as a value, whose values reaching it share one. An entry is added as the node's place is
-     * resolved, and is never removed, since a node stands in one place.
+     * The nodes whose truthiness alone is tested where they are being resolved, by the node: a condition, what a conditional binding binds, the operand of `not`, an operand of `and` or `or`, and a predicate's argument
+     * written as an expression of `it`. A logical expression among them gives values that need share no type, and every other is used as a value, whose values reaching it share one. An entry lasts as long as the
+     * resolution it is made for, so another reading of the node, a candidate's taking it as a value among them, tests nothing.
      * @type {WeakSet<object>}
      */
     #testedNodes = new WeakSet();
+
+    /** Resolves the node where its truthiness alone is tested, for as long as this resolution of it lasts. */
+    #resolveTested(node, pointer, scope) {
+        this.#testedNodes.add(node);
+
+        try {
+            return this.#resolveNode(node, pointer, scope);
+        } finally {
+            this.#testedNodes.delete(node);
+        }
+    }
 
     /**
      * Resolves a coalescing: a value and a fallback of one type, as a conditional's branches are, its type the value's made non-null where the fallback's is; the whole is resolved before any of it is evaluated.
@@ -515,9 +526,7 @@ export class LanguageResolver {
         const condition = node.binding === undefined ? node.condition : node.binding.value;
         const conditionPointer = node.binding === undefined ? `${pointer}/condition` : `${pointer}/binding/value`;
 
-        this.#testedNodes.add(condition);
-
-        const tested = this.#resolveNode(condition, conditionPointer, scope);
+        const tested = this.#resolveTested(condition, conditionPointer, scope);
 
         this.#requireValue(tested, node.binding === undefined ? "The condition of 'if'" : "What 'if let' binds", conditionPointer);
         this.#decidingResults.set(condition, tested);
@@ -581,9 +590,7 @@ export class LanguageResolver {
             const operandPointer = `${pointer}/operands/${index}`;
             const operandScope = LanguageResolver.#withFacts(scope, passed);
 
-            this.#testedNodes.add(operand);
-
-            const result = this.#resolveNode(operand, operandPointer, operandScope);
+            const result = this.#resolveTested(operand, operandPointer, operandScope);
 
             this.#requireValue(result, `An operand of '${node.kind}'`, operandPointer);
             this.#decidingResults.set(operand, result);
@@ -1021,9 +1028,7 @@ export class LanguageResolver {
             this.#pointers.set(node.operand, `${pointer}/operand`);
         }
 
-        this.#testedNodes.add(node.operand);
-
-        const operand = node.operand.kind === 'equality' ? this.#resolveEquality(node.operand, `${pointer}/operand`, scope, true) : this.#resolveNode(node.operand, `${pointer}/operand`, scope);
+        const operand = node.operand.kind === 'equality' ? this.#resolveEquality(node.operand, `${pointer}/operand`, scope, true) : this.#resolveTested(node.operand, `${pointer}/operand`, scope);
 
         this.#requireValue(operand, "What 'not' negates", `${pointer}/operand`);
 
@@ -3769,12 +3774,10 @@ export class LanguageResolver {
             // Whether the argument reads its own implicit parameter, which its own context key identifies; it holds no syntax of the body.
             const argumentBody = { key: {}, isRead: false };
 
-            // A predicate tests the truthiness of what its body gives, so the values of a logical expression there need share no type.
-            if (parameter.kind === 'predicate') {
-                this.#testedNodes.add(node);
-            }
+            const bodyScope = { ...scope, contextType: parameter.nulls === 'accept' ? itemType : itemType.toNonNullable(), contextKey: argumentBody.key, argumentBody };
 
-            result = this.#resolveNode(node, pointer, { ...scope, contextType: parameter.nulls === 'accept' ? itemType : itemType.toNonNullable(), contextKey: argumentBody.key, argumentBody });
+            // A predicate tests the truthiness of what its body gives, so the values of a logical expression there need share no type.
+            result = parameter.kind === 'predicate' ? this.#resolveTested(node, pointer, bodyScope) : this.#resolveNode(node, pointer, bodyScope);
 
             if (result.type?.kind === 'function' && argumentBody.isRead) {
                 this.#fail('NEXO3074', `The expression of '${NexoModule.writtenNameOf(declaration)}' reads each item as 'it' and gives a function; a function of the item is written as the argument itself, as ${declaration.name}(x => …)`, pointer);
