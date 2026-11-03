@@ -831,3 +831,17 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Decision:** A fixed parameter is required and takes no default, NEXO4072: a script always writes the argument that selects what it selects.
 - **Why:** A module could declare one optional or with a default, which resolution never applied, so every script leaving it out was refused, NEXO3028, as if nothing bound the type it selects.
 - **Declined:** Selecting through a default where a script leaves the argument out, which would let the type a call answers follow a declaration's default, never what the script says, where a fixed argument is the one value resolution settles from the script itself.
+
+<a id="d59"></a>
+
+## D59 — Resolution reads each part of a script once
+
+*November 3, 2026*
+
+- **Kind:** Implementation decision, measured.
+- **Decision:** An argument resolved ahead of its invocation, an overloaded indexer's key and a generic member's value argument, is handed to the invocation rather than resolved again, where its parameter's type is no structure it could construct. A script function's body is resolved once for each set of argument results its calls give it, and calls giving the same set share that body's copy.
+- **Why:**
+  - Each nesting level resolved its argument twice, so `([0][([0][…] ?? 0)] ?? 0)` 18 deep took 5.4 s, a generic call 18 deep 1.3 s, and 16 functions each calling the one before twice about 1 s, doubling at each level a script may nest to 256.
+  - Calls whose arguments resolve alike resolve a body alike, and an origin, a hook request and a failure already name the body's own expression whichever call reached it, so sharing a copy changes nothing a script or a host observes.
+- **Measured** in paired runs against the commit before it, nine rounds: resolving the account summary −8.9% and allocating −8.7%, resolving and evaluating it once −14.6%; the script of 150 fields unchanged. The nested cases above each resolve in under 2 ms.
+- **Declined:** A copy of a body for each call, resolved once and copied for alike calls, which keeps a copy for each of exponentially many calls.

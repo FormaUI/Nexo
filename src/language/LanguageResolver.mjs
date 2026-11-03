@@ -400,6 +400,14 @@ export class LanguageResolver {
     #readArgumentBodies = [];
 
     /**
+     * The result of each argument resolved ahead of its invocation, an indexer's key to select its signature and a value argument to bind its member's type parameters, by the argument, with the scope and the place it
+     * was resolved at, which the invocation takes next rather than resolving the argument again, so arguments nested within arguments resolve in time linear in their depth. An entry is made as the argument is
+     * resolved ahead and removed as the invocation reads it, so it lasts from one to the other alone.
+     * @type {WeakMap<object, { scope: object, pointer: string, result: object }>}
+     */
+    #resolvedArguments = new WeakMap();
+
+    /**
      * The nodes whose truthiness alone is tested where they are being resolved, by the node: a condition, what a conditional binding binds, the operand of `not`, an operand of `and` or `or`, and a predicate's argument
      * written as an expression of `it`. A logical expression among them gives values that need share no type, and every other is used as a value, whose values reaching it share one. An entry lasts as long as the
      * resolution it is made for, so another reading of the node, a candidate's taking it as a value among them, tests nothing.
@@ -1043,8 +1051,8 @@ export class LanguageResolver {
 
     /**
      * The signature of the indexer the selection chose that the access's key selects: the one signature of an indexer that has one, and otherwise the one whose key type the key's type is assignable to, a key of null
-     * or a never the first's; a key none takes, and one of Any where several stand, is refused (NEXO3084), never falling through to another member. The key is resolved to its type alone, its records discarded,
-     * since the signature's invocation resolves it.
+     * or a never the first's; a key none takes, and one of Any where several stand, is refused (NEXO3084), never falling through to another member. The key is resolved once, its records kept, and its result is
+     * handed to the signature's invocation, which takes it rather than resolving the key again, so keys nested within keys resolve in time linear in their depth.
      */
     #selectSignature(declaration, node, pointer, scope, receiverType) {
         const signatures = this.#registry.getIndexerSignatures(declaration);
@@ -1082,11 +1090,13 @@ export class LanguageResolver {
             }
         }
 
-        const outcome = this.#resolveSpeculatively(() => this.#resolveNode(node.argument, keyPointer, scope), { keepsSuccess: false });
+        const outcome = this.#resolveSpeculatively(() => this.#resolveNode(node.argument, keyPointer, scope), { keepsSuccess: true });
 
         if (outcome.error !== undefined) {
             throw outcome.error;
         }
+
+        this.#resolvedArguments.set(node.argument, { scope, pointer: keyPointer, result: outcome.result });
 
         const keyType = outcome.result.type;
 
@@ -1587,6 +1597,14 @@ export class LanguageResolver {
             this.#fail('NEXO3034', `'${name}' would call a function within its own call, through a function passed to it: a function never calls itself, directly or through another`, callPointer);
         }
 
+        // A call whose arguments resolve as an earlier call's did, to equal types and the same fixed values, resolves the body alike, so it shares that call's copy, which this resolution still holds.
+        const resolvedBodies = this.#resolvedBodies.get(target.function) ?? [];
+        const shared = resolvedBodies.find(resolved => resolved.scope === target.scope && this.#functionBodyCopies[resolved.copyIndex]?.node === resolved.body && LanguageResolver.#resolveAlike(resolved.argumentResults, argumentResults));
+
+        if (shared !== undefined) {
+            return { function: target.function, body: shared.body, parameters, type: shared.type };
+        }
+
         let locals = target.scope.locals;
 
         parameters.forEach((parameter, index) => {
@@ -1594,6 +1612,7 @@ export class LanguageResolver {
         });
 
         const bodyCopy = DefinitionValidator.copyOf(body);
+        const copyIndex = this.#functionBodyCopies.length;
 
         this.#functionBodyCopies.push({ node: bodyCopy, pointer: bodyCopyPointer, bodyPointer: `${target.pointer}/body` });
         this.#functionsBeingResolved.add(target.function);
@@ -1610,7 +1629,27 @@ export class LanguageResolver {
             this.#fail('NEXO3048', `'${name}' gives ${LanguageResolver.#descriptionOf(result.kind)}, and a function gives a value`, bodyCopyPointer);
         }
 
+        resolvedBodies.push({ scope: target.scope, argumentResults, body: bodyCopy, copyIndex, type: result.type });
+        this.#resolvedBodies.set(target.function, resolvedBodies);
+
         return { function: target.function, body: bodyCopy, parameters, type: result.type };
+    }
+
+    /**
+     * The bodies each function a script declares was resolved for, by the function: the scope it captured, the results of the arguments its call gave it, its body's copy, where the copy stands among the body copies, and
+     * its type. A later call of the function in that scope, its arguments resolving alike, shares the copy rather than resolving the body again, so a chain of functions each calling the one before resolves in time
+     * linear in its length. An entry is valid while the body copies hold its copy where it was recorded, which a speculative reading discarded no longer does; it lasts as long as this resolution.
+     * @type {WeakMap<object, { scope: object, argumentResults: object[], body: object, copyIndex: number, type: Type }[]>}
+     */
+    #resolvedBodies = new WeakMap();
+
+    /** Whether two calls' argument results resolve a body alike: each of one kind, of an equal type, and fixed to the same value or neither fixed. */
+    static #resolveAlike(results, others) {
+        return results.length === others.length && results.every((result, index) => {
+            const other = others[index];
+
+            return result.kind === other.kind && result.isFixed === other.isFixed && (!result.isFixed || Object.is(result.value, other.value)) && result.type.equals(other.type);
+        });
     }
 
     /** The functions whose bodies are being resolved, each for a call within which none is called again. @type {Set<object>} */
@@ -2733,10 +2772,17 @@ export class LanguageResolver {
                 continue;
             }
 
-            const outcome = this.#resolveSpeculatively(() => this.#resolveExpecting(given.node, given.pointer, argumentScope, this.#registry.getDeclaredType(declaration, parameter.type)), { keepsSuccess: false });
+            const declaredType = this.#registry.getDeclaredType(declaration, parameter.type);
+            // An argument no structure is expected of resolves alike for its evidence and its invocation, so its records are kept and its result handed on; one that may construct is resolved again.
+            const handsOn = this.#constructibleTypeOf(declaredType.toNonNullable()) === null;
+            const outcome = this.#resolveSpeculatively(() => this.#resolveExpecting(given.node, given.pointer, argumentScope, declaredType), { keepsSuccess: handsOn });
 
             if (outcome.error !== undefined) {
                 continue;
+            }
+
+            if (handsOn) {
+                this.#resolvedArguments.set(given.node, { scope: argumentScope, pointer: given.pointer, result: outcome.result });
             }
 
             if (outcome.result.type.kind !== 'function') {
@@ -3402,7 +3448,15 @@ export class LanguageResolver {
                     }
                 }
             } else {
-                result = this.#resolveExpecting(given.node, valuePointer, argumentScope, expected);
+                // An argument resolved ahead, to select a signature or bind type parameters, in this scope at this place, where its parameter's type is no structure it could construct, so expecting the type
+                // changes nothing, is taken as it was.
+                const resolvedAhead = this.#resolvedArguments.get(given.node);
+                const constructs = expected !== undefined && this.#constructibleTypeOf(expected.toNonNullable()) !== null;
+
+                this.#resolvedArguments.delete(given.node);
+                result = resolvedAhead !== undefined && resolvedAhead.scope === argumentScope && resolvedAhead.pointer === valuePointer && !constructs
+                    ? resolvedAhead.result
+                    : this.#resolveExpecting(given.node, valuePointer, argumentScope, expected);
 
                 if (node.kind === 'indexerAccess') {
                     this.#refuseFunctionKey(result, valuePointer);

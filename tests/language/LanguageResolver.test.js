@@ -329,6 +329,35 @@ describe('LanguageResolver', () => {
             expect(evaluate('[[1], [2]].flatten')).toEqual([1, 2]);
         });
 
+        it('shares a function\'s body between calls whose arguments resolve alike, each call evaluated with its own, and resolves apart those whose arguments do not', () => {
+            const { resolution, bindings } = resolveWith([probe], 'do\n    let g = x => x.abs\n    return { a = g(0 - 1), b = g(0 - 5), c = [1].concat([g(0 - 2)]) }\nend');
+            const pointers = [];
+            const evaluation = resolution.createEvaluator(bindings).evaluate({ beforeInvoke: request => { pointers.push(request.pointer); } });
+
+            expect(evaluation.value).toEqual({ a: 1, b: 5, c: [1, 2] });
+            // Each call names the part of the body it reached, whichever call reached it.
+            expect(pointers.filter(pointer => pointer.startsWith('/expression/body/locals/0'))).toEqual(Array.from({ length: 3 }, () => '/expression/body/locals/0/value/body'));
+            expect(evaluate('do\n    let g = x => x\n    return { a = g(1), b = g("s"), c = g(true) }\nend')).toEqual({ a: 1, b: 's', c: true });
+            expect(String(resolveWith([probe], 'do\n    let g = x => x\n    return { a = g(1), b = g("s") }\nend').resolution.type)).toBe('{ a: Number, b: String }');
+        });
+
+        it('resolves a chain of functions each calling the one before twice in time linear in its length', () => {
+            const chain = length => `do\n    let f0 = x => x + 1\n${Array.from({ length }, (_, index) => `    let f${index + 1} = x => f${index}(f${index}(x))\n`).join('')}    return f${length}(0)\nend`;
+            const start = performance.now();
+
+            expect(String(resolveWith([probe], chain(40)).resolution.type)).toBe('Number');
+            expect(performance.now() - start).toBeLessThan(2000);
+            expect(evaluate(chain(10))).toBe(1024);
+        });
+
+        it('resolves a key nested within keys, and a generic argument within arguments, once each, in time linear in their depth', () => {
+            const keys = Array.from({ length: 60 }).reduce(key => `([0][${key}] ?? 0)`, '0');
+            const start = performance.now();
+
+            expect(evaluate(keys)).toBe(0);
+            expect(performance.now() - start).toBeLessThan(2000);
+        });
+
         it('binds the type parameter of a member a never meets to a never, so an empty list flattens', () => {
             expect(String(resolveWith([], '{ a = [].flatten, b = [[]].flatten }').resolution.type)).toBe('{ a: List<Never>, b: List<Never> }');
         });

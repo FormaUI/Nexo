@@ -41,6 +41,8 @@ A test of a receiver is a member, a Boolean function, and a member that takes a 
 
 `ParsedTexts` keeps the definitions of the 256 texts parsed most recently, with the imports supplied to each, so reading the same text again, as a host does at every evaluation of the same script, costs a lookup.
 
+Resolution reads each part of a script once, so its time grows with the script's length and no faster. An argument resolved ahead of its invocation, an overloaded indexer's key to select its signature and a generic member's value argument to bind its type parameters, is handed to the invocation, which takes it rather than resolving it again, wherever the type its parameter expects is no structure the argument could construct. A script function's body is resolved once for each set of argument results its calls give it, equal types and the same fixed values, and calls giving the same set share that body's copy, whose every expression the runtime follows back to the body's own, as origins and hook requests name it. Without either, a key within a key, or a function calling the one before it twice, doubled the work at each level.
+
 ## Types and their relations
 
 A `Type` is a value and nothing more: what kind of type it is, its name and its module, its type arguments, its fields and its nullability, its equality to another and how a message writes it. It knows no relation to another type, since every relation the specification sets out, [assignability, equal types and merging](../spec/language/types.md#types-assignability-and-merging), depends on declarations only a registry holds: a type's supertypes, and a generic type's parameters and their variance.
