@@ -16,7 +16,7 @@ A host uses an implementation in four steps: it binds its values, resolves the s
 
 ```js
 const bindings = registry.createBindings({ room: livingRoom });
-const resolution = registry.resolve('{ name = room.name, total = room.devices.count }', bindings);
+const resolution = registry.resolve('{ name = room.name, total = room.devices.count }', bindings, { imports: ['Home'] });
 const evaluator = resolution.createEvaluator(bindings, env);
 const { value, metadata } = evaluator.evaluate();
 ```

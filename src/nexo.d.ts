@@ -403,8 +403,8 @@ export interface NexoModuleContents {
 export interface NexoModule {
     readonly name: string;
     readonly typeOf: ((value: unknown) => string | null) | undefined;
-    readonly types: readonly Readonly<NexoTypeDeclaration>[];
-    readonly members: readonly NexoMemberDeclaration[];
+    readonly types: readonly NexoStoredDeclaration<NexoTypeDeclaration>[];
+    readonly members: readonly NexoStoredDeclaration<NexoMemberDeclaration>[];
     readonly typeSelectors: readonly NexoTypeSelectorDeclaration[];
     readonly mappings: readonly NexoMappingDeclaration[];
     readonly observationTypes: readonly NexoObservationTypeDeclaration[];
@@ -598,7 +598,7 @@ export interface NexoResolution {
      * until it evaluates. It refuses bindings another registry made (NEXO2024), bindings of another resolution key (NEXO2025), a resolution no longer current (NEXO2040), and a script using a declaration
      * that has no implementation, a conversion operator among them, even in a branch it may not take (NEXO4001).
      */
-    createEvaluator(bindings: NexoBindings | NexoBindingValues, env?: unknown): NexoEvaluator;
+    createEvaluator(bindings?: NexoBindings | NexoBindingValues, env?: unknown): NexoEvaluator;
 }
 
 /** The host call a script ends in: its name, where it stands, the declaration it resolved to, null while its receiver's type is unknown, and its candidates. */
@@ -638,17 +638,23 @@ export interface NexoRegistry {
     resolve(script: NexoScript, bindings?: NexoBindings | NexoBindingValues, options?: NexoScriptOptions): NexoResolution;
 }
 
+/** What a helper's options give a member declaration: every key of one but those its arguments give, so an inline `impl` reads its input typed. */
+export type NexoMemberDeclarationOptions = Partial<Omit<NexoMemberDeclaration, 'name' | 'kind' | 'result'>>;
+
+/** A declaration as a module holds it once validated: read-only, named by its local name, with the type parameters it declares beside it. */
+export type NexoStoredDeclaration<T> = Readonly<T> & { readonly typeParameters?: readonly string[] };
+
 /**
  * The declaration helpers, each creating a declaration as a module declares it, constructing a record and registering nothing; each writes every option it is given over its defaults, leaving none out, so a module
  * refuses one its declaration doesn't take. A member takes no receiver of its own, since where it stands gives it one.
  */
 export interface NexoDeclarations {
     /** A property: with updates, one the evaluator invokes, or, without them, a property of a structured type's data where it stands directly in that type. */
-    createPropertyDeclaration(name: string, result: string, options?: object): NexoMemberDeclaration;
+    createPropertyDeclaration(name: string, result: string, options?: NexoMemberDeclarationOptions): NexoMemberDeclaration;
     /** A member a script calls with arguments, or, with `invokedBy: 'host'`, that its host invokes, its result left out where its host supplies nothing. */
-    createFunctionDeclaration(name: string, result: string | undefined, options?: object): NexoMemberDeclaration;
+    createFunctionDeclaration(name: string, result: string | undefined, options?: NexoMemberDeclarationOptions): NexoMemberDeclaration;
     /** An indexer, given its key in brackets: a named one, `x.name[key]`, or, where its name is null, the unnamed one of its receivers, `x[key]`. */
-    createIndexerDeclaration(name: string | null, result: string, options?: object): NexoMemberDeclaration;
+    createIndexerDeclaration(name: string | null, result: string, options?: NexoMemberDeclarationOptions): NexoMemberDeclaration;
     /** A value parameter, required unless its options give a default. */
     createValueParameterDeclaration(name: string, type: string, options?: Partial<NexoParameterDeclaration>): NexoParameterDeclaration;
     /** An expression of each item, its `nulls` `'propagate'` by default, so a null item answers null without its body being evaluated, or `'accept'`, which evaluates its body against every item, its `it` of the item's type. */
@@ -700,7 +706,7 @@ export interface Nexo {
     /** Where a pointer stands in the source a definition was read from, or the pointer alone for a definition given directly; a pointer the definition does not hold is refused. */
     getLocation(definition: NexoDefinition, pointer: string): NexoLocation;
     /** Creates a module from the declarations it holds and the implementations that carry them out. */
-    createModule(name: string, contents: NexoModuleContents): NexoModule;
+    createModule(name: string, contents?: NexoModuleContents): NexoModule;
     readonly declarations: NexoDeclarations;
     /** Creates a registry of Nexo's own module and the modules given, which the host registers more modules with. */
     createRegistry(modules?: readonly NexoModule[]): NexoRegistry;

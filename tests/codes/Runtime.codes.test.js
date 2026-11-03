@@ -224,6 +224,10 @@ describe('the runtime codes', () => {
 
         it('NEXO2644: a pointer at nothing the definition holds', () => {
             expectNexoError(errorThrownBy(() => nexo.getLocation(nexo.parse('1 + 2'), '/expression/middle')), 'NEXO2644', 'structure');
+            // An array's parts are its entries at their indexes, so no other name, its length among them, is one.
+            expectNexoError(errorThrownBy(() => nexo.getLocation(nexo.parse('{ a = 1 }'), '/expression/objectFields/length')), 'NEXO2644', 'structure');
+            expectNexoError(errorThrownBy(() => nexo.getLocation(nexo.parse('{ a = 1 }'), '/expression/objectFields/01')), 'NEXO2644', 'structure');
+            expect(nexo.getLocation(nexo.parse('{ a = 1 }'), '/expression/objectFields/0')).toMatchObject({ pointer: '/expression/objectFields/0' });
         });
 
         it('NEXO2645: parsing what is not a script\'s source', () => {
@@ -293,6 +297,10 @@ describe('the runtime codes', () => {
 
         it('NEXO3602: a path naming a field the result does not hold', () => {
             expectNexoError(errorThrownBy(() => registry.resolve('{ total = 1 }').typeAt(['count'])), 'NEXO3602', 'validation');
+            // A path steps through a dictionary's entries and a pair's parts, as a result exports them, and no further.
+            expect(registry.resolve('{ d = ["a" = 1], p = ["a" = 1].entry["a"] }').typeAt(['d', 'entries', 0, 'key'])).toBe('String?');
+            expect(registry.resolve('{ d = ["a" = 1], p = ["a" = 1].entry["a"] }').typeAt(['p', 'value'])).toBe('Number?');
+            expectNexoError(errorThrownBy(() => registry.resolve('{ d = ["a" = 1] }').typeAt(['d', 'keys'])), 'NEXO3602', 'validation');
         });
     });
 

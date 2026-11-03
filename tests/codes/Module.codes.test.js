@@ -624,6 +624,9 @@ describe('the module error codes', () => {
 
         it('NEXO4546: registering what createModule did not make', () => {
             expectModuleCode(registering({ name: 'fake', members: [] }), 'NEXO4546');
+            expectModuleCode(() => nexo.createRegistry(null), 'NEXO4546');
+            expect(nexo.createRegistry([]).getImplementation(null)).toBeUndefined();
+            expect(nexo.createRegistry([]).getImplementation({ impl: () => 1 })).toBeUndefined();
         });
 
         it('NEXO4035: a module whose name, compared case-insensitively, is already registered', () => {

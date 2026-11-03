@@ -53,6 +53,19 @@ export class ResultPath {
                 continue;
             }
 
+            // A dictionary exports its entries, and a pair its key and its value, so a path steps through them as through the result's exported form.
+            if (type.isDictionary && item === 'entries') {
+                const [keyType, valueType] = type.typeArguments;
+
+                type = Type.createListType(Type.createObjectType(new Map([['key', keyType], ['value', valueType]])));
+                continue;
+            }
+
+            if (type.isPair && (item === 'key' || item === 'value')) {
+                type = type.typeArguments[item === 'key' ? 0 : 1];
+                continue;
+            }
+
             // An object type's object field, or a property of a structured type's data, each type's lookup its own.
             const nextType = type.kind === 'object' ? type.getObjectFieldType(item) : (registry.getDataShape(type)?.get(item) ?? null);
 

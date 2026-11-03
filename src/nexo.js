@@ -92,7 +92,10 @@ const locate = (definition, pointer) => {
     let node = definition;
 
     for (const segment of pointer.split('/').slice(1).map(part => part.replaceAll('~1', '/').replaceAll('~0', '~'))) {
-        if (node === null || typeof node !== 'object' || !Object.hasOwn(node, segment)) {
+        // An array's parts are its entries, each at an index, so `length` names none.
+        const isPart = Array.isArray(node) ? /^(?:0|[1-9][0-9]*)$/.test(segment) && Number(segment) < node.length : Object.hasOwn(node ?? {}, segment);
+
+        if (node === null || typeof node !== 'object' || !isPart) {
             throw NexoErrors.structure('NEXO2644', `The definition holds nothing at ${pointer}`, { pointer });
         }
 
@@ -223,6 +226,10 @@ const resolutionOf = (registry, definition, parameterBindings) => {
  * It reads no text of its own: a script's imports decide which of its names are namespaces, so `nexo.parse`, `format` and `quote` read and write a text alike for every registry, and registering a module changes how no text reads. No registry is shared, so two hosts never see each other's modules.
  */
 const createRegistry = modules => {
+    if (!Array.isArray(modules)) {
+        throw NexoErrors.module('NEXO4546', 'A registry is created from a list of modules, each as createModule makes it', { module: String(modules) });
+    }
+
     const registry = new NexoRegistry([Vocabulary.module, ...modules]);
 
     return Object.freeze({

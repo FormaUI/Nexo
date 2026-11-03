@@ -78,6 +78,10 @@ export class NexoRegistry {
 
     /** @param {import('./NexoModule.mjs').NexoModule[]} modules The modules registered at the start. */
     constructor(modules = []) {
+        if (!Array.isArray(modules)) {
+            throw NexoErrors.module('NEXO4546', 'A registry is created from a list of modules, each as createModule makes it', { module: String(modules) });
+        }
+
         modules.forEach(module => this.registerModule(module));
     }
 
@@ -712,8 +716,9 @@ export class NexoRegistry {
     }
 
     /** The implementation that carries the declaration out, its `impl`, or undefined where its module gives it none. */
+    /** The implementation a declaration the registry holds carries out, undefined where its module gives none, and for anything else, as `getDeclaringModuleName` answers undefined for it. */
     getImplementation(declaration) {
-        return declaration.impl;
+        return this.getDeclaringModuleName(declaration) === undefined ? undefined : declaration.impl;
     }
 
     /** Whether the module, registered or being registered, declares a value type of the local name. */

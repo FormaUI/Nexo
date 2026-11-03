@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.28` and definition version 38, the twenty-eighth beta.** What remains is [tooling](#tooling) and [the release](#release), and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.29` and definition version 38, the twenty-ninth beta.** What remains is [tooling](#tooling) and [the release](#release), and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.28` | `1.0.0-beta.28` |
+| Language | `1.0.0-beta.29` | `1.0.0-beta.29` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -97,7 +97,7 @@ The bundle and type declarations are built, as [the build](../README.md#build) s
 
 ## DOMQL's migration
 
-DOMQL, Nexo's first host, has migrated from Lexica at `0e98b3e` to language `1.0.0-beta.3`, at the commit its `nexo.commit` pins, and passes its gate there, browser tests included. Its [status](https://github.com/FormaUI/DOMQL/blob/main/docs/features-status.md#migration-to-nexo) records how, and its version history what changed for its callers.
+DOMQL, Nexo's first host, migrated from Lexica at `0e98b3e` to language `1.0.0-beta.3`, and has since followed Nexo to the commit its `nexo.commit` pins, passing its gate there, browser tests included. Its [status](https://github.com/FormaUI/DOMQL/blob/main/docs/features-status.md#migration-to-nexo) records how, and its version history what changed for its callers.
 
 - **The checklists are removed,** as each was to be once its migration was verified. Their history holds them, at [`c9db3ad`](https://github.com/FormaUI/Nexo/blob/c9db3adc838ab8d16a6aa1626ce6df5a61b50f79/docs/features-status.md#domqls-migration).
 - **What it brought to Nexo:**

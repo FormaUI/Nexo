@@ -65,4 +65,14 @@ if (prepared.kind === 'prepared') {
     prepared.dispose();
 }
 
-export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer, prepared };
+// A helper's options are a member declaration's own keys, so an inline implementation reads its input typed, and a misspelled option is refused.
+const helped = nexo.declarations.createFunctionDeclaration('greet', 'String', {
+    updates: { changes: 'constant', reads: 'fresh' },
+    impl: ({ receiver, args, env }) => `${String(receiver)} ${String(args.name)} ${String(env)}`,
+});
+// @ts-expect-error A member's updates name how it changes, one of its categories.
+const misupdated = nexo.declarations.createPropertyDeclaration('size', 'Number', { updates: { changes: 'constnt', reads: 'fresh' } });
+// A module holds each declaration with the type parameters it declares beside its local name.
+const parameters: readonly string[] | undefined = nexo.createModule('Generic').members[0]?.typeParameters;
+
+export { operator, member, registry, misnamed, misdeclared, kinds, candidates, callPointer, prepared, helped, misupdated, parameters };

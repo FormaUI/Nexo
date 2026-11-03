@@ -223,7 +223,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4543` | A fixed parameter selecting anything but a type | A module error naming the parameter |
 | `NEXO4544` | A fixed parameter that selects a type and names no selector | A module error naming the parameter |
 | `NEXO4545` | A fixed parameter that is not a `String` value parameter | A module error naming the parameter |
-| `NEXO4546` | Registering what `createModule` did not make | A module error |
+| `NEXO4546` | Registering what `createModule` did not make, or creating a registry from anything but a list of modules | A module error |
 | `NEXO4547` | A parameter selecting through a selector no registered module declares | A module error naming the parameter and the selector |
 | `NEXO4548` | A parameter's default its type does not admit, a number that is not finite and a list with a hole at any depth among them | A module error naming the parameter |
 | `NEXO4549` | Two module members of one name in one module | A module error naming the member |

@@ -7,6 +7,21 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-29"></a>
+
+## `1.0.0-beta.29`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- [`resolution.typeAt`](spec/runtime/resolution.md#runtime-result-paths) steps from a dictionary to its `entries` and from a pair to its `key` and `value`, as a result exports them, so every path `valueAt` reads, `typeAt` types.
+- [`getLocation`](spec/runtime/resolution.md#runtime-locations) takes pointers into the validated definition, and answers a location naming the node in the definition as its caller gave it; an array's parts are its entries at their indexes, so `length` is none, NEXO2644.
+- `nexo.createRegistry` refuses anything but a list of modules, NEXO4546, and `registry.getImplementation` answers undefined for anything no module it holds declares, rather than either throwing a TypeError.
+- The type declarations type a declaration helper's options, so an inline `impl` reads its input typed, declare the `typeParameters` a module's stored declarations carry, and leave `createModule`'s contents and `createEvaluator`'s bindings optional, as they are.
+
+**Breaking:** nothing a host relied on. A pointer naming an array's `length` is refused, and `getImplementation` answers undefined for an object no module declares.
+
 <a id="v1-0-0-beta-28"></a>
 
 ## `1.0.0-beta.28`
