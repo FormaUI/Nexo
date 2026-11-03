@@ -251,6 +251,11 @@ export class Tokenizer {
             return this.#readInvalidToken(start, start + 1, 'NEXO1509', "Unexpected '!': an inequality is written '!=', and a negation 'not'", start);
         }
 
+        // A `?` written directly after a word or a `>` is a nullable type's notation, `Light?` or `List<Number>?`, which no script writes: the cast or the conversion that names a type is nullable where its operand can be null.
+        if (character === '?' && /[A-Za-z0-9>]/.test(this.#text[start - 1] ?? '')) {
+            return this.#readInvalidToken(start, start + 1, 'NEXO1000', "Unexpected '?': a script names a type bare, and a cast or a conversion answers null where its operand can be null", start);
+        }
+
         // A character outside the Basic Multilingual Plane is one character, two code units long.
         const unexpected = String.fromCodePoint(this.#text.codePointAt(start));
 

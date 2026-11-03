@@ -198,6 +198,21 @@ describe('the codes of syntax errors', () => {
             expectSyntaxCode('NEXO1026', ['a as "Light"', "a to 'Number'"]);
         });
 
+        it('gives NEXO1026 to type arguments after the type a cast or a conversion names, where no comparison reads them, and reads the comparisons that do', () => {
+            expectSyntaxCode('NEXO1026', ['a to List<Number>', 'a as Home.Light<Number>', 'try a to List<List<Number>>', 'a to Dictionary<String, Number> ?? b', 'f(a to D<b, c>)']);
+            expect(errorThrownBy(() => nexo.parse('a to List<Number>'))).toMatchObject({ message: expect.stringContaining("'List<Number>' writes type arguments, which no type it names takes"), location: { offset: 9 } });
+
+            // Comparisons that read as an expression stay comparisons: one that keeps its direction, and two arguments the `>` of the second begins.
+            expect(nexo.parse('a to Number < b').expression).toMatchObject({ kind: 'comparison', operators: ['<'] });
+            expect(nexo.parse('f(a to Number<b, c>d)').expression.arguments.map(argument => argument.operators)).toEqual([['<'], ['>']]);
+        });
+
+        it('gives NEXO1000 to a nullable type written after a word, saying a script names a type bare', () => {
+            for (const text of ['a as Light?', 'a to List<Number>?']) {
+                expect(errorThrownBy(() => nexo.parse(text))).toMatchObject({ code: 'NEXO1000', kind: 'syntax', message: expect.stringContaining('a script names a type bare, and a cast or a conversion answers null where its operand can be null') });
+            }
+        });
+
         it('gives NEXO1072 to a value nesting deeper than 256 levels, at the value, where reading it would overflow the stack', () => {
             expect(() => nexo.parse(`${'['.repeat(255)}1${']'.repeat(255)}`)).not.toThrow();
             expect(errorThrownBy(() => nexo.parse(`${'('.repeat(1000)}1${')'.repeat(1000)}`))).toMatchObject({ code: 'NEXO1072', kind: 'syntax', location: { line: 1, column: 257 } });

@@ -884,9 +884,17 @@ export class Parser {
 
     /**
      * Reads the name of the type a cast or a conversion names after its keyword, written bare: any word, a reserved one included, as a member's name is after its dot, qualified by its module's name and a dot where one follows it,
-     * which makes a type-name node of the three. A string in its place is refused with the bare name to write, and anything else with the form the keyword takes.
+     * which makes a type-name node of the three. A string in its place is refused with the bare name to write, and anything else with the form the keyword takes, as type arguments written after the name are.
      */
     #parseTypeName(keyword, what, example) {
+        const typeName = this.#parseBareTypeName(keyword, what, example);
+
+        this.#refuseTypeArguments(keyword, what, SyntaxTree.typeNameOf(typeName, this.#text));
+
+        return typeName;
+    }
+
+    #parseBareTypeName(keyword, what, example) {
         const token = this.#token;
 
         if (token.type === 'literal' && typeof token.value === 'string') {
@@ -912,6 +920,48 @@ export class Parser {
         }
 
         return Parser.#node('type-name', [name, dot, this.#take()]);
+    }
+
+    /**
+     * Refuses type arguments written after the name a cast or a conversion names, `List<Number>`, which no type either names takes. Angle brackets are read as type arguments only where reading them as comparisons gives
+     * no expression: one argument, which turns the comparisons' direction, or several where the `>` closing them is followed by no operand, as `f(a to D<b, c>d)` passes two comparisons.
+     */
+    #refuseTypeArguments(keyword, what, name) {
+        const token = this.#token;
+
+        if (token.type !== '<') {
+            return;
+        }
+
+        let depth = 0;
+        let separated = false;
+        let index = this.#index;
+
+        for (; index < this.#tokens.length; index++) {
+            const { type } = this.#tokens[index];
+
+            if (type === '<' || type === '>') {
+                depth += type === '<' ? 1 : -1;
+            } else if (type === ',') {
+                separated ||= depth === 1;
+            } else if (type !== '.' && !this.#isWord(this.#tokens[index])) {
+                return;
+            }
+
+            if (depth === 0) {
+                break;
+            }
+        }
+
+        const following = this.#tokens[index + 1];
+
+        if (depth !== 0 || (separated && following !== undefined && (BOUNDARY_STARTS.has(following.type) || (following.type === 'keyword' && following.value === 'try')))) {
+            return;
+        }
+
+        const written = this.#text.slice(token.start, this.#tokens[index].end);
+
+        throw this.#createSyntaxError('NEXO1026', `'${keyword}' names the type it ${what} bare, and '${name}${written}' writes type arguments, which no type it names takes`, token.start);
     }
 
     /**

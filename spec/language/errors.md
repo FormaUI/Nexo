@@ -61,7 +61,7 @@ In this document:
 | `NEXO1024` | Casts chained without a group, as `a as Device as Light` | A syntax error giving the grouped form, `(thing as Device) as Light` |
 | `NEXO1053` | A chain continuing a cast without a group, as `device as Light?.brightness` | A syntax error giving the grouped form, `(device as Light)?.brightness` |
 | `NEXO1025` as syntax, `NEXO2002` as structure | A cast whose target is none text could write: a group other than a coalescing operator or an optional enclosed access, or a chain an object expression continues | A syntax error in text, and a structure error at the target in a definition |
-| `NEXO1026` | A string where a cast or a conversion names its type, as `device as "Light"` | A syntax error giving the type's name written bare, `device as Light` |
+| `NEXO1026` | A string where a cast or a conversion names its type, as `device as "Light"`, or type arguments after the name, as `value to List<Number>`, where no comparison reads them | A syntax error giving the type's name written bare, `device as Light` |
 | `NEXO1027` | A conditional or a `do` block used as a condition or an operand without a group | A syntax error giving the grouped form |
 | `NEXO1028` as syntax, `NEXO2003` as structure | A conditional or a `do` block that is the receiver of a chain | A syntax error, or a structure error in a definition, saying to bind its value first |
 | `NEXO1029` | A conditional, a function or a `do` block without its `end` | A syntax error |

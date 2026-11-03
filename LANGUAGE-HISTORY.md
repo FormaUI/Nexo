@@ -7,6 +7,19 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-37"></a>
+
+## `1.0.0-beta.37`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [Type arguments after the type a cast or a conversion names](spec/language/types.md#casts-target-type), `value to List<Number>`, are refused saying the type is named bare, NEXO1026, where they were read as comparisons and refused as a chain turning its direction, NEXO1019. Angle brackets that read as comparisons stay comparisons: `a to Number < b`, and `f(a to Number<b, c>d)`, two arguments.
+- A `?` directly after a word or a `>`, `device as Light?`, is refused saying a script names a type bare and a cast or a conversion answers null where its operand can be null, NEXO1000 as before.
+
+**Breaking:** nothing. Each text refused before is refused, with a message that says what to write.
+
 <a id="v1-0-0-beta-36"></a>
 
 ## `1.0.0-beta.36`
