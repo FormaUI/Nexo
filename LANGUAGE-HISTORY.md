@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-40"></a>
+
+## `1.0.0-beta.40`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [A member no module declares](spec/language/errors.md#preparation-and-type-errors), read on a number literal by an exponent's name, `1.e3`, says a number's exponent follows its digits directly, `1e3`, since a dot after them begins an access.
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-39"></a>
 
 ## `1.0.0-beta.39`

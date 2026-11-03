@@ -165,6 +165,14 @@ describe('the codes of resolution', () => {
         it('NEXO3001, a member no declaration has', () => expectResolutionCode('s.nope', 'NEXO3001'));
         it('NEXO3001, a member a declaration has on another receiver', () => expectResolutionCode('xs.pad(1)', 'NEXO3001'));
         it('NEXO3001, a member a module does not declare, read through its namespace', () => expectResolutionCode('shop.nope', 'NEXO3001'));
+
+        it("NEXO3001, a number's exponent written after a dot, which reads a member, saying the exponent follows the digits directly", () => {
+            for (const [text, written] of [['1.e3', '1e3'], ['2.5.E4', '2.5E4'], ['1.e+3', '1e3']]) {
+                expect(refusalOf(text)).toMatchObject({ code: 'NEXO3001', message: expect.stringContaining(`a number's exponent follows its digits directly, as ${written} writes it`) });
+            }
+
+            expect(refusalOf('s.e3').message).not.toContain('exponent');
+        });
         it('NEXO3001, a member called on a receiver of unknown type that no declaration has', () => expectResolutionCode('nothing?.nope(1)', 'NEXO3001'));
         it('NEXO3008, a member read with . on a receiver that can be null', () => expectResolutionCode('s:partner.size', 'NEXO3008'));
         it('NEXO3011, a named indexer written without its key', () => expectResolutionCode('s:letter', 'NEXO3011'));

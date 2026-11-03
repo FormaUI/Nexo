@@ -138,7 +138,7 @@ In this document:
 
 | Code | Situation | Result |
 | --- | --- | --- |
-| `NEXO3001` | A misspelled member or extension | A validation error, with its location; a property access with a hyphen, as `it.floor-area`, giving the camelCase member, `it.floorArea` |
+| `NEXO3001` | A misspelled member or extension | A validation error, with its location; a property access with a hyphen, as `it.floor-area`, giving the camelCase member, `it.floorArea`, and an exponent read as a number's member, as `1.e3`, giving the number, `1e3` |
 | `NEXO3002` | A script's import naming a module the registry does not hold | A validation error naming the module |
 | `NEXO3052` | A script's import naming a type its module does not declare | A validation error naming the type by its qualified name |
 | `NEXO3053` | A script's import naming an internal type | A validation error naming the type by its qualified name |

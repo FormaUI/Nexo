@@ -1703,6 +1703,20 @@ export class LanguageResolver {
      * For a property access no member is named as, which a subtraction takes a bare name from, the suggestion of the member the two names joined in camelCase name, as `client` and `size` join as `clientSize`,
      * where the receiver's type has one of that name, compared ignoring case and written as the member spells it; nothing for any other access.
      */
+    /**
+     * The hint an access on a number literal gives where its name is an exponent's, `1.e3`, which a number writes directly after its digits, `1e3`, since a dot after the digits begins an access; none otherwise, the
+     * name then a member's no module declares.
+     */
+    #exponentHintOf(access) {
+        if (access.receiver.kind !== 'literal' || typeof access.receiver.value !== 'number' || !/^[eE][0-9]*$/.test(access.name)) {
+            return '';
+        }
+
+        const digits = DefinitionWriter.quote(access.receiver, this.#namespaceNames);
+
+        return `: a number's exponent follows its digits directly, as ${digits}${access.name.length === 1 ? `${access.name}3` : access.name} writes it, and a dot after them begins an access`;
+    }
+
     #joinedNameHintOf(node, receiverType) {
         const joined = this.#joinedNames.get(node)?.toLowerCase();
 
@@ -2548,7 +2562,7 @@ export class LanguageResolver {
 
         if (declared.length === 0) {
             this.#refuseExtensionMemberRead(node, pointer, receiverType, isComputed);
-            this.#fail(isComputed ? 'NEXO3056' : 'NEXO3001', `'${access.name}' is no member of the vocabulary${this.#joinedNameHintOf(node, receiverType)}`, pointer);
+            this.#fail(isComputed ? 'NEXO3056' : 'NEXO3001', `'${access.name}' is no member of the vocabulary${isComputed ? '' : this.#exponentHintOf(access)}${this.#joinedNameHintOf(node, receiverType)}`, pointer);
         }
 
         const candidates = this.#imported.getAvailable(declared);
