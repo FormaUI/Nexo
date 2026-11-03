@@ -948,3 +948,23 @@ Forty decisions were taken while implementing the declarations, member selection
   - Renumbering the versions before `1.0.0-beta.40` into one, which DOMQL's records and these decisions name.
   - An entry named *Unreleased* with no number, which the sources could not declare, so a build of an unreleased commit couldn't say which contract it follows.
   - Dating a release when its packages are published, which leaves a host nothing to pin until a registry holds them.
+
+<a id="d67"></a>
+
+## D67 — 1.0 waits for five requirements, and no new feature comes before it
+
+*November 3, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:**
+  - Nexo is 1.0 once its contracts are settled, it is fuzzed, a release is published, DOMQL runs Forma's scripts on it, and a release candidate breaks nothing, as [what 1.0 requires](features-status.md#what-1-0-requires) sets out.
+  - Until then, a change fixes, explains, speeds up or documents, or meets a requirement. A feature lands only where a host's real use needs it, as a decision records.
+  - Tooling follows 1.0: it adds an API, and changes no contract a script or a host relies on.
+- **Why:**
+  - The beta promised no breaking redesign, but said nothing about when breaks end: 18 of its 40 versions broke something.
+  - Each feature adds surface that 1.0 must then keep, and a contract is settled by use, not by more of it.
+  - Nexo's hosts are DOMQL and Forma, so their real use is the test of its contracts.
+- **Declined:**
+  - A date for 1.0, which says nothing about whether the contracts are settled.
+  - Making tooling a requirement, which would hold 1.0 for an addition.
+  - Refusing every feature without exception, which would hold 1.0 for the one its own requirement, real use, turns out to need.
