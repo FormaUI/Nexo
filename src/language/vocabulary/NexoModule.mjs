@@ -639,8 +639,9 @@ export class NexoModule {
             fail(observationDeclaration === null || typeof observationDeclaration !== 'object' ? 'NEXO4504' : 'NEXO4060', 'An observation names its type as a name is', name, declarationKey);
         }
 
-        // A function a member is given lasts as long as its invocation, so no observation, which outlives it, is given one.
-        const functionArgumentReference = Object.values(observationDeclaration).find(value => typeof value?.argument === 'string' && parameters.get(value.argument)?.kind === 'function');
+        // A function a member is given, an expression and a predicate among them, lasts as long as its invocation, so no observation, which outlives it, is given one, directly or within a list.
+        const references = Object.values(observationDeclaration).flatMap(value => (Array.isArray(value) ? value : [value]));
+        const functionArgumentReference = references.find(value => typeof value?.argument === 'string' && ['function', 'expression', 'predicate'].includes(parameters.get(value.argument)?.kind));
 
         if (functionArgumentReference !== undefined) {
             fail('NEXO4055', `The observation '${observationDeclaration.type}' is given the parameter '${functionArgumentReference.argument}', a function that lasts only while the member's invocation does`, name, declarationKey);
@@ -1108,6 +1109,11 @@ export class NexoModule {
         // A fixed argument names a declaration, which only a string can.
         if (parameter.kind !== 'value' || parameter.type !== 'String') {
             fail('NEXO4545', `The fixed parameter '${parameter.name}' is a value parameter of type string, since it names what it selects`, memberName, declarationKey);
+        }
+
+        // What a fixed argument selects is what the script says, so a script always writes it, and none is left to a default.
+        if (parameter.required === false || parameter.default !== undefined) {
+            fail('NEXO4072', `The fixed parameter '${parameter.name}' is required, since the argument a script writes for it selects what it does`, memberName, declarationKey);
         }
     }
 }

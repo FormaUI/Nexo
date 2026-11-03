@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.29` · definition format 38*
+*Unpublished · language `1.0.0-beta.30` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -53,3 +53,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A script nesting deeper than 256 levels is refused, NEXO1072 or NEXO2046, rather than overflowing the stack with a RangeError, and a definition holding a node that holds itself, or an array with a missing entry, is refused at validation, NEXO2000, rather than failing later with a TypeError.
 - `typeAt` types the paths through a dictionary's entries and a pair's parts that `valueAt` reads. `getLocation` refuses an array's `length`. `createRegistry` and `getImplementation` given what they don't take answer with a NexoError or undefined rather than a TypeError. The declaration helpers type their options, and a module's stored declarations their `typeParameters`.
 - The hosting document's example imports the module it reads.
+- A module giving an observation an expression, a predicate or a function within a list is refused, NEXO4055, and so is one declaring a fixed parameter optional, NEXO4072. Module errors name the key a notation stands at, a mapping by its key, an unnamed indexer as `[]` and the type a member stands in.

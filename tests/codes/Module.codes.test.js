@@ -325,12 +325,19 @@ describe('the module error codes', () => {
             expectModuleCode(creating({ members: [functionDeclaration({ result: '@selected', parameters: [selecting({ type: 'Number' })] })] }), 'NEXO4545');
         });
 
-        it('NEXO4547: a parameter selecting through a type selector no module declares', () => {
+        it('NEXO4072: a fixed parameter declared optional or given a default, which no resolution could select through', () => {
+            expectModuleCode(creating({ members: [functionDeclaration({ result: '@selected', parameters: [selecting({ required: false })] })] }), 'NEXO4072');
+            expectModuleCode(creating({ members: [functionDeclaration({ result: '@selected', parameters: [selecting({ required: false, default: 'motion' })] })] }), 'NEXO4072');
+        });
+
+        it('NEXO4547: a parameter selecting through a type selector no module declares, located at the type a member stands in', () => {
             expectModuleCode(registering(module('charts', { members: [functionDeclaration({ result: '@selected', parameters: [selecting()] })] })), 'NEXO4547');
+            expect(expectModuleError(registering(module('charts', onStrings([functionDeclaration({ name: 'pick', result: '@selected', parameters: [selecting()] })]))))).toMatchObject({ type: 'Words', declaration: 'pick', declarationKey: 'parameters' });
         });
 
         it('NEXO4548: a parameter default its type does not admit', () => {
             expectModuleCode(registering(module('charts', { members: [functionDeclaration({ parameters: [parameterDeclaration({ required: false, default: 'many' })] })] })), 'NEXO4548');
+            expect(expectModuleError(registering(module('charts', { members: [functionDeclaration({ parameters: [parameterDeclaration({ required: false, default: 'many' })] })] })))).toMatchObject({ declarationKey: 'parameters' });
             expectModuleCode(registering(module('charts', { members: [functionDeclaration({ parameters: [parameterDeclaration({ required: false, default: Infinity })] })] })), 'NEXO4548');
             expectModuleCode(registering(module('charts', { members: [functionDeclaration({ parameters: [parameterDeclaration({ type: 'List<Number>', required: false, default: [1, , 3] })] })] })), 'NEXO4548');
             expectModuleCode(registering(module('charts', { types: [extensionDeclaration('Lists<T>', 'List<T>', [functionDeclaration({ parameters: [parameterDeclaration({ type: 'T', required: false, default: 0 })] })])] })), 'NEXO4548');
@@ -650,6 +657,9 @@ describe('the module error codes', () => {
             const axes = module('axes', { types: [{ name: 'Axis', kind: 'structured', members: dataPropertyDeclarations({ length: 'Number' }) }] });
 
             expectModuleCode(registering(module('charts', { members: [propertyDeclaration({ result: 'Chart' })] })), 'NEXO4047');
+            // It is located at the key whose notation names no type.
+            expect(expectModuleError(registering(module('charts', { members: [propertyDeclaration({ result: 'Chart' })] })))).toMatchObject({ module: 'charts', declaration: 'zoom', declarationKey: 'result' });
+            expect(expectModuleError(registering(module('charts', { members: [functionDeclaration({ parameters: [parameterDeclaration({ type: 'Chart' })] })] })))).toMatchObject({ declarationKey: 'parameters' });
             expectModuleCode(registering(module('charts', { members: [propertyDeclaration({ result: 'axes.Axis' })] })), 'NEXO4047');
             expectModuleCode(registering(axes, module('charts', { members: [propertyDeclaration({ result: 'axes.Scale' })] })), 'NEXO4047');
         });

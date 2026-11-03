@@ -13,7 +13,7 @@ Invalid syntax, an invalid definition or binding, an invalid script, an invalid 
 | `syntax` | Reading text | Text that does not follow the grammar |
 | `structure` | Reading text, validating a definition, binding, and resolving, creating an evaluator or entering one with bindings or a registry that no longer fit | A definition or a binding that breaks the language's structural rules; validating a definition, `nexo.validate`, checks these alone, with no registry |
 | `validation` | Resolution | A script that does not fit its vocabulary or its types: the semantic validation resolution performs against a registry |
-| `module` | Creating and registering a module, creating an evaluator | A declaration that breaks a declaration contract, or a used declaration without an implementation |
+| `module` | Creating and registering a module, creating an evaluator, and evaluating an access on a value of `Any` | A declaration that breaks a declaration contract, or a used declaration without an implementation, one an access on `Any` selects as it is evaluated among them |
 | `evaluation` | Evaluation, its hooks and its prepared calls | A failure while the script is evaluated |
 
 Structural validation checks a definition against the definition format wherever one is read or given, `nexo.validate` among them, and reports a `structure` error. Semantic validation checks a script against its vocabulary and its types, which resolution alone can, and reports a `validation` error, so `nexo.validate` never raises one.
@@ -125,7 +125,7 @@ A module whose declarations break the declaration contract, a type or a member n
 
 | Code | Situation | Result |
 | --- | --- | --- |
-| `NEXO4001` | Creating an evaluator for a resolution whose used declarations the evaluator invokes, conversion operators among them, have no `impl` | A module error naming the declaration and its module |
+| `NEXO4001` | Creating an evaluator for a resolution whose used declarations the evaluator invokes, conversion operators among them, have no `impl`, or evaluating an access on a value of `Any` that selects such a declaration | A module error naming the declaration and its module, or, raised as the access is evaluated, located at the access |
 | `NEXO4002` | A member other than an indexer declared without a `name` | A module error naming the member |
 | `NEXO4030` | A declaration key a declaration's kind does not take, a type-level `fields` collection, and `target`, `syntax` or `default` on a member among them | A module error naming the declaration key |
 | `NEXO4031` | An `internal` that is no Boolean | A module error naming the declaration |
@@ -163,7 +163,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4020` | An indexer whose parameters are other than one required value parameter, its key | A module error naming the indexer |
 | `NEXO4053` | An indexer the host invokes | A module error naming the indexer |
 | `NEXO4054` | A function parameter that is optional or has a null policy | A module error naming the parameter |
-| `NEXO4055` | A function parameter an observation is given | A module error naming the parameter |
+| `NEXO4055` | A function, an expression or a predicate parameter an observation is given, directly or within a list | A module error naming the parameter |
 | `NEXO4056` | A function the host invokes taking an expression or a predicate parameter | A module error naming the parameter |
 | `NEXO4022` | A module member that is an indexer or an operator | A module error naming the member |
 | `NEXO4057` | A module member that observes its receiver or a target found from one | A module error naming the member |
@@ -187,6 +187,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4069` | Two operators of one name and destination on one receiver type of one module | A module error naming both |
 | `NEXO4070` | One of Nexo's generic types, `List`, `Dictionary` or `Pair`, named without its type arguments where no nearer tier declares a type of its name | A module error naming the declaration, giving the type with its type arguments and another module's type of the name qualified |
 | `NEXO4071` | A member reading maintained values whose result can't be null, which it reads as while it is pending | A module error at its `result`, giving the nullable type to declare |
+| `NEXO4072` | A fixed parameter declared optional, or given a default | A module error naming the parameter, which a script always writes |
 | `NEXO4500` | A module whose name is not an identifier | A module error naming the module |
 | `NEXO4501` | A module's contents that are not an object | A module error naming what a module declares |
 | `NEXO4502` | A module's contents declaring what a module does not declare | A module error naming what a module declares |

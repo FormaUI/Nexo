@@ -7,6 +7,21 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-30"></a>
+
+## `1.0.0-beta.30`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- [An observation](spec/runtime/observations.md) is given no expression or predicate parameter, nor a function parameter within a list, NEXO4055, since each lasts only while its member's invocation does.
+- A fixed parameter is required, and takes no default, NEXO4072.
+- An access on a value of `Any` that selects a declaration without an implementation is refused as it is evaluated, NEXO4001, located at the access.
+- A module error names the key a declaration's notation stands at, a mapping by its key, an unnamed indexer as `[]`, and the type a member stands in.
+
+**Breaking:** a module giving an observation an expression, a predicate or a function within a list, and one declaring a fixed parameter optional or with a default, is refused. Neither ever worked: the first failed when the host called what it kept, and the second refused every script that left the argument out.
+
 <a id="v1-0-0-beta-29"></a>
 
 ## `1.0.0-beta.29`

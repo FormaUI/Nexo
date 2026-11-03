@@ -146,7 +146,7 @@ const resolutionOf = (registry, definition, parameterBindings) => {
             const { declaration, qualifiedName } = unimplemented;
             const containing = registry.getContainingType(declaration);
             // A member within a type or an extension is located at it, as any of its module's errors is.
-            const location = { module: registry.getDeclaringModuleName(declaration), ...(containing === undefined ? {} : { type: containing.name }), declaration: declaration.name, declarationKey: 'impl' };
+            const location = { module: registry.getDeclaringModuleName(declaration), ...(containing === undefined ? {} : { type: containing.name }), declaration: declaration.name ?? '[]', declarationKey: 'impl' };
             const subject = declaration.kind === 'operator' ? `The conversion from ${qualifiedName}` : `'${qualifiedName}'`;
 
             throw NexoErrors.module('NEXO4001', `${subject} has no implementation, so a script that uses it is resolved and never evaluated`, location);

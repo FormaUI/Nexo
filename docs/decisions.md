@@ -820,3 +820,14 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Counting a chain of operators as one level, which would leave a chain of thousands of terms overflowing validation and resolution.
   - Catching the stack's overflow, which engines report apart, as `RangeError` or `InternalError`, and which can leave what was being read half done.
+
+<a id="d58"></a>
+
+## D58 — A fixed parameter is required
+
+*November 3, 2026*
+
+- **Kind:** Runtime contract, closing a gap between the specification and the code.
+- **Decision:** A fixed parameter is required and takes no default, NEXO4072: a script always writes the argument that selects what it selects.
+- **Why:** A module could declare one optional or with a default, which resolution never applied, so every script leaving it out was refused, NEXO3028, as if nothing bound the type it selects.
+- **Declined:** Selecting through a default where a script leaves the argument out, which would let the type a call answers follow a declaration's default, never what the script says, where a fixed argument is the one value resolution settles from the script itself.

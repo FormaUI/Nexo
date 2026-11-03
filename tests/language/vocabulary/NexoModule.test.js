@@ -435,13 +435,22 @@ describe('NexoModule', () => {
             expect(fails(prefixed(1)).message).toContain(message);
             expect(fails(prefixed('aria-', 'Number')).message).toContain(message);
             expect(fails(prefixed('aria-', 'String?')).message).toContain(message);
-            expect(fails(prefixed('aria-', 'String', 'expression')).message).toContain(message);
+            // An expression lasts only while the member's invocation does, so no observation is given one, prefixed or not.
+            expect(fails(prefixed('aria-', 'String', 'expression')).message).toContain("a function that lasts only while the member's invocation does");
         });
 
         it('are never given a function parameter, which lasts only while the member\'s invocation does', () => {
             const callback = parameterDeclaration({ name: 'f', kind: 'function', parameterTypes: [], nulls: undefined });
 
             expect(fails(onStrings([observed([{ type: 'resize', of: { argument: 'f' } }], { kind: 'function', arguments: 'positional', parameters: [callback] })])).message).toContain("is given the parameter 'f', a function that lasts only while the member's invocation does");
+            // Nor is it given one within a list, nor an expression or a predicate, each a function of each item.
+            expect(fails(onStrings([observed([{ type: 'mutation', of: 'receiver', attributes: [{ argument: 'f' }] }], { kind: 'function', arguments: 'positional', parameters: [callback] })])).message).toContain("a function that lasts only while the member's invocation does");
+
+            for (const kind of ['expression', 'predicate']) {
+                const item = parameterDeclaration({ name: 'expression', kind, type: kind === 'predicate' ? 'Boolean' : 'Number', context: 'item' });
+
+                expect(fails(onStrings([observed([{ type: 'resize', of: { argument: 'expression' } }], { kind: 'function', arguments: 'positional', parameters: [item] })])).message).toContain("a function that lasts only while the member's invocation does");
+            }
         });
 
         it('are named for a type that is a name, in a list', () => {

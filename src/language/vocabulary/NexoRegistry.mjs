@@ -162,6 +162,9 @@ export class NexoRegistry {
         const typesOfMembers = new Map([...ownValueTypes, ...module.types].flatMap(type => (type.members ?? []).map(member => [member, type])));
         const members = [...module.members, ...typesOfMembers.keys()];
 
+        // Each member is located at the type that holds it from here on, so a refusal of it below names that type.
+        typesOfMembers.forEach((type, member) => this.#containingTypes.set(member, type));
+
         NexoRegistry.#validateTypeSelections(module, members, this.#typeSelectors, this.#mappings, declaration => this.getDeclaringModuleName(declaration), fail, failAt);
 
         for (const type of module.observationTypes) {
@@ -185,8 +188,6 @@ export class NexoRegistry {
 
             this.#declaringModules.set(declaration, { moduleName: module.name, imports: type?.import ?? [], typeParameters: NexoRegistry.#typeParameterScopeOf(declaration, type) });
         }
-
-        typesOfMembers.forEach((type, member) => this.#containingTypes.set(member, type));
 
         this.#pending = { module, types: new Map(valueTypes.map(type => [`${module.name}.${type.name}`, type])) };
 
@@ -346,7 +347,25 @@ export class NexoRegistry {
 
     /** How a location names the declaration: an unnamed indexer, which is given no name, as its access is written, and any other by its name. */
     static #locatedNameOf(declaration) {
+        // A mapping is named by its key, which no other mapping of its selector holds.
+        if (declaration.name === undefined && typeof declaration.key === 'string') {
+            return declaration.key;
+        }
+
         return NexoRegistry.#isUnnamedIndexer(declaration) ? '[]' : declaration.name;
+    }
+
+    /** The declaration key holding the notation, as a declaration writes it: its result, a parameter's type, its supertype, its target or a mapping's type; none where it holds the notation nowhere it can be told. */
+    static #declarationKeyOf(declaration, notation) {
+        if (declaration.result === notation) {
+            return 'result';
+        }
+
+        if ((declaration.parameters ?? []).some(parameter => parameter.type === notation || (parameter.parameterTypes ?? []).includes(notation))) {
+            return 'parameters';
+        }
+
+        return ['supertype', 'target', 'type'].find(key => declaration[key] === notation);
     }
 
     /**
@@ -365,8 +384,9 @@ export class NexoRegistry {
         if (!types.has(notation)) {
             const typeName = this.#containingTypes.get(declaration)?.name;
             const declarationName = NexoRegistry.#locatedNameOf(declaration);
+            const declarationKey = NexoRegistry.#declarationKeyOf(declaration, notation);
             const fail = (code, message) => {
-                throw NexoErrors.module(code, message, { module: this.getDeclaringModuleName(declaration), ...(typeName === undefined ? {} : { type: typeName }), declaration: declarationName });
+                throw NexoErrors.module(code, message, { module: this.getDeclaringModuleName(declaration), ...(typeName === undefined ? {} : { type: typeName }), declaration: declarationName, ...(declarationKey === undefined ? {} : { declarationKey }) });
             };
 
             types.set(notation, this.#resolveNotation(notation, this.#declaringModules.get(declaration), fail));
@@ -1006,7 +1026,7 @@ export class NexoRegistry {
                     const typeParameters = NexoRegistry.#typeParametersOf(type);
                     const whatever = typeParameters.length === 0 ? '' : `, whatever ${typeParameters.join(' and ')} binds to: null where it is nullable, or a list of none of its values`;
 
-                    failAt(declaration)('NEXO4548', `The default of '${parameter.name}' is no ${parameter.type}${whatever}`, declaration.name);
+                    failAt(declaration)('NEXO4548', `The default of '${parameter.name}' is no ${parameter.type}${whatever}`, undefined, 'parameters');
                 }
             }
         }
