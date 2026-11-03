@@ -634,7 +634,8 @@ export class Evaluator {
                 const evaluateArguments = node.arguments.map(argument => this.#getCompiledFunction(argument));
 
                 // The callee is evaluated once, and then the arguments, once each, left to right, in the caller's scope, and the body of the function it is in its captured scope, so no local of the caller's is visible in it;
-                // where it may be one of several, the one it is is recorded for the value's place in the result. The receiver argument of a reference to a module's function is evaluated first, and a null one answers null before the others are.
+                // where it may be one of several, the one it is is recorded for the value's place in the result. The receiver argument of a reference to a module's function is evaluated first, and a null one answers null before the others are;
+                // a reference bound to its receiver captured it, so every argument the call writes is one of its own.
                 return (evaluator, context) => {
                     const callee = evaluator.#evaluateLocal(resolution.callee);
                     const functionKey = Evaluator.#getFunctionKey(callee);
@@ -643,7 +644,7 @@ export class Evaluator {
                         evaluator.#selections = Evaluator.#select(evaluator.#selections, node, functionKey);
                     }
 
-                    if (functions.get(functionKey).invocation?.takesReceiver === true) {
+                    if (callee.isBound !== true && functions.get(functionKey).invocation?.takesReceiver === true) {
                         const receiver = evaluateArguments[0](evaluator, context);
 
                         if (receiver === null) {

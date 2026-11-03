@@ -325,8 +325,10 @@ export class TypeChecker {
             return typeArgument.toNonNullable().equals(actualType.toNonNullable());
         }
 
-        // No value is a never, so a never matches whatever is declared.
+        // No value is a never, so a never matches whatever is declared, and binds to a never each type parameter written there that nothing bound yet, as `[].flatten` binds T.
         if (actualType.kind === 'never') {
+            TypeChecker.#bindToNever(declaredType, typeArguments);
+
             return true;
         }
 
@@ -335,6 +337,19 @@ export class TypeChecker {
         }
 
         return declaredType.typeArguments.length === actualType.typeArguments.length && declaredType.typeArguments.every((typeArgument, index) => this.#inferInto(typeArgument, actualType.typeArguments[index], typeArguments));
+    }
+
+    /** Binds to a never each type parameter the declared type writes, at any depth, that nothing bound yet. */
+    static #bindToNever(declaredType, typeArguments) {
+        if (declaredType.kind === 'typeParameter') {
+            if (!typeArguments.has(declaredType.name)) {
+                typeArguments.set(declaredType.name, Type.never);
+            }
+
+            return;
+        }
+
+        declaredType.typeArguments.forEach(typeArgument => TypeChecker.#bindToNever(typeArgument, typeArguments));
     }
 
     /**

@@ -49,14 +49,14 @@ export class LanguageResolver {
     /** The optional chains being resolved, the innermost last, each with whether an optional access of it can meet a null receiver. @type {{ shortCircuits: boolean }[]} */
     #optionalChains = [];
 
+    /** The selection of a declaration among those of a name for a receiver, the one every access, indexer and qualified call reads. */
+    #memberSelector;
+
     /**
      * @param {import('./vocabulary/NexoRegistry.mjs').NexoRegistry} registry The vocabulary to resolve against.
      * @param {import('./ParameterBindings.mjs').ParameterBindings} bindings What the request's parameters are bound to.
      * @param {import('./TextLocations.mjs').TextLocations | null} locations Where in a text each part of the definition came from.
      */
-    /** The selection of a declaration among those of a name for a receiver, the one every access, indexer and qualified call reads. */
-    #memberSelector;
-
     constructor(registry, bindings, locations) {
         this.#registry = registry;
         this.#typeChecker = registry.typeChecker;
@@ -215,8 +215,9 @@ export class LanguageResolver {
                 }
 
                 // An `it` of an argument body's own scope, its implicit parameter, which the member supplies, is recorded on the scope's `argumentBody`, so the argument is read as a body.
-                if (scope.argumentBody?.key === scope.contextKey) {
+                if (scope.argumentBody?.key === scope.contextKey && !scope.argumentBody.isRead) {
                     scope.argumentBody.isRead = true;
+                    this.#readArgumentBodies.push(scope.argumentBody);
                 }
 
                 return { type: scope.facts.get(scope.contextKey) ?? scope.contextType, kind: 'value', isFixed: false };
@@ -392,6 +393,13 @@ export class LanguageResolver {
     #decidingResults = new WeakMap();
 
     /**
+     * The argument bodies whose implicit parameter a reading has read, in the order it read them, so a reading a speculative resolution discards reads none of them: an argument is an implicit body only where an
+     * accepted reading reads its `it`. It lasts as long as this resolution, and holds each argument body once.
+     * @type {{ key: object, isRead: boolean }[]}
+     */
+    #readArgumentBodies = [];
+
+    /**
      * The nodes whose truthiness alone is tested where they are being resolved, by the node: a condition, what a conditional binding binds, the operand of `not`, an operand of `and` or `or`, and a predicate's argument
      * written as an expression of `it`. A logical expression among them gives values that need share no type, and every other is used as a value, whose values reaching it share one. An entry lasts as long as the
      * resolution it is made for, so another reading of the node, a candidate's taking it as a value among them, tests nothing.
@@ -421,8 +429,6 @@ export class LanguageResolver {
             if (result.kind !== 'value') {
                 this.#fail('NEXO3048', `The ${side} of '??' is a value, and this one is ${LanguageResolver.#descriptionOf(result.kind)}`, `${pointer}/${side}`);
             }
-
-            this.#decidingResults.set(node[side], result);
 
             return result;
         });
@@ -1036,10 +1042,6 @@ export class LanguageResolver {
     }
 
     /**
-     * Refuses what the operation, arithmetic unless another is named, takes no part in: what is no value, a value that can be null, which a fallback or a test removes first,
-     * and a value of any type but a number, which nothing converts to one but `to`.
-     */
-    /**
      * The signature of the indexer the selection chose that the access's key selects: the one signature of an indexer that has one, and otherwise the one whose key type the key's type is assignable to, a key of null
      * or a never the first's; a key none takes, and one of Any where several stand, is refused (NEXO3084), never falling through to another member. The key is resolved to its type alone, its records discarded,
      * since the signature's invocation resolves it.
@@ -1131,6 +1133,10 @@ export class LanguageResolver {
         }
     }
 
+    /**
+     * Refuses what the operation, arithmetic unless another is named, takes no part in: what is no value, a value that can be null, which a fallback or a test removes first,
+     * and a value of any type but a number, which nothing converts to one but `to`.
+     */
     #requireNumber(result, what, pointer, operation = 'arithmetic') {
         this.#requireValue(result, what, pointer);
 
@@ -1195,10 +1201,9 @@ export class LanguageResolver {
     }
 
     /**
-     * Resolves a body: each local against the scope and the locals before it, a value, and the result against them all, its type the result's.
-     * It is fixed only where every local and its result are, so a read a local makes, used or not, is never discarded.
+     * Resolves a body: each local against the scope and the locals before it, a value, and its result against them all, a value too, its type the result's, or the host call the script ends in where the body
+     * stands in the script's terminal position. It is fixed only where every local and its result are, so a read a local makes, used or not, is never discarded.
      */
-    /** Resolves a body: its locals, each a value, and its result, which is a value too, or the host call the script ends in where the body stands in the script's terminal position. */
     #resolveBody(node, pointer, scope, isTerminal = false) {
         let locals = scope.locals;
         let isFixed = true;
@@ -1255,13 +1260,15 @@ export class LanguageResolver {
             this.#fail('NEXO3033', `No function named '${node.callee.name}' is in scope${form === null ? '' : `; write '${form}' for the member of the implicit parameter`}`, pointer);
         }
 
-        const functions = local.function !== undefined ? [local] : (local.result?.type?.kind === 'function' ? local.result.type.functions : null);
+        // A local a test narrowed is called as the test leaves it, so one tested not to be null holds a function.
+        const calleeType = local.function !== undefined ? null : (scope.facts.get(local) ?? local.result?.type);
+        const functions = local.function !== undefined ? [local] : (calleeType?.kind === 'function' ? calleeType.functions : null);
 
         if (functions === null) {
             this.#fail('NEXO3068', `'${node.callee.name}' is a local holding a value, and no function, so it is read without parentheses`, pointer);
         }
 
-        if (local.function === undefined && local.result.type.isNullable) {
+        if (local.function === undefined && calleeType.isNullable) {
             this.#fail('NEXO3068', `'${node.callee.name}' may hold null, and only a function is called: bind one to call in its place first, as let call = ${node.callee.name} ?? other`, pointer);
         }
 
@@ -1269,13 +1276,7 @@ export class LanguageResolver {
         if (functions.length === 1 && functions[0].reference !== undefined) {
             const [target] = functions;
 
-            if (target.isBound !== true) {
-                return this.#resolveReferenceCall(node, pointer, scope, local, target.reference);
-            }
-
-            if (target.receiverType.kind !== 'any') {
-                return this.#resolveBoundReferenceCall(node, pointer, scope, target);
-            }
+            return target.isBound === true ? this.#resolveBoundReferenceCall(node, pointer, scope, target) : this.#resolveReferenceCall(node, pointer, scope, local, target.reference);
         }
 
         // A call of several possible functions gives them one argument list, which their one contract reads where one of them takes an argument of another kind than a value.
@@ -1308,7 +1309,7 @@ export class LanguageResolver {
 
         // A reference bound to its receiver takes it as the reference captured it, before the values the call gives.
         const targets = functions.map((target, index) => (target.reference !== undefined
-            ? this.#resolveModuleFunctionCall(target.reference, node, target.isBound === true ? [{ type: target.receiverType, kind: 'value', isFixed: false }, ...results] : results, pointer)
+            ? this.#resolveModuleFunctionCall(target.reference, node, target.isBound === true ? [{ type: target.receiverType, kind: 'value', isFixed: false }, ...results] : results, pointer, target.isBound === true)
             : this.#resolveScriptFunctionCall(target, node.callee.name, results, node.arguments, scope, functions.length === 1 ? `${pointer}/body` : `${pointer}/bodies/${index}`, pointer)));
         const type = targets.reduce((merged, target) => (merged === null ? null : this.#typeChecker.merge(merged, target.type)), Type.never);
 
@@ -1494,9 +1495,11 @@ export class LanguageResolver {
      * first where its declaration has a receiver, then a value for each of its own parameters, each a value parameter its argument fits. It determines their compatibility and answers the reference, its argument map, the result type its implementation answers for this call, its type parameters bound by the receiver,
      * and the call's type, that result type made nullable where its receiver argument, or an argument whose parameter propagates null, can be null.
      */
-    #resolveModuleFunctionCall(declaration, node, results, pointer) {
+    #resolveModuleFunctionCall(declaration, node, results, pointer, isBound = false) {
         const written = this.#referenceNameOf(declaration);
         const takesReceiver = this.#registry.takesReceiver(declaration);
+        // A bound reference's receiver is the one it captured, which no argument of the call writes, so the call's own arguments are counted from its first.
+        const offset = takesReceiver && !isBound ? 1 : 0;
         const own = takesReceiver ? results.slice(1) : results;
         const { parameters } = declaration;
         const required = parameters.filter(parameter => parameter.required).length;
@@ -1524,8 +1527,9 @@ export class LanguageResolver {
 
             typeArguments = inferred ?? typeArguments;
 
-            if (inferred === null) {
-                this.#fail('NEXO3042', `'${node.callee.name}' may hold a reference to '${written}', which takes a receiver of ${this.#registry.getReceiverTypes(declaration).join(', ')}, and is given ${receiverType.toNonNullable()}`, `${pointer}/arguments/0`);
+            // A reference bound to a value of Any had its receiver checked as it was created, as an extension access on Any is.
+            if (inferred === null && !(isBound && receiverType.kind === 'any')) {
+                this.#fail('NEXO3042', `'${node.callee.name}' may hold a reference to '${written}', which takes a receiver of ${this.#registry.getReceiverTypes(declaration).join(', ')}, and is given ${receiverType.toNonNullable()}`, isBound ? pointer : `${pointer}/arguments/0`);
             }
 
             isNullable = receiverType.isNullable || receiverType.kind === 'null';
@@ -1545,7 +1549,7 @@ export class LanguageResolver {
             const parameter = parameters[index];
             const expected = this.#registry.getDeclaredType(declaration, parameter.type).resolveTypeParameters(typeArguments);
 
-            this.#requireArgumentType(result, expected, parameter, declaration, `${pointer}/arguments/${index + (takesReceiver ? 1 : 0)}`);
+            this.#requireArgumentType(result, expected, parameter, declaration, `${pointer}/arguments/${index + offset}`);
 
             if (LanguageResolver.#propagatesNull(result, parameter)) {
                 isNullable = true;
@@ -2358,8 +2362,9 @@ export class LanguageResolver {
             case 'scriptParameter':
                 return LanguageResolver.#possibleOf(this.#bindings.readValue(node.name));
             case 'local': {
+                // A function parameter and a function a script declares hold no initializer whose values can be determined.
                 const local = scope.locals.get(node.name);
-                const possible = local === undefined ? null : this.#possibleNamesOf(local.initializer, local.scope);
+                const possible = local?.initializer === undefined ? null : this.#possibleNamesOf(local.initializer, local.scope);
 
                 // A conditional binding's name is used where its value is truthy.
                 return possible !== null && local.conditional !== undefined ? LanguageResolver.#partOfPossible(possible, true) : possible;
@@ -2860,8 +2865,8 @@ export class LanguageResolver {
     }
 
     /**
-     * Resolves a possible reading, answering what it resolves to, or the failure that refuses it where that is a NexoError; any other failure propagates. A refused reading leaves the resolutions, the declaration uses
-     * and the body copies as they were, and so does a successful one unless `keepsSuccess` keeps its records, its result answered either way. Restoring those three stores is all it promises, since resolution writes
+     * Resolves a possible reading, answering what it resolves to, or the failure that refuses it where that is a NexoError; any other failure propagates. A refused reading leaves the resolutions, the declaration uses,
+     * the body copies and the argument bodies read as they were, and so does a successful one unless `keepsSuccess` keeps its records, its result answered either way. Restoring those four stores is all it promises, since resolution writes
      * nothing else a later reading could take for its own: the functions being resolved and the optional chains are removed as each resolution ends, whether it succeeds or fails; an object expression's object-root
      * fields are reset before they are filled, and read only within it; a structure expected of a node lasts only while the resolution that expects it does; the result a computed property access follows is read only once
      * its own resolution wrote it; the name an access joins comes from its syntax alone;
@@ -2874,6 +2879,7 @@ export class LanguageResolver {
         const resolutions = new Map(this.#resolutions);
         const usedCount = this.#usedDeclarations.length;
         const bodyCopyCount = this.#functionBodyCopies.length;
+        const readBodyCount = this.#readArgumentBodies.length;
         let isKept = false;
 
         try {
@@ -2893,6 +2899,10 @@ export class LanguageResolver {
                 this.#resolutions = resolutions;
                 this.#usedDeclarations.length = usedCount;
                 this.#functionBodyCopies.length = bodyCopyCount;
+
+                for (const argumentBody of this.#readArgumentBodies.splice(readBodyCount)) {
+                    argumentBody.isRead = false;
+                }
             }
         }
     }

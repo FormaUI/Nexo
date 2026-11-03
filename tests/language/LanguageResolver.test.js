@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { nexo } from '#nexo/nexo.js';
 import { LanguageResolver } from '#nexo/language/LanguageResolver.mjs';
 import { ParameterBindings } from '#nexo/language/ParameterBindings.mjs';
 import { ParsedTexts } from '#nexo/language/ParsedTexts.mjs';
@@ -9,6 +10,7 @@ import { Vocabulary } from '#nexo/language/vocabulary/Vocabulary.mjs';
 import { constantUpdates } from '../support/updates.mjs';
 import { dataPropertyDeclarations, extensionDeclaration, operatorDeclaration } from '../support/declarations.mjs';
 import { errorThrownBy } from '../support/errors.mjs';
+import { createExamplesEnergy, createExamplesFixtures, createExamplesHome } from '../support/examples.mjs';
 import { parseImporting } from '../support/pipeline.mjs';
 
 /** A word the shop sells, a value with identity the shop recognizes. */
@@ -246,6 +248,67 @@ describe('LanguageResolver', () => {
 
         it('may not where nothing it uses gives it a value of Any and its host call supplies no nullable reference, a value parameter of Any and a host call supplying a number among them', () => {
             expect([mayRecognize('shop.count() + 1'), mayRecognize('shop.close()'), mayRecognize('shop.restocks()'), mayRecognize('shop.takes(1)')]).toEqual([false, false, false, false]);
+        });
+    });
+
+    describe('calls of the functions a name holds, and readings of a member\'s candidates', () => {
+        const { home, values, types } = createExamplesFixtures();
+        const probe = nexo.createModule('Probe', {
+            types: [{
+                name: 'Dev',
+                kind: 'extension',
+                target: 'Home.Device',
+                members: [
+                    Declarations.createFunctionDeclaration('ping', 'Number', { updates: constantUpdates, impl: ({ receiver }) => receiver.power }),
+                    Declarations.createFunctionDeclaration('plus', 'Number', { updates: constantUpdates, parameters: [Declarations.createValueParameterDeclaration('n', 'Number')], impl: ({ receiver, args }) => receiver.power + args.n }),
+                ],
+            }],
+            members: [Declarations.createFunctionDeclaration('give', 'Any', { updates: constantUpdates, parameters: [Declarations.createValueParameterDeclaration('value', 'Any?', { nulls: 'accept' })], impl: ({ args }) => args.value })],
+        });
+        // A box whose `any` takes a number, a candidate a string's `any` is read against, which a device refuses.
+        const boxes = nexo.createModule('Boxes', { types: [{ name: 'Box', kind: 'reference', isInstance: () => false, members: [Declarations.createFunctionDeclaration('any', 'Boolean', { updates: constantUpdates, parameters: [Declarations.createValueParameterDeclaration('n', 'Number')], impl: () => true })] }] });
+        const resolveWith = (modules, text) => {
+            const registry = nexo.createRegistry([createExamplesHome(home), createExamplesEnergy(), ...modules]);
+            const bindings = registry.createBindings(values, { types });
+
+            return { resolution: registry.resolve(text, bindings, { imports: ['Home', 'Energy', ...modules.map(module => module.name)] }), bindings };
+        };
+        const evaluate = text => {
+            const { resolution, bindings } = resolveWith([probe], text);
+
+            return resolution.createEvaluator(bindings).evaluate().value;
+        };
+        const refusalOf = (text, modules = [probe]) => errorThrownBy(() => resolveWith(modules, text));
+        const power = evaluate('device.power');
+        const metered = evaluate('metered');
+
+        it('refuses a computed name a function parameter or a function holds, whose values no resolution determines, with NEXO3014', () => {
+            expect(refusalOf('["name"].select(n => room.[n])')).toMatchObject({ code: 'NEXO3014', kind: 'validation' });
+            expect(refusalOf('do\n    let g = function() 1 end\n    return room.[g]\nend')).toMatchObject({ code: 'NEXO3014', kind: 'validation' });
+        });
+
+        it('calls a function a local holds once a test narrows it not to be null', () => {
+            expect(evaluate('do\n    let g = function() 1 end\n    let f = if metered then g else null end\n    return if f != null then f() else 0 end\nend')).toBe(metered ? 1 : 0);
+        });
+
+        it('calls a reference bound to a value of Any, whose receiver its creation checks, and refuses one created on a value outside the extension\'s target', () => {
+            expect(evaluate('do\n    let f = Probe.give(device):Dev.ping\n    return f()\nend')).toBe(power);
+            expect(errorThrownBy(() => evaluate('do\n    let f = Probe.give(42):Dev.ping\n    return f()\nend'))).toMatchObject({ code: 'NEXO5043', kind: 'evaluation', location: { pointer: '/expression/body/locals/0/value' } });
+        });
+
+        it('gives a bound reference among several functions the arguments the call writes, locating a refused one where it is written, and calls one that takes none', () => {
+            expect(refusalOf('do\n    let g = function(n) n end\n    let f = if metered then device:Dev.plus else g end\n    return f("x")\nend')).toMatchObject({ code: 'NEXO3042', location: { pointer: '/expression/body/result/arguments/0' } });
+            expect(evaluate('do\n    let g = function(n) n end\n    let f = if metered then device:Dev.plus else g end\n    return f(5)\nend')).toBe(metered ? power + 5 : 5);
+            expect(evaluate('do\n    let g = function() 7 end\n    let f = if metered then device:Dev.ping else g end\n    return f()\nend')).toBe(metered ? power : 7);
+        });
+
+        it('keeps nothing of the implicit parameter a refused candidate\'s arguments read, so an argument reading none is no implicit body', () => {
+            expect(refusalOf('{ v = room.anyDevice(property?.any(it) ?? false) }', [boxes])).toMatchObject({ code: 'NEXO3073' });
+            expect(refusalOf('{ v = room.anyDevice(property?.any(it) ?? false) }', [])).toMatchObject({ code: 'NEXO3073' });
+        });
+
+        it('binds the type parameter of a member a never meets to a never, so an empty list flattens', () => {
+            expect(String(resolveWith([], '{ a = [].flatten, b = [[]].flatten }').resolution.type)).toBe('{ a: List<Never>, b: List<Never> }');
         });
     });
 
