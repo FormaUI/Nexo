@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-39"></a>
+
+## `1.0.0-beta.39`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- [Canonical text](spec/runtime/definition.md#definition) lays a call's arguments and a list's items out on lines of their own, a level within their brackets, where one follows an item ending in a block's `end`, where it wrote the next on the line after `end` at the call's own indentation, `end,` then `2)`. A last item spanning lines keeps its lines after the opening, `items.map(x => {`.
+
+**Breaking:** nothing a script relies on. The canonical text of such a call or list changes, and reads back as the same definition.
+
 <a id="v1-0-0-beta-38"></a>
 
 ## `1.0.0-beta.38`

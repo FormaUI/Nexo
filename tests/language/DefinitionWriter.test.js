@@ -48,11 +48,16 @@ describe('DefinitionWriter', () => {
         expect(DefinitionWriter.format(canonicalOf({ kind: 'conditional', condition, consequent: literal(1), alternative: literal(2) }))).toBe('if lit then 1 else 2 end');
     });
 
-    it("starts a call's argument after one ending in a block's end on the next line, since only closing punctuation follows end on its line", () => {
-        const formatted = nexo.format('f(if c then { a = 1, b = 2 } else null end, 2)');
+    it("lays a call's arguments and a list's items out on lines of their own, a level within, where one follows a block's end, since only closing punctuation follows end on its line", () => {
+        const text = 'f(if c then { a = 1, b = 2 } else null end, 2)';
+        const formatted = nexo.format(text);
 
-        expect(formatted).toBe('f(if c then\n    {\n        a = 1,\n        b = 2\n    }\nelse\n    null\nend,\n2)');
-        expect(nexo.parse(formatted)).toEqual(nexo.parse('f(if c then { a = 1, b = 2 } else null end, 2)'));
+        expect(formatted).toBe('f(\n    if c then\n        {\n            a = 1,\n            b = 2\n        }\n    else\n        null\n    end,\n    2\n)');
+        expect(nexo.parse(formatted)).toEqual(nexo.parse(text));
+        expect(nexo.format('{ r = [if c then { a = 1, b = 2 } else null end, 2] }')).toBe('{\n    r = [\n        if c then\n            {\n                a = 1,\n                b = 2\n            }\n        else\n            null\n        end,\n        2\n    ]\n}');
+        // Compact text keeps the call on one line, and a last argument spanning lines keeps its lines after the call's opening.
+        expect(nexo.quote('f(if c then { a = 1, b = 2 } else null end, 2)')).toBe('f(if c then { a = 1, b = 2 } else null end, 2)');
+        expect(nexo.format('items.map(x => { a = 1, b = 2 })')).toBe('items.map(x => {\n    a = 1,\n    b = 2\n})');
     });
 
     it("writes a script's imports before its body, each on a line of its own in the definition's order, an alias and = before its source, leaving out those its destination supplies", () => {

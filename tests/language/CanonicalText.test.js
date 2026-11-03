@@ -96,7 +96,7 @@ describe('canonical text', () => {
     it('propagates block form outward from a body nested in an object, a call and a conditional, continuing after the end on its own line', () => {
         const inner = 'do\n    let x = 1\n    return x\nend';
         const object = '{\n    a = do\n        let x = 1\n        return x\n    end,\n    b = 2\n}';
-        const call = 'f(if c then\n    {\n        a = 1,\n        b = 2\n    }\nelse\n    null\nend,\n2)';
+        const call = 'f(\n    if c then\n        {\n            a = 1,\n            b = 2\n        }\n    else\n        null\n    end,\n    2\n)';
         const conditional = 'if c then\n    do\n        let x = 1\n        return x\n    end\nelse\n    0\nend';
         const grouped = `(${inner}\n) + 2`;
 

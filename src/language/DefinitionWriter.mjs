@@ -349,9 +349,20 @@ export class DefinitionWriter {
         return DefinitionWriter.#items(node.arguments, level);
     }
 
-    /** Nodes in order, a call's arguments or a list's items, separated by commas, the one after a node that ends with a block's `end` on the next line, since only closing punctuation follows `end` on its line. */
+    /**
+     * Nodes in order, a call's arguments or a list's items, separated by commas: on one line, the last one's lines after it where it spans lines, as `f(x => {` begins one. Only closing punctuation follows a block's `end` on
+     * its line, so a node after one ending in it stands on the next line: laid out, each node on a line of its own, a level within its brackets, which close on the line after the last, and compact, on the line after
+     * the `end`. A node written a level within holds an indentation more after each of its line breaks, since no string the writer writes holds one.
+     */
     static #items(nodes, level) {
         const written = nodes.map(item => DefinitionWriter.#write(item, level));
+        const isFollowingBlock = written.some((text, index) => index < written.length - 1 && DefinitionWriter.#endsWithBlock(text));
+
+        if (isFollowingBlock && !DefinitionWriter.#isCompact) {
+            const indentation = INDENTATION.repeat(level + 1);
+
+            return `\n${written.map(text => `${indentation}${text.replaceAll('\n', `\n${INDENTATION}`)}`).join(',\n')}\n${INDENTATION.repeat(level)}`;
+        }
 
         return written.map((argument, index) => (index === 0 ? argument : `${DefinitionWriter.#endsWithBlock(written[index - 1]) ? `\n${INDENTATION.repeat(level)}` : ' '}${argument}`)).join(',');
     }
