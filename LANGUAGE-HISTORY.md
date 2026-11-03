@@ -7,6 +7,19 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-21"></a>
+
+## `1.0.0-beta.21`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [The type of a logical expression](spec/language/expressions.md#logical-expressions-negations-and-groups-type): `and` and `or` mean the same in every expression, and their values share a type only where the value is used. A condition, the operand of `not`, an operand of another `and` or `or`, and a predicate test truthiness alone, and a conditional binding binds the truthy values. So `metered and light.brightness or 0` is a `Number`: the false that selects `0` reaches nothing. NEXO3040 refuses values of no one type where the value is used, and a conditional binding whose truthy values are of none.
+- [Not a conditional](spec/language/expressions.md#logical-expressions-negations-and-groups-not-a-conditional) is a note on behavior: `c and x or y` gives `y` where `x` is falsey, which a conditional doesn't.
+
+**Breaking:** nothing. Every script accepted before keeps its type, and some it refused are accepted.
+
 <a id="v1-0-0-beta-20"></a>
 
 ## `1.0.0-beta.20`

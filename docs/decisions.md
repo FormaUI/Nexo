@@ -680,3 +680,26 @@ Forty decisions were taken while implementing the declarations, member selection
   - A lifetime Nexo ends by itself, as with the evaluator or a timer, which can't know when a host's behavior ends.
   - Hooks for a kept function's calls, which would make every call an evaluation a host schedules, where a test is called inside an event's dispatch.
   - Answering null after disposal, which would hide a host's mistake behind a value the contract allows.
+
+<a id="d50"></a>
+
+## D50 — `and` and `or` are typed where their value is used
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:** `and` and `or` mean the same in every expression, and are evaluated as before, left to right, stopping at the operand that decides. Their values must share a type only where the value is used:
+  - **Used:** a result, a function's among them, a local's initializer, an object field, an argument, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation.
+  - **Tested for truthiness alone:** a condition, the operand of `not`, an operand of another `and` or `or`, and a predicate argument written as an expression of `it`. Their values need share no type.
+  - **Bound:** a conditional binding binds the truthy values, which share one.
+
+  The values that reach a place are those `and` and `or` can answer there, so `c and fee or 0` is a `Number`, a null fee among them. Parentheses add no requirement, and a local is a boundary: it holds one type from its declaration. The language advances to `1.0.0-beta.21`.
+- **Why:**
+  - `c and x or y` is a familiar way to choose a value, and the false `c and x` gives can only select `y`. Refusing it at the `and` reported a type no value of the whole ever has.
+  - A truthiness test reads no value's type, so requiring one there refused scripts whose meaning was clear.
+  - Settling the type where a value is used keeps every value of one type, without union types.
+- **Declined:**
+  - A type for "false or a number", which would let `c and x` itself be a value. Nexo keeps every value of one type.
+  - Carrying a logical expression's values through a local, which would accept `let level = c and fee` before `level or 0`. A local's type is settled at its declaration, so reading it never depends on how its initializer is written.
+  - Testing the values of an arrow function given as a predicate for truthiness alone. A function's result is a value used, as every function's is.
+  - Typing a fixed operand by its value rather than its declared type, which would change the type of scripts accepted before.

@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.20` · definition format 38*
+*Unpublished · language `1.0.0-beta.21` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -34,3 +34,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - `resolution.typeAt` and `nexo.paths.valueAt` refuse a path of another shape, NEXO2646, as `nexo.paths.validate` does, a path that is no list among it; `valueAt` steps to an object field a value holds and a list's item alone.
 - A text that ends inside a collection, as `[10,`, is refused with NEXO1000, where a `TypeError` escaped `nexo.parse`.
 - A function the host invokes takes function parameters: its prepared call gives the host each function argument as a kept function, which it calls later in the context preparation found, until it disposes the call with `dispose()`, after which a call fails with NEXO5051. NEXO4056 refuses an expression or a predicate parameter alone.
+- An `and` or an `or` is typed where its value is used, by the values that reach it, so `c and fee or 0` is a `Number`. A condition, `not`, another `and` or `or`, and a predicate test its truthiness alone. NEXO3040 refuses values of no one type where the value is used, and a conditional binding whose truthy values are of none.

@@ -360,6 +360,10 @@ device.offline() or (device.batteryPowered() and (device.battery ?? 0) < 10)
 room { free = not it.occupied() and not busy }
 room { let lamp = it.device("lamp"), power = lamp and lamp.power }
 device["label"] or "untitled"
+metered and light.brightness or 0
+metered and device.battery or 0
+not (metered and light.brightness)
+if metered and light.brightness then "lit" else "dark" end
 ```
 
 <a id="logical-expressions-negations-and-groups-operands"></a>
@@ -378,7 +382,12 @@ An equality binds tighter than `not`, `not` tighter than `and`, and `and` tighte
 
 ### What a logical expression answers
 
-`and` answers its first falsey operand, or its last where every one before it is truthy, and `or` its first truthy operand, or its last where every one before it is falsey, each as it is, never copied or converted: `null and "value"` is null, `0 or 10` is 0 and `"" or "fallback"` is the empty string.
+`and` and `or` mean the same in every expression:
+
+- `and` evaluates its left operand. If that value is falsey, `and` answers it. Otherwise, `and` evaluates its right operand and answers it.
+- `or` evaluates its left operand. If that value is truthy, `or` answers it. Otherwise, `or` evaluates its right operand and answers it.
+
+Each answers a value as it is, never copied or converted: `null and "value"` is null, `0 or 10` is 0 and `"" or "fallback"` is the empty string. `a and b and c` is `(a and b) and c`, and `a or b or c` is `(a or b) or c`.
 
 `not` answers a `Boolean`, true where its operand is falsey. Of Booleans, they answer what Boolean logic does.
 
@@ -386,23 +395,53 @@ An equality binds tighter than `not`, `not` tighter than `and`, and `and` tighte
 
 ### The type of a logical expression
 
-`and` is of the falsey part of each operand before its last, merged with its last, and `or` of the truthy part, merged with its last: a value that can be null has null for its falsey part and itself without null for its truthy part, a Boolean is a Boolean in both, and any other value is truthy only.
+A logical expression can give values of several types. Which of them must share a type depends on where it stands:
 
-So `room.device(name) and 5` is a `Number?`, `name or "untitled"` a `String` where `name` is a string, and Booleans give a `Boolean`. Where fixed operands, literals and bound parameters, decide it, it is of the one that does, so `true and "value"` is a `String`.
+- **Where its truthiness is tested,** none need to. It is tested as a condition, as the operand of `not`, as an operand of another `and` or `or`, and as a predicate argument written as an expression of `it`.
+- **Where a conditional binding binds it,** its truthy values share a type, since the name is bound only where the value is truthy: `if let level = metered and device.battery then level else 0 end` binds a `Number`.
+- **Wherever else it stands,** its value is used, and the values that can reach that place merge to one type, as [merging](types.md#types-assignability-and-merging) sets out. Values of no one type are a validation error (NEXO3040).
 
-Values no one type holds are a validation error, as `it.active() and it` in an object expression following a device, which gives false or a device: unlike Lua, Nexo types every expression, and does not offer a type for false or true beside another, so a conditional chooses between values of one type, `if it.active() then it else null end`, where null is an acceptable alternative.
+Its value is used as a result, a function's result among them, a local's initializer, an object field, an argument, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation. Parentheses group an expression and add no requirement of their own, so `(metered and light.brightness) or 0` is typed as `metered and light.brightness or 0` is.
+
+The values that can reach a place:
+
+- **Of `and`:** the falsey values of its left operand, and every value of its right operand.
+- **Of `or`:** the truthy values of its left operand, and every value of its right operand.
+- **Of an operand:** a value that can be null gives null where it is falsey, and itself without null where it is truthy. A Boolean gives false where it is falsey and true where it is truthy. Any other value is truthy only.
+- **Of fixed operands,** literals and bound parameters, the one that decides: `true and "value"` is a `String`.
+
+So, where `metered` is a `Boolean`:
+
+| Expression | Its type |
+| --- | --- |
+| `metered and light.brightness or 0` | A `Number`. Where `metered` is false, `or` selects `0`; where it is true, the brightness is a number. |
+| `metered and device.battery or 0` | A `Number`, though the battery is a `Number?`: a null battery selects `0` too. |
+| `metered and "metered" or 0` | Refused where its value is used (NEXO3040): `"metered"` and `0` both reach it. |
+| `metered and light.brightness`, as a result | Refused (NEXO3040): false and a number both reach it. |
+| `not (metered and light.brightness)` | A `Boolean`: `not` tests its operand's truthiness alone. |
+| `if metered and light.brightness then "lit" else "dark" end` | A `String`: the condition tests truthiness, and both branches are strings. |
+| `if metered then light.brightness else 0 end` | A `Number`: the branch selected gives the result. |
+| `room.device(name) and 5` | A `Number?`. |
+| `name or "untitled"` | A `String`, where `name` is a string. |
+
+A local holds one type from its declaration. So `let level = metered and light.brightness` is refused, even where the next line reads `level or 0`; write `let level = metered and light.brightness or 0`, or a conditional.
 
 <a id="logical-expressions-negations-and-groups-not-a-conditional"></a>
 
 ### Not a conditional
 
-`and` and `or` choose a value only where the value that decides them is the one wanted: `true and false or "fallback"` is "fallback", since false is falsey, so a choice whose chosen value can be false or null is a conditional, `if condition then value else fallback end`.
+`c and x or y` chooses as `if c then x else y end` does only where `x` is truthy. A conditional tests `c` alone, while `or` tests the value `and` gives, so where `c` is true and `x` is false or null, `or` selects `y`:
+
+- `if metered then false else true end` is false where `metered` is true.
+- `metered and false or true` is true there, since `or` tests the false that `and` gives.
+
+A choice whose chosen value can be false or null is written as a conditional.
 
 <a id="logical-expressions-negations-and-groups-evaluation"></a>
 
 ### Evaluating a logical expression
 
-Operands are evaluated from left to right, each once, and evaluation stops at the first that decides the result, a falsey one for `and` and a truthy one for `or`, so the operands after it are unreached: they are still validated, but are not evaluated or observed and cannot produce runtime failures.
+Operands are evaluated from left to right, each once, and evaluation stops at the first that decides the result, a falsey one for `and` and a truthy one for `or`, so the operands after it are unreached: they are still validated, but are not evaluated or observed and cannot produce runtime failures. Where a value is used is a matter of its type alone, and changes nothing of this: `metered and light.active() or false` calls `active` once where `metered` is true, and not at all where it is false.
 
 An evaluation reads what the operands it reaches read, and nothing of the others.
 

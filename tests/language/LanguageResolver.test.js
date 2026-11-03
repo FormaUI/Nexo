@@ -8,6 +8,7 @@ import { NexoRegistry } from '#nexo/language/vocabulary/NexoRegistry.mjs';
 import { Vocabulary } from '#nexo/language/vocabulary/Vocabulary.mjs';
 import { constantUpdates } from '../support/updates.mjs';
 import { dataPropertyDeclarations, extensionDeclaration, operatorDeclaration } from '../support/declarations.mjs';
+import { errorThrownBy } from '../support/errors.mjs';
 import { parseImporting } from '../support/pipeline.mjs';
 
 /** A word the shop sells, a value with identity the shop recognizes. */
@@ -245,6 +246,58 @@ describe('LanguageResolver', () => {
 
         it('may not where nothing it uses gives it a value of Any and its host call supplies no nullable reference, a value parameter of Any and a host call supplying a number among them', () => {
             expect([mayRecognize('shop.count() + 1'), mayRecognize('shop.close()'), mayRecognize('shop.restocks()'), mayRecognize('shop.takes(1)')]).toEqual([false, false, false, false]);
+        });
+    });
+
+    describe('a logical expression', () => {
+        /** A billing module whose functions answer whether an invoice is overdue, a fee and a fee that can be null, none fixed, so no operand decides an expression before it is evaluated. */
+        const billing = new NexoRegistry([Vocabulary.module, new NexoModule('billing', {
+            members: [
+                Declarations.createFunctionDeclaration('overdue', 'Boolean', { updates: constantUpdates, impl: () => true }),
+                Declarations.createFunctionDeclaration('fee', 'Number', { updates: constantUpdates, impl: () => 10 }),
+                Declarations.createFunctionDeclaration('waived', 'Number?', { updates: constantUpdates, impl: () => null }),
+            ],
+        })]);
+        const resolveBilling = text => {
+            const definition = ParsedTexts.parse(text, [{ module: 'billing' }]);
+
+            return new LanguageResolver(billing, new ParameterBindings(billing, {}), ParsedTexts.locationsOf(definition)).resolveDefinition(definition);
+        };
+        const typeOf = text => String(resolveBilling(text).type);
+        const refusalOf = text => errorThrownBy(() => resolveBilling(text));
+
+        it('is of the values that reach it where its value is used: a falsey value its or selects past reaches none, a null fee among them, and parentheses add nothing', () => {
+            expect([
+                typeOf('billing.overdue() and billing.fee() or 0'),
+                typeOf('(billing.overdue() and billing.fee()) or 0'),
+                typeOf('billing.overdue() and billing.waived() or 0'),
+                typeOf('(billing.overdue() and false) or "late"'),
+            ]).toEqual(['Number', 'Number', 'Number', 'String']);
+        });
+
+        it('is refused where its value is used and the values reaching it are of no one type, at the logical expression whose value it is', () => {
+            expect(refusalOf('billing.overdue() and "late" or 0')).toMatchObject({ code: 'NEXO3040', kind: 'validation', message: expect.stringContaining("What 'or' gives is String or Number"), location: { pointer: '/expression', line: 1, column: 1 } });
+            expect(refusalOf('billing.overdue() and billing.fee()')).toMatchObject({ code: 'NEXO3040', kind: 'validation', message: expect.stringContaining("What 'and' gives is false or Number"), location: { pointer: '/expression', line: 1, column: 1 } });
+            expect(refusalOf('[billing.fee()].select(billing.overdue() and it)')).toMatchObject({ code: 'NEXO3040', kind: 'validation', location: { pointer: '/expression/arguments/0', line: 1, column: 24 } });
+        });
+
+        it('needs no one type where its truthiness alone is tested: a condition, the operand of not, and a predicate', () => {
+            expect([
+                typeOf('not (billing.overdue() and billing.fee())'),
+                typeOf('if billing.overdue() and billing.fee() then "charge" else "skip" end'),
+                typeOf('if billing.overdue() then billing.fee() else 0 end'),
+                typeOf('[billing.fee()].where(billing.overdue() and it).count'),
+            ]).toEqual(['Boolean', 'String', 'Number', 'Number']);
+        });
+
+        it('binds its truthy values of one type where a conditional binding binds it, and is refused where they are of none', () => {
+            expect(typeOf('if let fee = billing.overdue() and billing.waived() then fee else 0 end')).toBe('Number');
+            expect(refusalOf('if let fee = billing.overdue() and "late" or 0 then fee else 0 end')).toMatchObject({ code: 'NEXO3040', kind: 'validation', message: expect.stringContaining("What 'if let' binds is String or Number where it is truthy"), location: { pointer: '/expression/binding/value', line: 1, column: 14 } });
+        });
+
+        it('settles its type at a local, which holds one type from its declaration, so a later or reads the local by its type alone', () => {
+            expect(refusalOf('let candidate = billing.overdue() and billing.fee()\nreturn candidate or 0')).toMatchObject({ code: 'NEXO3040', kind: 'validation', location: { pointer: '/expression/locals/0/value', line: 1, column: 17 } });
+            expect(refusalOf('let waived = billing.overdue() and false\nreturn waived or "late"')).toMatchObject({ code: 'NEXO3040', kind: 'validation', message: expect.stringContaining("What 'or' gives is true or String"), location: { line: 2, column: 8 } });
         });
     });
 });

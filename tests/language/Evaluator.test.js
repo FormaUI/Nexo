@@ -109,6 +109,18 @@ describe('Evaluator', () => {
         expect(invoked).toEqual([]);
     });
 
+    it('evaluates an and inside an or as it does anywhere: the operand after a falsey one unreached, and the one after a truthy one evaluated once', () => {
+        const evaluate = values => {
+            const invoked = [];
+            const { value } = createEvaluator('name:price > 2 and other:price * 2 or 0', values, { invoked }).evaluate(createHost());
+
+            return { value, invoked };
+        };
+
+        expect(evaluate({ name: 'oolong', other: 'tea' })).toEqual({ value: 6, invoked: ['price:oolong', 'price:tea'] });
+        expect(evaluate({ name: 'ok', other: 'tea' })).toEqual({ value: 0, invoked: ['price:ok'] });
+    });
+
     it('answers null for a member of a receiver known to be null, evaluating the receiver once and selecting and invoking nothing', () => {
         const host = createHost();
         const invoked = [];

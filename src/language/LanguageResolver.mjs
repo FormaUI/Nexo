@@ -392,6 +392,14 @@ export class LanguageResolver {
     #decidingResults = new WeakMap();
 
     /**
+     * The nodes whose truthiness alone is tested where they stand, by the node: a condition, what a conditional binding binds, the operand of `not`, an operand of `and` or `or`, and a predicate's argument written as
+     * an expression of `it`. A logical expression among them gives values that need share no type, and every other is used as a value, whose values reaching it share one. An entry is added as the node's place is
+     * resolved, and is never removed, since a node stands in one place.
+     * @type {WeakSet<object>}
+     */
+    #testedNodes = new WeakSet();
+
+    /**
      * Resolves a coalescing: a value and a fallback of one type, as a conditional's branches are, its type the value's made non-null where the fallback's is; the whole is resolved before any of it is evaluated.
      * Where the value is fixed, it is the side that value selects, fixed where that side is.
      */
@@ -499,12 +507,16 @@ export class LanguageResolver {
     }
 
     /**
-     * Resolves a conditional: a condition, any value, or a conditional binding, any value, whose name the consequent alone sees, bound to that value where it is truthy; and two branches of one type, nullable where either is.
-     * The consequent sees what the condition's being truthy guarantees of the stable references it tests, and the alternative what its being falsey does. The whole is resolved before any of it is evaluated.
+     * Resolves a conditional: a condition, any value, or a conditional binding, any value, whose name the consequent alone sees, bound to that value where it is truthy, its truthy values of one type; and two branches
+     * of one type, nullable where either is. The consequent sees what the condition's being truthy guarantees of the stable references it tests, and the alternative what its being falsey does. The whole is resolved
+     * before any of it is evaluated.
      */
     #resolveConditional(node, pointer, scope) {
         const condition = node.binding === undefined ? node.condition : node.binding.value;
         const conditionPointer = node.binding === undefined ? `${pointer}/condition` : `${pointer}/binding/value`;
+
+        this.#testedNodes.add(condition);
+
         const tested = this.#resolveNode(condition, conditionPointer, scope);
 
         this.#requireValue(tested, node.binding === undefined ? "The condition of 'if'" : "What 'if let' binds", conditionPointer);
@@ -515,9 +527,16 @@ export class LanguageResolver {
         let consequentScope = truthyScope;
 
         if (node.binding !== undefined) {
-            // The consequent is taken where the value is truthy, so it sees the value without null, fixed where the value is fixed; a value that is always falsey is never bound, and is a never there.
+            // The consequent is taken where the value is truthy, so it sees the truthy values, of one type, fixed where the value is fixed; a value that is always falsey is never bound, and is a never there.
             const isFalsey = tested.isFixed && !LanguageResolver.#isTruthy(tested.value);
-            const type = isFalsey ? Type.never : LanguageResolver.#truthyPartOf(tested.type);
+            const truthy = LanguageResolver.#valuesWhere(condition, tested, true);
+            const merged = isFalsey ? Type.never : this.#mergedTypeOf(truthy);
+
+            if (merged === null) {
+                this.#fail('NEXO3040', `What 'if let' binds is ${LanguageResolver.#describeValues(truthy)} where it is truthy, which no one type holds`, conditionPointer);
+            }
+
+            const type = LanguageResolver.#truthyPartOf(merged);
             const result = tested.isFixed && !isFalsey ? { type, kind: 'value', isFixed: true, value: tested.value } : { type, kind: 'value', isFixed: false };
 
             consequentScope = LanguageResolver.#consequentScopeOf(node, truthyScope, result);
@@ -550,8 +569,8 @@ export class LanguageResolver {
 
     /**
      * Resolves an and or an or: every value it combines, each seeing what the operands before it guarantee where it is reached, truthy ones for `and` and falsey ones for `or`, so the whole is validated before any of it is evaluated.
-     * It answers the operand that decides it: `and` the falsey part of an operand before the last, or the last, and `or` the truthy part of one, or the last; values of more than one type no type holds, which is refused.
-     * Where fixed operands decide it, it is the one that does, fixed.
+     * It answers the operand that decides it, and gives the values that reach it: `and` the falsey values of each operand before its last, and the last's, and `or` the truthy values, and the last's. Where it is used as a
+     * value, they merge to its type, values no type holds being refused; where its truthiness alone is tested, they need not, and it has no type. Where fixed operands decide it, it is the one that does, fixed.
      */
     #resolveLogical(node, pointer, scope) {
         const passesWhenTruthy = node.kind === 'and';
@@ -561,6 +580,9 @@ export class LanguageResolver {
         node.operands.forEach((operand, index) => {
             const operandPointer = `${pointer}/operands/${index}`;
             const operandScope = LanguageResolver.#withFacts(scope, passed);
+
+            this.#testedNodes.add(operand);
+
             const result = this.#resolveNode(operand, operandPointer, operandScope);
 
             this.#requireValue(result, `An operand of '${node.kind}'`, operandPointer);
@@ -570,27 +592,72 @@ export class LanguageResolver {
         });
 
         const last = results.length - 1;
+        let outcome = null;
 
-        // Operands whose values are fixed decide it before anything is evaluated, the operand that decides it giving its value and its type.
+        // Operands whose values are fixed decide it before anything is evaluated, the operand that decides it giving its value, its type and its values.
         for (let index = 0; index <= last && results[index].isFixed; index++) {
             if (index === last || LanguageResolver.#isTruthy(results[index].value) !== passesWhenTruthy) {
-                return results[index];
+                outcome = { ...results[index], values: LanguageResolver.#valuesOf(node.operands[index], results[index]) };
+                break;
             }
         }
 
-        const parts = results.map((result, index) => (index === last ? result.type : LanguageResolver.#partOf(result, !passesWhenTruthy)));
-        const type = parts.reduce((merged, part) => (merged === null ? null : this.#typeChecker.merge(merged, part)));
+        if (outcome === null) {
+            const values = results.flatMap((result, index) => (index === last ? LanguageResolver.#valuesOf(node.operands[index], result) : LanguageResolver.#valuesWhere(node.operands[index], result, !passesWhenTruthy)));
 
-        if (type === null) {
-            const described = [...new Set(parts.flatMap((part, index) => LanguageResolver.#describePart(part, index === last ? null : !passesWhenTruthy)))];
+            outcome = { type: this.#mergedTypeOf(values), kind: 'value', isFixed: false, values };
+        }
+
+        if (outcome.type === null && !this.#testedNodes.has(node)) {
             const rewrite = node.kind === 'and' && node.operands.length === 2
                 ? `write 'if ${DefinitionWriter.quote(node.operands[0], this.#namespaceNames)} then ${DefinitionWriter.quote(node.operands[1], this.#namespaceNames)} else null end' if null is an acceptable alternative`
                 : "a conditional, 'if … then … else … end', chooses between values of one type";
 
-            this.#fail('NEXO3040', `What '${node.kind}' gives is ${described.join(' or ')}, which no one type holds; ${rewrite}`, pointer);
+            this.#fail('NEXO3040', `What '${node.kind}' gives is ${LanguageResolver.#describeValues(outcome.values)}, which no one type holds; ${rewrite}`, pointer);
         }
 
-        return { type, kind: 'value', isFixed: false };
+        return outcome;
+    }
+
+    /**
+     * The values a node's result can give, each a type and whether a value of it is `truthy`, `falsey` or `either`: an `and`'s or an `or`'s own, a fixed value's, told from the value, and otherwise any value of its
+     * type. A local or any other node that holds a logical expression's value gives its type's values, so a value's type is settled where it is used.
+     */
+    static #valuesOf(node, result) {
+        if ((node.kind === 'and' || node.kind === 'or') && result.values !== undefined) {
+            return result.values;
+        }
+
+        if (result.isFixed) {
+            return [{ type: result.type, truthiness: LanguageResolver.#isTruthy(result.value) ? 'truthy' : 'falsey' }];
+        }
+
+        return [{ type: result.type, truthiness: 'either' }];
+    }
+
+    /** The values of a node's result that are truthy, or falsey: a value of either kind its type's truthy or falsey part, where it has one. */
+    static #valuesWhere(node, result, isTruthy) {
+        const truthiness = isTruthy ? 'truthy' : 'falsey';
+
+        return LanguageResolver.#valuesOf(node, result).flatMap(value => {
+            if (value.truthiness !== 'either') {
+                return value.truthiness === truthiness ? [value] : [];
+            }
+
+            const type = isTruthy ? LanguageResolver.#truthyPartOf(value.type) : LanguageResolver.#falseyPartOf(value.type);
+
+            return type.kind === 'never' ? [] : [{ type, truthiness }];
+        });
+    }
+
+    /** The one type the values merge to, a never for none, or null where no type holds them all. */
+    #mergedTypeOf(values) {
+        return values.reduce((merged, value) => (merged === null ? null : this.#typeChecker.merge(merged, value.type)), Type.never);
+    }
+
+    /** The types a result's values are of: its type, or, for a logical expression tested for its truthiness alone, which has none, each of its values'. */
+    static #typesOf(result) {
+        return result.type === null ? result.values.map(value => value.type) : [result.type];
     }
 
     /** Whether a value is truthy: every value is but null and false. */
@@ -612,26 +679,21 @@ export class LanguageResolver {
         return type.isNullable ? Type.null : Type.never;
     }
 
-    /** The part of a result that is truthy, or falsey, told from its value where the value is fixed. */
-    static #partOf(result, isTruthy) {
-        if (result.isFixed) {
-            return LanguageResolver.#isTruthy(result.value) === isTruthy ? result.type : Type.never;
-        }
+    /** How a refusal names values: a truthy Boolean as true and a falsey one as false, with null where it can be null, and any other by its type, each once. */
+    static #describeValues(values) {
+        const described = values.flatMap(({ type, truthiness }) => {
+            if (type.kind === 'never') {
+                return [];
+            }
 
-        return isTruthy ? LanguageResolver.#truthyPartOf(result.type) : LanguageResolver.#falseyPartOf(result.type);
-    }
+            if (truthiness === 'either' || !(type.kind === 'named' && type.name === 'Boolean')) {
+                return [String(type)];
+            }
 
-    /** How a refusal names the part of an operand's type: a Boolean's truthy part as true and its falsey one as false, with null where it can be null; the last operand's, of no part, as its type. */
-    static #describePart(part, isTruthy) {
-        if (part.kind === 'never') {
-            return [];
-        }
+            return truthiness === 'truthy' ? ['true'] : type.isNullable ? ['false', 'null'] : ['false'];
+        });
 
-        if (isTruthy === null || !(part.kind === 'named' && part.name === 'Boolean')) {
-            return [String(part)];
-        }
-
-        return isTruthy ? ['true'] : part.isNullable ? ['false', 'null'] : ['false'];
+        return [...new Set(described)].join(' or ');
     }
 
     /**
@@ -959,6 +1021,8 @@ export class LanguageResolver {
             this.#pointers.set(node.operand, `${pointer}/operand`);
         }
 
+        this.#testedNodes.add(node.operand);
+
         const operand = node.operand.kind === 'equality' ? this.#resolveEquality(node.operand, `${pointer}/operand`, scope, true) : this.#resolveNode(node.operand, `${pointer}/operand`, scope);
 
         this.#requireValue(operand, "What 'not' negates", `${pointer}/operand`);
@@ -1118,8 +1182,10 @@ export class LanguageResolver {
             this.#fail('NEXO3048', `${what} is a value, and this one is ${LanguageResolver.#descriptionOf(result.kind)}`, pointer);
         }
 
-        if (LanguageResolver.#holdsTypeParameter(result.type)) {
-            this.#fail('NEXO3028', `${what} produces ${result.type}, a type no receiver gives`, pointer);
+        const held = LanguageResolver.#typesOf(result).find(type => LanguageResolver.#holdsTypeParameter(type));
+
+        if (held !== undefined) {
+            this.#fail('NEXO3028', `${what} produces ${held}, a type no receiver gives`, pointer);
         }
     }
 
@@ -2344,7 +2410,7 @@ export class LanguageResolver {
                     if (operandPossible !== null) {
                         possible = LanguageResolver.#unionOfPossible(possible, LanguageResolver.#partOfPossible(operandPossible, decidesWhenTruthy));
                     } else if (!decidesWhenTruthy && result !== undefined) {
-                        possible = LanguageResolver.#unionOfPossible(possible, LanguageResolver.#falseyPossibleOf(result.type));
+                        possible = LanguageResolver.#unionOfPossible(possible, LanguageResolver.#falseyPossibleOf(LanguageResolver.#valuesWhere(operand, result, false)));
                     } else {
                         return null;
                     }
@@ -2386,11 +2452,14 @@ export class LanguageResolver {
             : { names: new Set(), canBeNull: possible.canBeNull, canBeFalse: possible.canBeFalse, canBeOther: false };
     }
 
-    /** The falsey values a value of the type can give, which no name is: false for a Boolean and null where it can be null. */
-    static #falseyPossibleOf(type) {
-        const isBoolean = type.kind === 'named' && type.name === 'Boolean';
-
-        return { names: new Set(), canBeNull: type.isNullable, canBeFalse: isBoolean, canBeOther: false };
+    /** The falsey values a value can give, of its falsey values' types, which no name is: false where one is a Boolean and null where one can be null. */
+    static #falseyPossibleOf(values) {
+        return {
+            names: new Set(),
+            canBeNull: values.some(({ type }) => type.kind === 'null' || type.isNullable),
+            canBeFalse: values.some(({ type }) => type.kind === 'named' && type.name === 'Boolean'),
+            canBeOther: false,
+        };
     }
 
     /**
@@ -3700,21 +3769,28 @@ export class LanguageResolver {
             // Whether the argument reads its own implicit parameter, which its own context key identifies; it holds no syntax of the body.
             const argumentBody = { key: {}, isRead: false };
 
+            // A predicate tests the truthiness of what its body gives, so the values of a logical expression there need share no type.
+            if (parameter.kind === 'predicate') {
+                this.#testedNodes.add(node);
+            }
+
             result = this.#resolveNode(node, pointer, { ...scope, contextType: parameter.nulls === 'accept' ? itemType : itemType.toNonNullable(), contextKey: argumentBody.key, argumentBody });
 
-            if (result.type.kind === 'function' && argumentBody.isRead) {
+            if (result.type?.kind === 'function' && argumentBody.isRead) {
                 this.#fail('NEXO3074', `The expression of '${NexoModule.writtenNameOf(declaration)}' reads each item as 'it' and gives a function; a function of the item is written as the argument itself, as ${declaration.name}(x => …)`, pointer);
             }
         }
 
         this.#requireValueArgument(result, parameter, declaration, pointer);
 
-        if (result.type.kind === 'function') {
+        if (result.type?.kind === 'function') {
             return { result, callback: this.#resolveCallback(result, contract, pointer, scope) };
         }
 
-        if (!this.#fitsResult(result.type, contract.resultType)) {
-            this.#fail(contract.resultType === null ? 'NEXO3028' : 'NEXO3042', contract.resultType === null ? `The expression of '${NexoModule.writtenNameOf(declaration)}' produces ${result.type}, a type no receiver gives` : `The expression of '${NexoModule.writtenNameOf(declaration)}' must produce ${expected} and produces ${result.type}`, pointer);
+        const unfit = LanguageResolver.#typesOf(result).find(type => !this.#fitsResult(type, contract.resultType));
+
+        if (unfit !== undefined) {
+            this.#fail(contract.resultType === null ? 'NEXO3028' : 'NEXO3042', contract.resultType === null ? `The expression of '${NexoModule.writtenNameOf(declaration)}' produces ${unfit}, a type no receiver gives` : `The expression of '${NexoModule.writtenNameOf(declaration)}' must produce ${expected} and produces ${unfit}`, pointer);
         }
 
         return { result, callback: { isBody: true, parameterTypes: contract.parameterTypes, resultType: contract.resultType } };
