@@ -138,9 +138,13 @@ describe('positions', () => {
             expect(evaluate('n.sequence(0)')).toEqual([]);
             expect(resolve('n.sequence(2)').type).toBe('List<Number>');
 
-            for (const count of ['-1', '1.5']) {
+            for (const count of ['-1', '1.5', '4294967296']) {
                 expect(errorThrownBy(() => evaluate(`n.sequence(${count})`))).toMatchObject({ code: 'NEXO5035', location: { pointer: '/expression' } });
             }
+
+            // A number no finite number holds never reaches a result, as an addition's never does.
+            expect(errorThrownBy(() => evaluate('1e308.sequence(3, 1e308)'))).toMatchObject({ code: 'NEXO5020', location: { pointer: '/expression' } });
+            expect(Object.is(evaluate('(0 - 1).sequence(2)')[1], 0)).toBe(true);
         });
     });
 

@@ -23,6 +23,10 @@ describe('Dictionary', () => {
         expect(dictionary.getEntry('milk')).toBeNull();
         expect(dictionary.entries).toEqual([new Pair('tea', null)]);
     });
+
+    it('answers an entry with the key it holds, 0 where -0 looks it up', () => {
+        expect(Object.is(new Dictionary([[0, 'zero']]).getEntry(-0).key, 0)).toBe(true);
+    });
 });
 
 describe('Pair', () => {

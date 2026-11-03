@@ -7,6 +7,26 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-25"></a>
+
+## `1.0.0-beta.25`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [Nexo's own members](spec/language/vocabulary.md) answer no number that isn't finite: a `sum`, or a number a `sequence` reaches, that no finite number holds is refused, NEXO5020, and `average` gives the mean of numbers whose sum overflows.
+- `sequence` takes a count of at most 4294967295, the most items a list holds, NEXO5035.
+- A list's `min`, `max` and `entry`, and a dictionary's `entry`, answer `0` where they answered `-0`, as every member of Nexo's own does.
+- `contains` compares as `indexOf` does.
+- [Conversions](spec/language/vocabulary.md#vocabulary-conversions): the text Nexo's own conversions read and write is stated.
+
+**Runtime**
+
+- A dictionary a host supplies or binds that holds a key twice once captured, as two references a nullable key type narrows to null, is refused, NEXO5015 and NEXO2045, rather than keeping the last.
+
+**Breaking:** a `sum` or a `sequence` that answered an infinity, a `sequence` too long for any list, and a dictionary holding a key twice once captured are refused; none of them was data a result may hold.
+
 <a id="v1-0-0-beta-24"></a>
 
 ## `1.0.0-beta.24`

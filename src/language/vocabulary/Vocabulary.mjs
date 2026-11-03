@@ -21,6 +21,9 @@ const SURROUNDING_ASCII_WHITESPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
 /** The updates of a member that reads and changes as what it selects and evaluates does. */
 const DERIVED_UPDATES = Object.freeze({ changes: 'derived', reads: 'derived' });
 
+/** The most items a list holds, 2^32 - 1, as ECMAScript's arrays do. */
+const MAX_LIST_LENGTH = 2 ** 32 - 1;
+
 export class Vocabulary {
     /** The name of Nexo's own module, spelled as the specification spells it. */
     static moduleName = Names.nexoModuleName;
@@ -303,11 +306,18 @@ export class Vocabulary {
                 updates: DERIVED_UPDATES,
                 parameters: [Declarations.createValueParameterDeclaration('count', 'Number'), Declarations.createValueParameterDeclaration('step', 'Number', { default: 1 })],
                 impl: ({ receiver, args }) => {
-                    if (!Number.isSafeInteger(args.count) || args.count < 0) {
-                        throw new MemberFailure('NEXO5035', `'sequence' takes a count that is a nonnegative whole number, and is given ${args.count}`);
+                    // A list holds at most 2^32 - 1 items, so a longer count is refused as one no list can hold.
+                    if (!Number.isSafeInteger(args.count) || args.count < 0 || args.count > MAX_LIST_LENGTH) {
+                        throw new MemberFailure('NEXO5035', `'sequence' takes a count that is a whole number from 0 to ${MAX_LIST_LENGTH}, and is given ${args.count}`);
                     }
 
-                    return Array.from({ length: args.count }, (_, index) => receiver + index * args.step);
+                    const numbers = Array.from({ length: args.count }, (_, index) => unsigned(receiver + index * args.step));
+
+                    if (numbers.some(number => !Number.isFinite(number))) {
+                        throw new MemberFailure('NEXO5020', `'sequence' reaches a number no finite number holds, from ${receiver} by steps of ${args.step}`);
+                    }
+
+                    return numbers;
                 },
             }),
         ];
@@ -362,7 +372,19 @@ export class Vocabulary {
             Declarations.createIndexerDeclaration(null, 'List<T>', { updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('range', 'Range')], impl: ({ receiver, args }) => Vocabulary.#slice(receiver, args.range) }),
             Declarations.createFunctionDeclaration('max', 'Number?', { updates: DERIVED_UPDATES, parameters: [Declarations.createExpressionParameterDeclaration('Number?')], impl: ({ receiver, args }) => Vocabulary.#extreme(receiver, args.expression, Math.max) }),
             Declarations.createFunctionDeclaration('min', 'Number?', { updates: DERIVED_UPDATES, parameters: [Declarations.createExpressionParameterDeclaration('Number?')], impl: ({ receiver, args }) => Vocabulary.#extreme(receiver, args.expression, Math.min) }),
-            Declarations.createFunctionDeclaration('sum', 'Number', { updates: DERIVED_UPDATES, parameters: [Declarations.createExpressionParameterDeclaration('Number?')], impl: ({ receiver, args }) => Vocabulary.#numbers(receiver, args.expression).reduce((total, number) => total + number, 0) }),
+            Declarations.createFunctionDeclaration('sum', 'Number', {
+                updates: DERIVED_UPDATES, parameters: [Declarations.createExpressionParameterDeclaration('Number?')],
+                impl: ({ receiver, args }) => {
+                    const total = Vocabulary.#numbers(receiver, args.expression).reduce((sum, number) => sum + number, 0);
+
+                    // A sum no finite number holds is refused, as an addition's is, so no infinity reaches a result.
+                    if (!Number.isFinite(total)) {
+                        throw new MemberFailure('NEXO5020', "The result of 'sum' is no finite number");
+                    }
+
+                    return total;
+                },
+            }),
             Declarations.createFunctionDeclaration('where', 'List<T>', { updates: DERIVED_UPDATES, parameters: [Declarations.createPredicateParameterDeclaration()], impl: ({ receiver, args }) => ItemPositions.createAnswer(receiver, Vocabulary.#positionsWhere(receiver, item => args.expression(item) === true)) }),
             // Every item's value, null items included, its expression's `it` of the item's type, so `select(it)` keeps the list and `select(it ?? 0)` replaces its nulls.
             Declarations.createFunctionDeclaration('select<U>', 'List<U>', { updates: DERIVED_UPDATES, parameters: [Declarations.createExpressionParameterDeclaration('U', { nulls: 'accept' })], impl: ({ receiver, args }) => receiver.map(item => args.expression(item)) }),
@@ -393,7 +415,7 @@ export class Vocabulary {
             Declarations.createFunctionDeclaration('any', 'Boolean', { updates: DERIVED_UPDATES, parameters: [Declarations.createPredicateParameterDeclaration()], impl: ({ receiver, args }) => receiver.some(item => args.expression(item) === true) }),
             Declarations.createFunctionDeclaration('all', 'Boolean', { updates: DERIVED_UPDATES, parameters: [Declarations.createPredicateParameterDeclaration()], impl: ({ receiver, args }) => receiver.every(item => args.expression(item) === true) }),
             // Whether an item equals the value by the language's key equality, stopping at the first that does; null equals a null item.
-            Declarations.createFunctionDeclaration('contains', 'Boolean', { updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('value', 'T?', { nulls: 'accept' })], impl: ({ receiver, args }) => receiver.includes(args.value) }),
+            Declarations.createFunctionDeclaration('contains', 'Boolean', { updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('value', 'T?', { nulls: 'accept' })], impl: ({ receiver, args }) => receiver.indexOf(args.value) !== -1 }),
             // The position of the value's first occurrence, compared as `contains` compares, and of the first item the predicate is truthy for, evaluating it against none after; null where none stands.
             Declarations.createFunctionDeclaration('indexOf', 'Number?', { updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('value', 'T?', { nulls: 'accept' })], impl: ({ receiver, args }) => Vocabulary.#positionOrNull(receiver.indexOf(args.value)) }),
             Declarations.createFunctionDeclaration('indexWhere', 'Number?', { updates: DERIVED_UPDATES, parameters: [Declarations.createPredicateParameterDeclaration()], impl: ({ receiver, args }) => Vocabulary.#positionOrNull(receiver.findIndex(item => args.expression(item) === true)) }),
@@ -413,7 +435,14 @@ export class Vocabulary {
                 impl: ({ receiver, args }) => {
                     const numbers = Vocabulary.#numbers(receiver, args.expression);
 
-                    return numbers.length === 0 ? null : numbers.reduce((total, number) => total + number, 0) / numbers.length;
+                    if (numbers.length === 0) {
+                        return null;
+                    }
+
+                    // The mean of finite numbers lies between them, so where their sum overflows, the sum of their shares gives it.
+                    const total = numbers.reduce((sum, number) => sum + number, 0);
+
+                    return Number.isFinite(total) ? total / numbers.length : numbers.reduce((mean, number) => mean + number / numbers.length, 0);
                 },
             }),
             // The first item whose key is the least or the greatest, ordered as `orderBy` orders, items whose key is null skipped, and null where none has one.
@@ -457,7 +486,7 @@ export class Vocabulary {
             // The item at a whole index from zero as a pair of its index and itself, null for any other index, as the list's unnamed indexer reads it.
             Declarations.createIndexerDeclaration('entry', 'Pair<Number, T>?', {
                 updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('index', 'Number')],
-                impl: ({ receiver, args }) => (Number.isInteger(args.index) && args.index >= 0 && args.index < receiver.length ? new Pair(args.index, receiver[args.index]) : null),
+                impl: ({ receiver, args }) => (Number.isInteger(args.index) && args.index >= 0 && args.index < receiver.length ? new Pair(args.index === 0 ? 0 : args.index, receiver[args.index]) : null),
             }),
             // The item at an index from the end as a pair of its index from the start and itself, null where the unnamed indexer answers null.
             Declarations.createIndexerDeclaration('entry', 'Pair<Number, T>?', {
@@ -559,7 +588,8 @@ export class Vocabulary {
     static #extreme(items, expression, choose) {
         const numbers = Vocabulary.#numbers(items, expression);
 
-        return numbers.length === 0 ? null : numbers.reduce((current, number) => choose(current, number));
+        // A member answers 0 where it would answer -0.
+        return numbers.length === 0 ? null : numbers.reduce((current, number) => choose(current, number)) || 0;
     }
 
     /** The numbers an expression produces for the items, leaving out the items it produces null for. */

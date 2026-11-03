@@ -101,7 +101,7 @@ An evaluation error fails the entire result and is delivered to the host in its 
 | `NEXO2022` | A bound value holding a cycle, a declared type's data among them | A structure error of its own naming the binding, and where it reaches itself in data a declared type captures |
 | `NEXO2038` | A reference type declared for a value that is not a reference, null aside where the type is nullable | A structure error naming the binding |
 | `NEXO2044` | A declared binding type no binding holds: a notation that writes no type, `Any`, `Never`, a position, a type holding one at any depth, a structure's data shape among it, or a dictionary keyed by no key type | A structure error naming the binding and the type |
-| `NEXO2045` | A value its binding's declared data type, or a part of it, doesn't admit, as [declared types](bindings.md#runtime-bindings) set out | A structure error naming the binding, the part and the type |
+| `NEXO2045` | A value its binding's declared data type, or a part of it, doesn't admit, as [declared types](bindings.md#runtime-bindings) set out, a dictionary holding a key twice among them | A structure error naming the binding, the part and the type |
 | `NEXO2039` | A type declared for anything but a top-level binding | A structure error naming the binding |
 | `NEXO2024` | Resolving or evaluating with a binding set another registry made | A structure error saying to bind with that registry |
 | `NEXO2025` | Creating an evaluator with bindings of another resolution key | A structure error saying to resolve again |
@@ -271,7 +271,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO5011` | Evaluating without `beforeInvoke` a script that reads a maintained member | An evaluation error |
 | `NEXO5014` | Preparing a script that ends in no host call | An evaluation error, as [host calls](host-calls.md#runtime-host-calls) set out |
 | `NEXO5023` | Evaluating a script that ends in a host call | An evaluation error, as [host calls](host-calls.md#runtime-host-calls) set out |
-| `NEXO5015` | A value a host supplies, or a part of it, that its host call's declared result does not admit, or that reaches itself, as [capturing a supplied value](host-calls.md#runtime-host-calls-capturing) sets out | An evaluation error naming the call and the part |
+| `NEXO5015` | A value a host supplies, or a part of it, that its host call's declared result does not admit, that reaches itself, or a dictionary in it that holds a key twice, as [capturing a supplied value](host-calls.md#runtime-host-calls-capturing) sets out | An evaluation error naming the call and the part |
 | `NEXO5503` | A function a member calls with arguments other than its callback contract declares, in number or in type | An evaluation error naming the function and the member |
 
 <a id="diagnostics-tolerant-reading"></a>

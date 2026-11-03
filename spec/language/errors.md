@@ -236,7 +236,7 @@ In this document:
 | `NEXO5001` | A value a strict cast rejects, by its destination's membership or by its operator's `reject` | An evaluation error naming the cast, the reason it gave and where it stands, as `The cast to Light rejected its value: it is a Thermostat`; null under `try` |
 | `NEXO5016` | A value a conversion rejects | An evaluation error naming the conversion, the reason it gave and where it stands; null under `try` |
 | `NEXO5005` | A division or a remainder by zero | An evaluation error at the operation |
-| `NEXO5020` | An arithmetic result no finite number holds | An evaluation error at the operation |
+| `NEXO5020` | An arithmetic result, a `sum`, or a number a `sequence` reaches, that no finite number holds | An evaluation error at the operation or the call |
 | `NEXO5012` | A deferred access whose receiver's actual type has no member of its name in the form it is written | An evaluation error naming the access and the actual type |
 | `NEXO5043` | A value of `Any` an extension access is given that its extension's target does not take | An evaluation error naming the access, the target and the actual type |
 | `NEXO5044` | A deferred access whose receiver's actual type several declarations apply to, none of them its owner's and none more specific than every other's | An evaluation error naming the access, the actual type and the modules |
@@ -259,7 +259,7 @@ In this document:
 | `NEXO5032` | An index's offset or a range's boundary that is no nonnegative safe integer, nor an index for a boundary, when it is evaluated, as `^1.5` and a value of `Any` of another kind | An evaluation error at the index or the range |
 | `NEXO5033` | A range sliced from a list or a string whose start stands after its end, or either beyond the list or the string | An evaluation error at the indexer, naming the range and the length |
 | `NEXO5034` | `pick` given a position no item stands at | An evaluation error at the call, naming the position |
-| `NEXO5035` | `sequence` given a count that is no nonnegative safe integer | An evaluation error at the call, naming the count |
+| `NEXO5035` | `sequence` given a count that is no whole number from 0 to 4294967295, the most items a list holds | An evaluation error at the call, naming the count |
 | `NEXO5036` | An ordering key that is no number, string, Boolean or null, or keys of two of those domains in one criterion, of `orderBy`, `orderByDescending`, `thenBy`, `thenByDescending`, `minBy` or `maxBy` | An evaluation error at the call, naming the member and the key's kind or the two domains |
 | `NEXO5037` | `thenBy` or `thenByDescending` of a list no `orderBy` ordered | An evaluation error at the call, giving `orderBy` |
 | `NEXO5039` | `clamp` given a low greater than its high | An evaluation error at the call, naming both |

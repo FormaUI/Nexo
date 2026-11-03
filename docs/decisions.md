@@ -735,3 +735,23 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Typing an object expression after a value of `Any` as `Any`, which would keep projecting lists, but lose the object's type wherever the value is no list, the common case.
   - Typing the falsey part of `Any` as `Boolean`, which would refuse `value and 5` where its value is used, though `Any` is checked when it is evaluated.
+
+<a id="d53"></a>
+
+## D53 — Nexo's own members answer finite numbers, and data holds each key once
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:**
+  - A `sum`, or a number a `sequence` reaches, that no finite number holds fails with NEXO5020, as an addition's does. `average` gives the mean of finite numbers whose sum overflows, by summing their shares.
+  - `sequence` refuses a count above 4294967295, the most items a list holds, with NEXO5035.
+  - A dictionary a host supplies or binds that holds a key twice once its keys are captured is refused, never keeping the first or the last.
+  - The text Nexo's own conversions read and write is stated as they implement it.
+- **Why:**
+  - The specification says every number an expression holds is finite, and Nexo's own members skipped the check a module's member gets, so an infinity reached results.
+  - A count too long for any list failed inside the implementation, as a fault, NEXO5007, rather than as the count's refusal.
+  - Constructing a dictionary from duplicate keys is refused; capturing one collapsed them silently.
+- **Declined:**
+  - A lower bound on `sequence`'s count for memory's sake, which would be a policy no count can justify; a host that runs untrusted scripts bounds what it evaluates.
+  - Normalizing `-0` from arithmetic, which no rule of Nexo's members covers and an interpolation already writes as `"0"`.

@@ -126,4 +126,17 @@ describe('ValueCapture of data reaching itself', () => {
             throw new Error('refused');
         })).toEqual({ value: 1, next: { value: 2, next: null } });
     });
+
+    it('gives fail the reason duplicate at the later of two keys a map holds that capture as one, never keeping either', () => {
+        const reasons = [];
+        const home = new NexoRegistry([Vocabulary.module, new NexoModule('home', withHome())]);
+        // Each thermostat is a reference of another type than the light the keys declare, so each captures as null.
+        const thermostats = new Map([[new Light('desk'), 0], [new Thermostat('hall'), 1], [new Thermostat('porch'), 2]]);
+
+        expect(() => new ValueCapture(home).capture(thermostats, Type.parse('Dictionary<home.Light?, Number>'), (path, part, type, reason) => {
+            reasons.push([path, part, reason]);
+            throw new Error('refused');
+        })).toThrow('refused');
+        expect(reasons).toEqual([['.entries[2].key', null, 'duplicate']]);
+    });
 });

@@ -58,6 +58,21 @@ A member following a string is a member of the string itself, and reads and chan
 - **What it doesn't do.** No member reads a regular expression, a locale's case or comparison, or a number's format: a text whose domain gives it a form of its own, as `"120px"`, is read by that domain's members or conversions.
 - **Nexo's own.** `String` is Nexo's own type, so its members, and its unnamed indexer, win over a member of the same name, or an unnamed indexer, that a module's extension of `String` declares, as [owners and extensions](extensions.md#extensions-owners) set out.
 
+<a id="vocabulary-conversions"></a>
+
+### Conversions
+
+Nexo's own module declares a conversion from a string to a number and to a Boolean, and from a number and a Boolean to a string:
+
+| From | To | The text it reads or writes |
+| --- | --- | --- |
+| `String` | `Number` | HTML's valid floating-point number, once ASCII whitespace is removed at either end: an optional minus, then digits with an optional fraction, or a fraction alone, then an optional exponent, as `-12`, `3.5`, `.5` and `1e3` are. A plus sign, a point with no digits after it, `Infinity`, and a number too large to be finite are refused. |
+| `String` | `Boolean` | `"true"` or `"false"`, exactly |
+| `Number` | `String` | The shortest text that reads back as the same number, as ECMAScript writes it, so `0.1 + 0.2` is `"0.30000000000000004"`, and `-0` is `"0"` |
+| `Boolean` | `String` | `"true"` or `"false"` |
+
+A text a conversion refuses fails the conversion, as [conversions](values.md#conversions) set out.
+
 <a id="vocabulary-boolean-functions"></a>
 <a id="predicates"></a>
 

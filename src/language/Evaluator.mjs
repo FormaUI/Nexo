@@ -390,6 +390,10 @@ export class Evaluator {
                 this.#fail('NEXO5015', `The host call '${NexoModule.writtenNameOf(declaration)}' supplied a value that reaches itself${path === '' ? '' : ` at '${path}'`}, which data never does`, pointer);
             }
 
+            if (reason === 'duplicate') {
+                this.#fail('NEXO5015', `The host call '${NexoModule.writtenNameOf(declaration)}' supplied a dictionary that holds a key twice, at '${path}', which a dictionary never does`, pointer);
+            }
+
             const supplied = path === '' ? Evaluator.#describe(part) : part === undefined ? `a value without '${path}'` : `a value whose '${path}' is ${Evaluator.#describe(part)}`;
 
             this.#fail('NEXO5015', `The host call '${NexoModule.writtenNameOf(declaration)}' supplied ${supplied}, and ${path === '' ? 'it declares' : `'${path}' is declared`} ${partType}`, pointer);

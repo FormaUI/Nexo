@@ -166,6 +166,17 @@ describe('Vocabulary', () => {
         expect(read('where', [1, 2, 3], { expression: item => item > 1 })).toEqual([2, 3]);
     });
 
+    it('answers no infinity and no -0: refuses a sum no finite number holds, averages numbers whose sum overflows, and answers 0 for a least, a greatest or an entry\'s index of -0', () => {
+        const expression = item => item;
+
+        expect(() => read('sum', [1e308, 1e308], { expression })).toThrow(expect.objectContaining({ code: 'NEXO5020' }));
+        expect(read('average', [1e308, 1e308], { expression })).toBe(1e308);
+        expect(read('average', [1, 2], { expression })).toBe(1.5);
+        expect([read('max', [-0], { expression }), read('min', [-0, -0], { expression })].map(number => Object.is(number, 0))).toEqual([true, true]);
+        expect(Object.is(list.members.filter(member => member.name === 'entry')[0].impl({ receiver: ['a'], args: { index: -0 }, env: {} }).key, 0)).toBe(true);
+        expect([read('contains', [1, 2], { value: 2 }), read('indexOf', [1, 2], { value: 2 }), read('contains', [-0], { value: 0 }), read('indexOf', [-0], { value: 0 })]).toEqual([true, 1, true, 0]);
+    });
+
     it('converts text to a number as HTML\'s valid floating-point number, and between Booleans and text, rejecting a text that is neither', () => {
         expect([' 12 ', '-3.5', '.5', '1e3'].map(text => convert('String', 'Number', text))).toEqual([12, -3.5, 0.5, 1000]);
         expect(convert('String', 'Number', '12px')).toContain('rejected: "12px" is no number');

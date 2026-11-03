@@ -130,6 +130,10 @@ export class ParameterBindings {
                 throw NexoErrors.structure('NEXO2022', `A binding holds a cycle, a list or an object that reaches itself, which data never does${path === '' ? '' : `, at '${path}'`}`, { binding: name });
             }
 
+            if (reason === 'duplicate') {
+                throw NexoErrors.structure('NEXO2045', `The value bound to '${name}' is declared ${type}, and holds a key twice, at '${path}', which a dictionary never does`, { binding: name });
+            }
+
             const given = path === '' ? `it is given ${ParameterBindings.#describe(part)}` : part === undefined ? `it is given a value without '${path}'` : `its '${path}' is ${ParameterBindings.#describe(part)}`;
 
             throw NexoErrors.structure('NEXO2045', `The value bound to '${name}' is declared ${type}, and ${given}, where ${partType} is declared`, { binding: name });

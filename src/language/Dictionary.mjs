@@ -30,9 +30,9 @@ export class Dictionary {
         return this.#entries.has(key) ? this.#entries.get(key) : null;
     }
 
-    /** The key's entry as a pair, or null where the dictionary holds no such key. */
+    /** The key's entry as a pair, its key the one the dictionary holds, 0 where -0 looks it up, or null where the dictionary holds no such key. */
     getEntry(key) {
-        return this.#entries.has(key) ? new Pair(key, this.#entries.get(key)) : null;
+        return this.#entries.has(key) ? new Pair(key === 0 ? 0 : key, this.#entries.get(key)) : null;
     }
 
     /** The keys, in their order, as a frozen list. */
