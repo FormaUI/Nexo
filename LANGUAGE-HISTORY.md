@@ -16,7 +16,7 @@ Each entry says what its version breaks:
 
 ## `1.0.0-beta.40`
 
-*Unreleased · definition format 38*
+*November 3, 2026 · definition format 38*
 
 ```nexo
 1.e3  // NEXO3001, now saying to write 1e3; only that e3 is no member before

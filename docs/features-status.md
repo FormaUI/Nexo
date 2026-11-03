@@ -2,7 +2,7 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.40` and definition version 38, the fortieth beta.** What remains is [the release](#release) and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.40` and definition version 38, the fortieth beta.** What remains is publishing [the release](#release), `1.0.0-beta.1`, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 | Work | State |
 | --- | --- |
 | [DOMQL's migration](#domqls-migration) | Done: DOMQL migrated at `1.0.0-beta.3` |
-| [Release](#release) | The beta is declared; no release is cut yet |
+| [Release](#release) | `1.0.0-beta.1` is released; publishing its packages remains |
 | [What 1.0 requires](#what-1-0-requires) | Five requirements, one met in part |
 | [Tooling](#tooling) | Follows 1.0, and waits for its design |
 
@@ -100,7 +100,7 @@ The bundle and type declarations are built, as [the build](../README.md#build) s
 
 ## DOMQL's migration
 
-DOMQL, Nexo's first host, migrated from Lexica at `0e98b3e` to language `1.0.0-beta.3`, and has since followed Nexo to the commit its `nexo.commit` pins, passing its gate there, browser tests included. Its [status](https://github.com/FormaUI/DOMQL/blob/main/docs/features-status.md#migration-to-nexo) records how, and its version history what changed for its callers.
+DOMQL, Nexo's first host, migrated from Lexica at `0e98b3e` to language `1.0.0-beta.3`, and has since followed Nexo, by its commits until the first release and by the release its `nexo.release` pins from then on, passing its gate on each, browser tests included. Its [status](https://github.com/FormaUI/DOMQL/blob/main/docs/features-status.md#migration-to-nexo) records how, and its version history what changed for its callers.
 
 - **The checklists are removed,** as each was to be once its migration was verified. Their history holds them, at [`c9db3ad`](https://github.com/FormaUI/Nexo/blob/c9db3adc838ab8d16a6aa1626ce6df5a61b50f79/docs/features-status.md#domqls-migration).
 - **What it brought to Nexo:**
@@ -123,14 +123,14 @@ References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design
 
 ## Release
 
-**Packages.** One source and build produce both packages locally; neither is published. Both carry the implementation version declared by `src/language/Versions.mjs`.
+**Packages.** One source and build produce both packages locally; neither is published. Both carry the implementation version declared by `src/language/Versions.mjs`. The first release, `1.0.0-beta.1`, is tagged `v1.0.0-beta.1`, and its packages are packed from that tag.
 
 | Package | Contents or delivery |
 | --- | --- |
 | npm: `@formaui-net/nexo` | The ES module sources and their type declarations, `src/nexo.d.ts` |
 | NuGet: `formaui-net.Nexo` | `nexo.js` and `nexo.d.ts` served at `_content/nexo/` |
 
-Publish both, and test them as consumers install them: NuGet in a published application, and npm installed, bundled, and loaded in Chromium.
+Publish both from the tag, and test them as consumers install them: NuGet in a published application, and npm installed, bundled, and loaded in Chromium.
 
 The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare. Cutting a release dates its entry in the [changelog](../CHANGELOG.md) and tags its commit, as [contributing](../CONTRIBUTING.md#cut-a-release) sets out, and its packages are published from that tag.
 
@@ -149,8 +149,8 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 | --- | --- | --- |
 | **Contracts settled.** No decision is open, no gap stands between the specification and the code, and each [deferred](#deferred) item is shown to land without a break. | What may still change after 1.0 must be able to change compatibly. | No decision is open and no gap stands; the deferred items are not yet reviewed. |
 | **Robust against any text.** A fuzzing test in the gate reads, resolves and evaluates generated scripts, and meets no failure but a `NexoError`: no hang, no stack overflow, no escaped `TypeError`. | The maintenance sweep, `1.0.0-beta.21` to `1.0.0-beta.40`, found such faults by reading the code. | Not started. |
-| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | No release is cut yet. |
-| **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against a commit, and replacing Forma's scripts is planned. |
+| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-beta.1` is released; publishing it remains. |
+| **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against the release `1.0.0-beta.1`, from its tag, and replacing Forma's scripts is planned. |
 | **A release candidate that breaks nothing.** `1.0.0-rc.1` is released once the rest hold, and DOMQL and Forma take it with no change but its version. `1.0.0` is its contract, unchanged. | It is the last check that nothing still needs to break. | Waits for the rest. |
 
 **Until 1.0, Nexo takes no new feature:** no new syntax, member, declaration key, API or behaviour a script or a host can use. A change before 1.0 does one of these:
