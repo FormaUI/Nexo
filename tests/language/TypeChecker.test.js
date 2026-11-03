@@ -218,6 +218,15 @@ describe('TypeChecker', () => {
             expect(checker.matchesType(typeOf('home.Light'), Type.never)).toBe(true);
         });
 
+        it('matches a type argument that can be null only to a declared one that can be, or to a type parameter, which binds the null, and a parameter met again within one to its binding null and all', () => {
+            expect(checker.inferTypeArguments(typeOf('List<List<T>>'), typeOf('List<List<Number>?>'))).toBeNull();
+            expect(checker.inferTypeArguments(typeOf('List<home.Light>'), typeOf('List<home.Light?>'))).toBeNull();
+            expect(checker.inferTypeArguments(typeOf('List<T>'), typeOf('List<Number?>')).get('T').toString()).toBe('Number?');
+            expect(checker.inferTypeArguments(typeOf('List<T?>'), typeOf('List<Number?>')).get('T').toString()).toBe('Number');
+            expect(checker.inferTypeArguments(typeOf('Pair<T, T>'), typeOf('Pair<Number, Number?>'))).toBeNull();
+            expect(checker.inferTypeArguments(typeOf('Pair<T?, T?>'), typeOf('Pair<Number, Number?>')).get('T').toString()).toBe('Number');
+        });
+
         it('requires a type parameter bound already to match the type it binds to, and leaves the bindings it is given unchanged', () => {
             const bound = new Map([['T', typeOf('Number')]]);
 

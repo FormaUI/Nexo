@@ -324,6 +324,11 @@ describe('LanguageResolver', () => {
             expect(evaluate('{ v = Probe.give([1, 2]) { n = it.count } }')).toEqual({ v: { n: 2 } });
         });
 
+        it('applies no member to a receiver whose items can be null where the member declares items that cannot, as flatten declares lists of lists', () => {
+            expect(refusalOf('[[1], null].flatten')).toMatchObject({ code: 'NEXO3001', message: expect.stringContaining('is not available on List<List<Number>?>') });
+            expect(evaluate('[[1], [2]].flatten')).toEqual([1, 2]);
+        });
+
         it('binds the type parameter of a member a never meets to a never, so an empty list flattens', () => {
             expect(String(resolveWith([], '{ a = [].flatten, b = [[]].flatten }').resolution.type)).toBe('{ a: List<Never>, b: List<Never> }');
         });

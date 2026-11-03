@@ -225,7 +225,9 @@ export class TypeChecker {
 
     /**
      * The arguments of the type parameters the declared type writes, inferred from the actual type, structure for structure, beside those bound already: an empty map where it writes none, or null where the actual type does not
-     * match. A type parameter matches any type the first time it is met, and binds to it; met again, or bound already, it matches the type it binds to, nullability aside.
+     * match. A type parameter matches any type the first time it is met, and binds to it; met again, or bound already, it matches the type it binds to, nullability aside where it stands alone, its caller's to apply.
+     * Within a type argument a type that can be null matches only a declared one that can be, as a `List<Number?>` matches no `List<Number>`, and a parameter met again there matches its binding null and all, so a
+     * `Pair<T, T>` matches no `Pair<Number, Number?>`; the actual type's own null is its caller's, which a receiver's `?.` handles.
      * @param {Type} declaredType
      * @param {Type} actualType
      * @param {ReadonlyMap<string, Type>} [bound] The arguments bound already, by parameter name, which it never changes.
@@ -312,7 +314,7 @@ export class TypeChecker {
      * Matches the actual type against the declared one, adding each argument it binds to the map: the one relation matching and inferring share. Binding is exact: a parameter written `T` binds the type as it is, and one
      * written `T?` the type without null, since the `?` it is written with gives it that.
      */
-    #inferInto(declaredType, actualType, typeArguments) {
+    #inferInto(declaredType, actualType, typeArguments, isNested = false) {
         if (declaredType.kind === 'typeParameter') {
             const typeArgument = typeArguments.get(declaredType.name);
 
@@ -322,7 +324,8 @@ export class TypeChecker {
                 return true;
             }
 
-            return typeArgument.toNonNullable().equals(actualType.toNonNullable());
+            // Within a type argument a parameter written alone holds what it bound, null and all; one written nullable, or one standing alone, takes its argument with null or without.
+            return isNested && !declaredType.isNullable ? typeArgument.equals(actualType) : typeArgument.toNonNullable().equals(actualType.toNonNullable());
         }
 
         // No value is a never, so a never matches whatever is declared, and binds to a never each type parameter written there that nothing bound yet, as `[].flatten` binds T.
@@ -336,7 +339,16 @@ export class TypeChecker {
             return false;
         }
 
-        return declaredType.typeArguments.length === actualType.typeArguments.length && declaredType.typeArguments.every((typeArgument, index) => this.#inferInto(typeArgument, actualType.typeArguments[index], typeArguments));
+        return declaredType.typeArguments.length === actualType.typeArguments.length && declaredType.typeArguments.every((typeArgument, index) => {
+            const actualArgument = actualType.typeArguments[index];
+
+            // A type argument that can be null fits only one declared nullable, or a type parameter, which binds the null with it.
+            if (actualArgument.isNullable && !typeArgument.isNullable && typeArgument.kind !== 'typeParameter') {
+                return false;
+            }
+
+            return this.#inferInto(typeArgument, actualArgument, typeArguments, true);
+        });
     }
 
     /** Binds to a never each type parameter the declared type writes, at any depth, that nothing bound yet. */
