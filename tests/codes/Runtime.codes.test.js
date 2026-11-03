@@ -410,6 +410,17 @@ describe('the runtime codes', () => {
             expectNexoError(failureOf('word:size', undefined, { afterEvaluation: () => { throw new Error('no cleanup'); } }), 'NEXO5009', 'evaluation');
         });
 
+        it('NEXO5009: a beforeInvoke answering neither samples, a pending maintained member nor nothing, its answer the cause', () => {
+            for (const answer of [5, { pending: false, value: 3 }]) {
+                const failure = failureOf('word:quoted', undefined, { beforeInvoke: () => answer });
+
+                expectNexoError(failure, 'NEXO5009', 'evaluation');
+                expect(failure.cause).toBe(answer);
+            }
+
+            expect(failureOf('word:size', undefined, { beforeInvoke: () => ({ pending: true }) }).message).toContain('which only a member reading maintained values is');
+        });
+
         it('NEXO5011: evaluating without beforeInvoke a script that reads a maintained member', () => {
             expectNexoError(failureOf('word:quoted'), 'NEXO5011', 'evaluation');
             expectNexoError(failureOf('word:quoted', undefined, { afterInvoke: () => {} }), 'NEXO5011', 'evaluation');

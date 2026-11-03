@@ -594,6 +594,11 @@ export class NexoModule {
             fail(updates[updatesKey] === undefined ? 'NEXO4023' : 'NEXO4514', `It declares how it changes, one of ${CHANGE_CATEGORIES.join(', ')}, and how it reads, one of ${READING_MODES.join(', ')}`, name, `updates.${updatesKey}`);
         }
 
+        // A member reading maintained values reads as null while it is pending, before its first sample, so its result can be null.
+        if (updates.reads === 'maintained' && typeof member.result === 'string' && !member.result.trim().endsWith('?')) {
+            fail('NEXO4071', `It reads maintained values, so it reads as null until its first sample arrives, and its result is ${member.result}, which can't be null: declare ${member.result.trim()}?`, name, 'result');
+        }
+
         if (updates.changes === 'partly-observable' && (typeof updates.misses !== 'string' || updates.misses === '')) {
             fail('NEXO4058', 'A partly observable member states the changes it misses', name, 'updates.misses');
         }

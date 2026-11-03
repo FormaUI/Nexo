@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.25` · definition format 38*
+*Unpublished · language `1.0.0-beta.26` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -46,3 +46,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A member applies to a receiver as the specification says: the items of a `List<Device?>` keep their null, so a member declared for a `List<Device>`, or `flatten` for a list whose inner lists can be null, is not available on it, where before it was accepted and gave its implementation, or a result typed without null, a null item.
 - `sum` and `sequence` refuse a number no finite number holds, NEXO5020, `average` no longer overflows, and `sequence` refuses a count too long for a list, NEXO5035, rather than failing inside its implementation. A list's `min`, `max` and `entry`, and a dictionary's `entry`, answer `0` for `-0`.
 - A supplied or bound dictionary holding a key twice once captured is refused, NEXO5015 or NEXO2045, rather than keeping the last.
+- A member that reads maintained values declares a nullable result, NEXO4071. `beforeInvoke` answering pending for another member, or answering what is neither samples, pending nor nothing, fails the evaluation at the member, NEXO5009, rather than reading null into a value that can't be null or blaming the module. A member's functions close however its invocation ends.

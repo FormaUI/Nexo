@@ -755,3 +755,21 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - A lower bound on `sequence`'s count for memory's sake, which would be a policy no count can justify; a host that runs untrusted scripts bounds what it evaluates.
   - Normalizing `-0` from arithmetic, which no rule of Nexo's members covers and an interpolation already writes as `"0"`.
+
+<a id="d54"></a>
+
+## D54 — Only a maintained member is pending, and its result can be null
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:**
+  - A member reading maintained values declares a result that can be null, NEXO4071, since it reads as null while pending.
+  - `beforeInvoke` answers `{ pending: true }` for such a member alone. Any answer but samples, that, or nothing fails the evaluation at the member, NEXO5009, with the answer as its cause.
+  - The functions a member is given close however its invocation ends.
+- **Why:**
+  - A pending member reads as null, so one declared `Number` gave a `Number` that was null, and arithmetic on it failed at evaluation with a code meant for values of `Any`.
+  - A malformed answer reached the implementation as its samples, and its failure was blamed on the module, NEXO5007.
+  - A function the member was given, kept by a host whose `beforeInvoke` answered pending or threw, stayed callable after its evaluation ended, outside the evaluator's guard.
+- **Declined:**
+  - Typing a read of a maintained member as nullable whatever its declaration says, which would give a script a type its module never declared.

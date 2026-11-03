@@ -186,6 +186,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4068` | Two unnamed indexers for one receiver type of one module whose key types overlap, as signatures of one indexer never do | A module error naming both |
 | `NEXO4069` | Two operators of one name and destination on one receiver type of one module | A module error naming both |
 | `NEXO4070` | One of Nexo's generic types, `List`, `Dictionary` or `Pair`, named without its type arguments where no nearer tier declares a type of its name | A module error naming the declaration, giving the type with its type arguments and another module's type of the name qualified |
+| `NEXO4071` | A member reading maintained values whose result can't be null, which it reads as while it is pending | A module error at its `result`, giving the nullable type to declare |
 | `NEXO4500` | A module whose name is not an identifier | A module error naming the module |
 | `NEXO4501` | A module's contents that are not an object | A module error naming what a module declares |
 | `NEXO4502` | A module's contents declaring what a module does not declare | A module error naming what a module declares |
@@ -266,7 +267,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO5007` | A member failing unexpectedly while it evaluates, its implementation throwing | An evaluation error at the member, its `cause` exactly what the implementation threw, as [the evaluator](evaluation.md#runtime-evaluation) sets out |
 | `NEXO5008` | A function given to a member called after that member's invocation has ended | An evaluation error |
 | `NEXO5051` | A function a host call gave its host called after the host disposed the prepared call, as [kept functions](host-calls.md#runtime-host-calls-kept-functions) set out | An evaluation error at the argument that gave it |
-| `NEXO5009` | A hook that throws: `beforeInvoke`, a host refusing a member among them, `afterInvoke`, or `afterEvaluation` after a completed evaluation | An evaluation error at that member, its `cause` exactly what the hook threw, as [a hook that throws](evaluation.md#runtime-evaluation) sets out; after a failed evaluation, the cleanup's failure is recorded on the original error |
+| `NEXO5009` | A hook that throws: `beforeInvoke`, a host refusing a member among them, `afterInvoke`, or `afterEvaluation` after a completed evaluation; or a `beforeInvoke` answering neither samples, nor `{ pending: true }` for a member that reads maintained values, nor nothing | An evaluation error at that member, its `cause` exactly what the hook threw, as [a hook that throws](evaluation.md#runtime-evaluation) sets out; after a failed evaluation, the cleanup's failure is recorded on the original error |
 | `NEXO5010` | Evaluating an evaluator from within its own evaluation | An evaluation error |
 | `NEXO5011` | Evaluating without `beforeInvoke` a script that reads a maintained member | An evaluation error |
 | `NEXO5014` | Preparing a script that ends in no host call | An evaluation error, as [host calls](host-calls.md#runtime-host-calls) set out |

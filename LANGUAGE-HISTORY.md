@@ -7,6 +7,23 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-26"></a>
+
+## `1.0.0-beta.26`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- [A member reading maintained values](spec/runtime/members.md) declares a result that can be null, since it reads as null while it is pending, NEXO4071.
+- [`beforeInvoke`](spec/runtime/evaluation.md) answers `{ pending: true }` only for a member that reads maintained values; that answer for any other member, and an answer that is neither samples, `{ pending: true }` nor nothing, fails the evaluation at the member, NEXO5009, with the answer as its cause.
+- The functions a member is given close however its invocation ends, a `beforeInvoke` answering it pending or throwing included.
+
+**Breaking:**
+
+- A module declaring a member that reads maintained values with a result that can't be null is refused. Declare the result nullable, `Number?`, and give a script's reads of it a fallback, `(sensor:temperature ?? 0) > 20`.
+- A host whose `beforeInvoke` answered `{ pending: true }` for another member, or answered something else, fails its evaluation. Answer pending only for a member that reads maintained values.
+
 <a id="v1-0-0-beta-25"></a>
 
 ## `1.0.0-beta.25`

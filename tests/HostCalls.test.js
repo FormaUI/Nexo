@@ -444,7 +444,7 @@ describe('kept functions', () => {
                 hostFunctionDeclaration('follow', undefined, { arguments: 'options', parameters: [createFunctionParameterDeclaration('when', 'Boolean', ['String']), createValueParameterDeclaration('label', 'String', { default: 'all' })] }),
                 hostFunctionDeclaration('track', 'Number', { arguments: 'positional', parameters: [createFunctionParameterDeclaration('first', 'Boolean', ['String']), createFunctionParameterDeclaration('second', 'Number', ['String', 'Number'])] }),
                 createPropertyDeclaration('occupied', 'Boolean', { updates: { changes: 'unobserved', reads: 'fresh' }, impl: ({ receiver, env }) => env.occupied.includes(receiver) }),
-                createPropertyDeclaration('temperature', 'Number', { updates: { changes: 'observable', reads: 'maintained', observations: [{ type: 'reading', of: 'receiver' }] }, impl: ({ samples: [value] }) => value }),
+                createPropertyDeclaration('temperature', 'Number?', { updates: { changes: 'observable', reads: 'maintained', observations: [{ type: 'reading', of: 'receiver' }] }, impl: ({ samples: [value] }) => value }),
             ]),
         ],
         members: [createFunctionDeclaration('warm', 'Boolean', { updates: { changes: 'constant', reads: 'fresh' }, parameters: [createValueParameterDeclaration('room', 'String')], impl: ({ args }) => args.room.startsWith('sun') })],
@@ -511,7 +511,7 @@ describe('kept functions', () => {
     });
 
     it('are evaluated without hooks, so a maintained member fails them, and alone, so one called while their evaluator evaluates is refused', () => {
-        const maintained = evaluatorOf('light:follow({ when = it:temperature > 10 })').prepareHostCall();
+        const maintained = evaluatorOf('light:follow({ when = (it:temperature ?? 0) > 10 })').prepareHostCall();
 
         expect(errorThrownBy(() => maintained.args.when('hall'))).toMatchObject({ kind: 'evaluation', code: 'NEXO5011' });
 

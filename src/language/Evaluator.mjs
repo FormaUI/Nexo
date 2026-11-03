@@ -2474,38 +2474,40 @@ export class Evaluator {
         // called through its namespace, and has no receiver.
         const pointer = this.#hooks === null ? null : this.#resolvedDefinition.resolveDefinitionPointer(this.#pointerOf(node));
         const request = this.#hooks === null ? null : takesReceiver ? { declaration, receiver, args, pointer, isDeferred } : { declaration, args, pointer, isDeferred };
-        const samples = this.#beforeInvoke(request, declaration, node, readsMaintained);
-
-        if (samples === null) {
-            return null;
-        }
-
         let value;
 
         try {
-            // The input names the receiver, the arguments, the environment and a maintained member's samples, in that order.
-            const input = takesReceiver ? { receiver, args, env: this.#environment } : { args, env: this.#environment };
+            const samples = this.#beforeInvoke(request, declaration, node, readsMaintained);
 
-            if (readsMaintained) {
-                input.samples = samples;
+            if (samples === null) {
+                return null;
             }
 
-            value = implementation(input);
-        } catch (error) {
-            // A failure Nexo raised, within a function the member was given or a nested evaluation among them, keeps its own code and place; anything else the implementation threw, a NexoError it built among them,
-            // is the cause of Nexo's own, exactly as thrown.
-            if (NexoErrors.isRaisedByNexo(error) || this.#callbackErrors.has(error)) {
-                throw error;
-            }
+            try {
+                // The input names the receiver, the arguments, the environment and a maintained member's samples, in that order.
+                const input = takesReceiver ? { receiver, args, env: this.#environment } : { args, env: this.#environment };
 
-            // One of Nexo's own members refuses the values it is given with a failure of the language's, at the call.
-            if (error instanceof MemberFailure && this.#registry.getDeclaringModuleName(declaration) === Vocabulary.moduleName) {
-                this.#fail(error.code, error.message, this.#pointerOf(node));
-            }
+                if (readsMaintained) {
+                    input.samples = samples;
+                }
 
-            this.#fail('NEXO5007', `${this.#subjectOf(declaration, node)} failed: ${Evaluator.#messageOf(error)}`, this.#pointerOf(node), { cause: error });
+                value = implementation(input);
+            } catch (error) {
+                // A failure Nexo raised, within a function the member was given or a nested evaluation among them, keeps its own code and place; anything else the implementation threw, a NexoError it built among them,
+                // is the cause of Nexo's own, exactly as thrown.
+                if (NexoErrors.isRaisedByNexo(error) || this.#callbackErrors.has(error)) {
+                    throw error;
+                }
+
+                // One of Nexo's own members refuses the values it is given with a failure of the language's, at the call.
+                if (error instanceof MemberFailure && this.#registry.getDeclaringModuleName(declaration) === Vocabulary.moduleName) {
+                    this.#fail(error.code, error.message, this.#pointerOf(node));
+                }
+
+                this.#fail('NEXO5007', `${this.#subjectOf(declaration, node)} failed: ${Evaluator.#messageOf(error)}`, this.#pointerOf(node), { cause: error });
+            }
         } finally {
-            // A function the member was given is called only while its invocation lasts.
+            // A function the member was given is called only while its invocation lasts, however it ends: answered, pending, or failed in the host's hook or in the implementation.
             if (lifetimes !== null) {
                 for (const lifetime of lifetimes) {
                     lifetime.isOpen = false;
@@ -2598,13 +2600,24 @@ export class Evaluator {
             this.#failHook(error, declaration, node, 'before its invocation');
         }
 
-        if (answer?.pending === true) {
+        // The hook answers a member's samples, that it is pending, which only a member reading maintained values is, or nothing; anything else is the host's failure, as a throw is.
+        if (answer === undefined || answer === null) {
+            return NO_SAMPLES;
+        }
+
+        if (Array.isArray(answer)) {
+            return answer;
+        }
+
+        if (answer.pending === true && readsMaintained) {
             this.#isPending = true;
 
             return null;
         }
 
-        return answer ?? NO_SAMPLES;
+        const answered = answer.pending === true ? 'that it is pending, which only a member reading maintained values is' : `${Evaluator.#describe(answer)}, which is neither its samples, a list, nor { pending: true }`;
+
+        this.#fail('NEXO5009', `The host answered before the invocation of ${this.#subjectOf(declaration, node).replace(/^The /, 'the ').replace(/,$/, '')} ${answered}`, this.#pointerOf(node), { cause: answer });
     }
 
     /**

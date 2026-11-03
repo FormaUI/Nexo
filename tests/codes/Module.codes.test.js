@@ -416,7 +416,13 @@ describe('the module error codes', () => {
         });
 
         it('NEXO4025: a member reading maintained values without a maintained observation', () => {
-            expectModuleCode(registering(module('charts', onStrings([propertyDeclaration({ updates: { ...observable([{ type: 'state', of: 'receiver' }]), reads: 'maintained' } })], { observationTypes: [state] }))), 'NEXO4025');
+            expectModuleCode(registering(module('charts', onStrings([propertyDeclaration({ result: 'Number?', updates: { ...observable([{ type: 'state', of: 'receiver' }]), reads: 'maintained' } })], { observationTypes: [state] }))), 'NEXO4025');
+        });
+
+        it('NEXO4071: a member reading maintained values whose result cannot be null, which it reads as while pending', () => {
+            const failure = errorThrownBy(() => registering(module('charts', onStrings([propertyDeclaration({ updates: { ...observable([{ type: 'state', of: 'receiver' }]), reads: 'maintained' } })], { observationTypes: [reading] }))));
+
+            expect(failure).toMatchObject({ code: 'NEXO4071', kind: 'module', message: expect.stringContaining('declare Number?'), location: { declarationKey: 'result' } });
         });
 
         it('NEXO4062: a member naming a maintained observation without reading maintained values', () => {
@@ -427,7 +433,7 @@ describe('the module error codes', () => {
             expectModuleCode(registering(module('charts', {
                 observationTypes: [reading],
                 observationTargets: [{ name: 'sensors', count: 'many' }],
-                members: [propertyDeclaration({ updates: { ...observable([{ type: 'reading', of: 'sensors' }]), reads: 'maintained' } })],
+                members: [propertyDeclaration({ result: 'Number?', updates: { ...observable([{ type: 'reading', of: 'sensors' }]), reads: 'maintained' } })],
             })), 'NEXO4063');
         });
     });

@@ -365,7 +365,7 @@ describe('NexoRegistry', () => {
         const watching = (updates = {}, moduleTypes = types) => new NexoModule('charts', {
             observationTypes: moduleTypes,
             observationTargets: targets,
-            ...onStrings([propertyDeclaration({ name: 'charts', updates: { changes: 'observable', reads: 'fresh', observations: [{ type: 'ticks', of: 'receiver' }], ...updates } })]),
+            ...onStrings([propertyDeclaration({ name: 'charts', result: 'Number?', updates: { changes: 'observable', reads: 'fresh', observations: [{ type: 'ticks', of: 'receiver' }], ...updates } })]),
         });
         // A member of a module of its own, which observes, through the charts module's types, the targets it declares.
         const observed = of => propertyDeclaration({ name: 'later', updates: { changes: 'observable', reads: 'fresh', observations: [{ type: 'ticks', of }] } });

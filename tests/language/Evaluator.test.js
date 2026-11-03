@@ -109,6 +109,25 @@ describe('Evaluator', () => {
         expect(invoked).toEqual([]);
     });
 
+    it('closes the functions a member is given however its invocation ends, its host answering it pending or throwing before it runs included', () => {
+        const registry = new NexoRegistry([Vocabulary.module]);
+        const definition = parseImporting(registry, 'xs.where(it > 1).count');
+        const bindings = new ParameterBindings(registry, { xs: [1, 2, 3] });
+        const resolved = new LanguageResolver(registry, bindings, ParsedTexts.locationsOf(definition)).resolveDefinition(definition);
+
+        for (const answer of [() => undefined, () => ({ pending: true }), () => { throw new Error('refused'); }]) {
+            let kept = null;
+            const evaluator = new Evaluator(registry, resolved, bindings, {}, ParsedTexts.locationsOf(definition));
+
+            errorThrownBy(() => {
+                evaluator.evaluate({ beforeInvoke: request => (request.declaration.name === 'where' ? (kept = request.args.expression, answer()) : undefined) });
+                throw new Error('evaluated');
+            });
+
+            expect(errorThrownBy(() => kept(5))).toMatchObject({ code: 'NEXO5008' });
+        }
+    });
+
     it('evaluates an and inside an or as it does anywhere: the operand after a falsey one unreached, and the one after a truthy one evaluated once', () => {
         const evaluate = values => {
             const invoked = [];
