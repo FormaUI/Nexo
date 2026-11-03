@@ -82,15 +82,16 @@ export class ParameterBindings {
     }
 
     /**
-     * What resolving a definition against these bindings depends on: each name with its type, written by its qualified identity, and its value where that is a string, a number, a Boolean or null, since a bound string can select
-     * what a member reads. Two bindings with one key resolve a definition alike, so they can share its resolution.
+     * What resolving a definition against these bindings depends on: each name with its type, written by its qualified identity, and its value where that is a string, a Boolean or null, which can decide a
+     * resolution, since a bound string can select what a member reads, and a Boolean and null decide by their truthiness. A number is always truthy, never null and never a string, so none decides one, and no number
+     * is in the key. Two bindings with one key resolve a definition alike, so they can share its resolution.
      */
     get resolutionKey() {
         return [...this.#types.keys()].sort().map(name => {
             const value = this.#values.get(name);
-            const isPrimitive = value === null || ['string', 'number', 'boolean'].includes(typeof value);
+            const decides = value === null || typeof value === 'string' || typeof value === 'boolean';
 
-            return `${name}:${this.#types.get(name).toString(true)}${isPrimitive ? `=${JSON.stringify(value)}` : ''}`;
+            return `${name}:${this.#types.get(name).toString(true)}${decides ? `=${JSON.stringify(value)}` : ''}`;
         }).join(';');
     }
 

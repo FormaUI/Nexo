@@ -800,7 +800,9 @@ export class NexoRegistry {
                         return new Type('named', { name: type.name, typeArguments, isNullable: type.isNullable });
                     }
 
-                    const { types } = this.resolveTypeName(type.moduleName === null ? type.name : `${type.moduleName}.${type.name}`, TypeNameScope.bindingScope);
+                    // A binding declares a public type alone, since no script reaches an internal one, so an internal type of the name is no candidate.
+                    const types = this.resolveTypeName(type.moduleName === null ? type.name : `${type.moduleName}.${type.name}`, TypeNameScope.bindingScope).types
+                        .filter(candidate => candidate.moduleName === null || this.getModuleType(candidate.moduleName, candidate.name)?.internal !== true);
 
                     if (types.length === 0) {
                         fail('NEXO2036', `${notation} names ${type.moduleName === null ? type.name : `${type.moduleName}.${type.name}`}, which is no public type`);

@@ -788,3 +788,20 @@ Forty decisions were taken while implementing the declarations, member selection
   - Object records shared across evaluations kept host values their sources held, past the evaluations that read them.
 - **Measured** in paired runs against the commit before it, eleven rounds: evaluating with a reused evaluator −3.7%, and with a new evaluator and new bindings for each evaluation +8% (about 3 µs), with no more allocation; the other cases are unchanged. The added cost comes with compiling through another evaluator, and is the price of releasing the host's values.
 - **Declined:** Compiling through the first evaluator and clearing its host values after it compiles, which would leave a function compiled later during that evaluator's own evaluations reading values cleared under it.
+
+<a id="d56"></a>
+
+## D56 — A resolution key holds what can decide a resolution, unambiguously
+
+*November 3, 2026*
+
+- **Kind:** Runtime contract, closing a gap between the specification and the code.
+- **Decision:**
+  - A resolution key holds each binding's type, and the value of a binding that is a string, a Boolean or null. A number, always truthy, never null and never a string, decides nothing, so it is no part of the key.
+  - A type's notation writes a field name that is no name quoted, as JSON writes a string, in the key and in messages alike.
+  - A binding's declared type is a public type, as the specification says; an internal one is no candidate.
+- **Why:**
+  - A field name of bound data was written raw, so a name holding `:` or `;` made two binding sets of different types write one key, and a resolution was reused with bindings it did not fit, its fields reading as null.
+  - Bindings differing in a number alone were refused a shared resolution, each resolving anew, about four times the cost of reusing one.
+  - An internal type, which no script names, was accepted as a binding's declared type.
+- **Declined:** Keying by the bindings a resolution read for its decisions alone, which would track every read at resolution for a gain the rule above already gives.

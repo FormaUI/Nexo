@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.26` · definition format 38*
+*Unpublished · language `1.0.0-beta.27` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -49,3 +49,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A member that reads maintained values declares a nullable result, NEXO4071. `beforeInvoke` answering pending for another member, or answering what is neither samples, pending nor nothing, fails the evaluation at the member, NEXO5009, rather than reading null into a value that can't be null or blaming the module. A member's functions close however its invocation ends.
 - An evaluator, its bindings and its environment are released once a host drops it, where the first evaluator of a resolution stayed alive as long as the resolution did. An access on a value of `Any` keeps a bounded number of selections, and a value's metadata keeps no host's values past its own description.
 - A prepared call's projection reads the lineage of the locals before its call, so its metadata gives their sources and provenance, as an evaluation's does.
+- Bindings that differ in their numbers alone share a resolution. A field name of bound data that is no name no longer lets two binding sets of different types share a resolution key, where a resolution was reused with bindings it did not fit. A binding declared as an internal type is refused, NEXO2036.

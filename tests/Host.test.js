@@ -40,6 +40,22 @@ describe('a host of plain data', () => {
         expect(bindings.resolutionKey).not.toBe(registry.createBindings({ order: 'b', codes }).resolutionKey);
     });
 
+    it('keys a resolution by the values that can decide one, strings, Booleans and null, never by a number, and writes a field name that is no name quoted', () => {
+        const registry = createImportingRegistry([createShop()]);
+        const keyOf = values => registry.createBindings(values).resolutionKey;
+
+        expect(keyOf({ limit: 50 })).toBe(keyOf({ limit: 51 }));
+        expect(keyOf({ wanted: true })).not.toBe(keyOf({ wanted: false }));
+        expect(keyOf({ order: 'a' })).not.toBe(keyOf({ order: null }));
+        // A key that reads as notation around it is quoted, so bindings of other names and types never share one.
+        expect(keyOf({ p: { 'a: Nexo.Number };q:Nexo.Number=2;r:{ x': 1 } })).not.toBe(keyOf({ p: { a: 1 }, q: 2, r: { x: 1 } }));
+        expect(keyOf({ p: { 'a b': 1 } })).toBe('p:{ "a b": Nexo.Number }');
+
+        const resolution = registry.resolve('limit * 2', registry.createBindings({ limit: 50 }));
+
+        expect(resolution.createEvaluator(registry.createBindings({ limit: 51 })).evaluate().value).toBe(102);
+    });
+
     it('resolves against its registry, telling the type, the declarations used and where each stands', () => {
         const registry = createImportingRegistry([createShop()]);
         const resolution = registry.resolve('{ total = order:total, cut = order:discount(code) }', registry.createBindings({ order: 'a', code: 'TEN' }));

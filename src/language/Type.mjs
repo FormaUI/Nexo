@@ -227,6 +227,11 @@ export class Type {
         return true;
     }
 
+    /** A field's name as the notation writes it: a name as it is, and any other key of data quoted, as JSON writes a string, so no key reads as the notation around it. */
+    static #fieldNameOf(name) {
+        return Names.isIdentifier(name) ? name : JSON.stringify(name);
+    }
+
     /**
      * The notation of the type, each named type in it by its local name, or, where it is written qualified, by its module and its local name, as a declaration names it: one of Nexo's own written alone, and `Any` and
      * `Never`, qualified by Nexo's module, as `Nexo.Number`, and a generic one, which a qualified name never writes, by its local name with its type arguments.
@@ -236,10 +241,10 @@ export class Type {
 
         switch (this.kind) {
             case 'object':
-                text = `{ ${[...this.fieldTypes].map(([name, fieldType]) => `${name}: ${fieldType.toString(isQualified)}`).join(', ')} }`;
+                text = `{ ${[...this.fieldTypes].map(([name, fieldType]) => `${Type.#fieldNameOf(name)}: ${fieldType.toString(isQualified)}`).join(', ')} }`;
                 break;
             case 'objectRoot':
-                text = this.fieldTypes.size === 0 ? 'root { }' : `root { ${[...this.fieldTypes].map(([name, fieldType]) => `${name}: ${fieldType.toString(isQualified)}`).join(', ')} }`;
+                text = this.fieldTypes.size === 0 ? 'root { }' : `root { ${[...this.fieldTypes].map(([name, fieldType]) => `${Type.#fieldNameOf(name)}: ${fieldType.toString(isQualified)}`).join(', ')} }`;
                 break;
             case 'function':
                 text = 'function';

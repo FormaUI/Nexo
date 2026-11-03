@@ -135,6 +135,15 @@ describe('the runtime codes', () => {
             expectNexoError(errorThrownBy(() => home().createBindings({ lamp: new Thermostat('heater') }, { types: { lamp: 'Light' } })), 'NEXO2036', 'structure');
         });
 
+        it('NEXO2036: a declared type an internal type alone is, which no script reaches, qualified or not, while a public type of its name is the one it names', () => {
+            const vault = nexo.createModule('vault', { types: [{ name: 'Secret', kind: 'structured', internal: true, members: dataPropertyDeclarations({ pin: 'Number' }) }] });
+            const shelf = nexo.createModule('shelf', { types: [{ name: 'Secret', kind: 'structured', members: dataPropertyDeclarations({ label: 'String' }) }] });
+
+            expectNexoError(errorThrownBy(() => createImportingRegistry([vault]).createBindings({ s: { pin: 1 } }, { types: { s: 'vault.Secret' } })), 'NEXO2036', 'structure');
+            expectNexoError(errorThrownBy(() => createImportingRegistry([vault]).createBindings({ s: { pin: 1 } }, { types: { s: 'List<Secret>' } })), 'NEXO2036', 'structure');
+            expect(createImportingRegistry([vault, shelf]).createBindings({ s: { label: 'a' } }, { types: { s: 'Secret' } }).getType('s')).toBe('Secret');
+        });
+
         it('NEXO2037: a declared type several types share unqualified', () => {
             const office = nexo.createModule('office', { types: [{ name: 'Device', kind: 'reference', isInstance: () => true }] });
 

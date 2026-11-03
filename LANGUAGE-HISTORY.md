@@ -7,6 +7,20 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-27"></a>
+
+## `1.0.0-beta.27`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- [A resolution key](spec/runtime/bindings.md) holds the values that can decide a resolution, strings, Booleans and null, and no number, so bindings that differ in their numbers alone share a resolution.
+- A field name of bound data that is no name is written quoted, in the key and in a type's notation, so two binding sets of different types never share a key.
+- A binding's declared type names a public type alone: an internal type is refused, NEXO2036, and a name an internal and a public type share names the public one.
+
+**Breaking:** a binding declared as an internal type is refused; declare a public one. A key or a message holding a field name that is no name writes it quoted.
+
 <a id="v1-0-0-beta-26"></a>
 
 ## `1.0.0-beta.26`
