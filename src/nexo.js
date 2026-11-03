@@ -263,7 +263,7 @@ const resolutionOf = (registry, definition, parameterBindings) => {
  */
 const createRegistry = modules => {
     if (!Array.isArray(modules)) {
-        throw NexoErrors.module('NEXO4546', 'A registry is created from a list of modules, each as createModule makes it', { module: String(modules) });
+        throw NexoErrors.module('NEXO4546', 'A registry is created from a list of modules, each as createModule makes it', {});
     }
 
     const registry = new NexoRegistry([Vocabulary.module, ...modules]);

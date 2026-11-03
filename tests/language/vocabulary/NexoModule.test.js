@@ -58,6 +58,16 @@ describe('NexoModule', () => {
         expect(expectModuleError(() => new NexoModule('charts', { members: [propertyDeclaration({ impl: 'size' })] }))).toEqual({ message: expect.stringContaining('Its `impl` is a function'), module: 'charts', declaration: 'zoom', declarationKey: 'impl' });
     });
 
+    it('locates a declaration by its name where it is a string, and leaves out a name of another value, which names nothing', () => {
+        expect(expectModuleError(() => new NexoModule('charts', { members: [{ name: 5, kind: 'property', result: 'Number' }] }))).toEqual({ message: expect.stringContaining('A member is named as a name is'), module: 'charts', declarationKey: 'name' });
+        expect(expectModuleError(() => new NexoModule('charts', { members: [{ kind: 'property', result: 'Number' }] }))).toEqual({ message: expect.stringContaining('A member is named as a name is'), module: 'charts', declarationKey: 'name' });
+        expect(expectModuleError(() => new NexoModule('charts', { types: [{ name: { x: 1 }, kind: 'reference', isInstance: () => true }] }))).toEqual({ message: expect.stringContaining('A type is named by an identifier'), module: 'charts', declarationKey: 'name' });
+        expect(expectModuleError(() => new NexoModule('charts', { typeSelectors: [{ name: 7 }] }))).toEqual({ message: expect.stringContaining('A type selector is named'), module: 'charts', declarationKey: 'name' });
+        expect(expectModuleError(() => new NexoModule('charts', { members: [{ kind: 'property', result: 'Number', size: 1 }] }))).toMatchObject({ module: 'charts', declarationKey: expect.any(String) });
+        expect(expectModuleError(() => new NexoModule(5, {}))).toEqual({ message: expect.stringContaining('A module is named as a name is') });
+        expect(expectModuleError(() => new NexoModule('chart-tools', {}))).toEqual({ message: expect.stringContaining('A module is named as a name is'), module: 'chart-tools' });
+    });
+
     it('refuses a declaration whose data reaches itself, at its declaration key, and takes data two parts share and a function that holds itself', () => {
         const selfList = [];
         const selfObject = { at: 1 };

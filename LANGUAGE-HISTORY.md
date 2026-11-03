@@ -7,6 +7,19 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-34"></a>
+
+## `1.0.0-beta.34`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- [A module error names](spec/runtime/errors.md#validation-diagnostics) a module, a type or a declaration only by a name that is a string. One named by another value, or by none, leaves that field out, where it was named by a string made of the value, `'5'`, `'[object Object]'` or `'undefined'`.
+- A registry created from anything but a list of modules stands nowhere, `{}`, where its location named the value given as a module.
+
+**Breaking:** nothing a host relies on. A location that named a declaration `'undefined'` leaves `declaration` out.
+
 <a id="v1-0-0-beta-33"></a>
 
 ## `1.0.0-beta.33`

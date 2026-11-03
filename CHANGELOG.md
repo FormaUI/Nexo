@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.33` · definition format 38*
+*Unpublished · language `1.0.0-beta.34` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -58,3 +58,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - Data nesting deeper than 1,000 levels, bound, supplied or answered, is refused with NEXO2047, NEXO5015 or NEXO5052 rather than overflowing the stack, and a host call declared `Any` takes the values its host supplies, where it refused every one.
 - A misspelled option or hook is refused, NEXO2048, rather than left out, and so is a hook that is no function. A `typeOf` answering nothing is a fault, NEXO5002. A conversion's `reject` kept past its call fails with a NexoError rather than throwing Nexo's private signal. A declared type that is no string is NEXO2044, and `f(1)(2)` gets a message saying what to write.
 - A conversion of a value of `Any`, `value to String`, resolves and converts by the type the value turns out to be, failing with NEXO5053 where nothing converts it, where it was refused at resolution. Its candidate conversions are among the resolution's candidate declarations.
+- A module error locates a module, a type or a declaration only by a name that is a string, leaving the field out where the name is another value or missing, rather than naming it `'undefined'` or `'[object Object]'`.

@@ -66,12 +66,13 @@ A **location** says where a failure stands by one group of fields, never two, th
 | Script | `pointer`, the node's JSON Pointer into the definition, with `offset`, `line` and `column`, its position in the text, where the definition was read from text | A structure, validation or evaluation error in a script or a definition; `getLocation` answers this group |
 | Text | `offset`, `line` and `column` alone | A syntax error, which stands in text no definition holds yet |
 | Binding | `binding`, the binding's name | An error in a binding |
-| Module | `module`, the module's name; `type`, the type a nested declaration, a member a type declares among them, stands in; `declaration`, the declaration's name; and `declarationKey`, the key the failure concerns, a declaration's, as `updates.misses`, or, with no declaration, the module's own; each but `module` only where the failure concerns it | A module error |
+| Module | `module`, the module's name; `type`, the type a nested declaration, a member a type declares among them, stands in; `declaration`, the declaration's name; and `declarationKey`, the key the failure concerns, a declaration's, as `updates.misses`, or, with no declaration, the module's own; each but `module` only where the failure concerns it, and each naming only by a name that is a string | A module error |
 
 - **A position counts from the text's start.** `offset` counts the text's UTF-16 code units from 0, and `line` and `column` count from 1. Each line break, LF, CRLF or a lone CR, begins a line, so CRLF begins one, its two characters both counted in the offset.
+- **A name is a string.** A module, a type or a declaration whose name is another value, `5` or an object, or that declares none, has no name to give, so its error leaves out the field that would name it, `module` among them, rather than naming it by a string made of that value.
 - **An unnamed indexer and a mapping** have no name, so a module error names an unnamed indexer `[]` as its `declaration`, and a mapping by its key. Two unnamed indexers that collide (NEXO4068) stand at the declaration key `kind`.
 - **A node without text of its own** is positioned at the nearest node enclosing it that has some, its `pointer` still its own.
-- **A failure of the API's use that stands nowhere** carries an empty location, `{}`: imports a host supplies that are refused, `NEXO2008`, bindings or their options that are not a plain object, `NEXO2020`, options or hooks holding a key the operation takes none of, `NEXO2048`, bindings another registry made, `NEXO2024`, bindings of another resolution key, `NEXO2025`, a resolution no longer current, `NEXO2040`, a pointer that is no JSON Pointer, `NEXO2643`, reading what is not a script's source, `NEXO2645`, a result path of another shape, `NEXO2646`, and evaluating an evaluator from within its own evaluation, `NEXO5010`.
+- **A failure of the API's use that stands nowhere** carries an empty location, `{}`: imports a host supplies that are refused, `NEXO2008`, bindings or their options that are not a plain object, `NEXO2020`, options or hooks holding a key the operation takes none of, `NEXO2048`, bindings another registry made, `NEXO2024`, a registry created from anything but a list of modules, `NEXO4546`, bindings of another resolution key, `NEXO2025`, a resolution no longer current, `NEXO2040`, a pointer that is no JSON Pointer, `NEXO2643`, reading what is not a script's source, `NEXO2645`, a result path of another shape, `NEXO2646`, and evaluating an evaluator from within its own evaluation, `NEXO5010`.
 
 An evaluation error fails the entire result and is delivered to the host in its place.
 
@@ -128,7 +129,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | Code | Situation | Result |
 | --- | --- | --- |
 | `NEXO4001` | Creating an evaluator for a resolution whose used declarations the evaluator invokes, conversion operators among them, have no `impl`, or evaluating an access on a value of `Any` that selects such a declaration | A module error naming the declaration and its module, or, raised as the access is evaluated, located at the access |
-| `NEXO4002` | A member other than an indexer declared without a `name` | A module error naming the member |
+| `NEXO4002` | A member other than an indexer declared without a `name` | A module error at its `name` |
 | `NEXO4030` | A declaration key a declaration's kind does not take, a type-level `fields` collection, and `target`, `syntax` or `default` on a member among them | A module error naming the declaration key |
 | `NEXO4031` | An `internal` that is no Boolean | A module error naming the declaration |
 | `NEXO4003` | A member without a declaration key its kind requires, `result`, `updates`, or `arguments` where it has parameters | A module error naming the declaration key |
@@ -190,7 +191,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO4070` | One of Nexo's generic types, `List`, `Dictionary` or `Pair`, named without its type arguments where no nearer tier declares a type of its name | A module error naming the declaration, giving the type with its type arguments and another module's type of the name qualified |
 | `NEXO4071` | A member reading maintained values whose result can't be null, which it reads as while it is pending | A module error at its `result`, giving the nullable type to declare |
 | `NEXO4072` | A fixed parameter declared optional, or given a default | A module error naming the parameter, which a script always writes |
-| `NEXO4500` | A module whose name is not an identifier | A module error naming the module |
+| `NEXO4500` | A module whose name is not an identifier | A module error naming the module where its name is a string |
 | `NEXO4501` | A module's contents that are not an object | A module error naming what a module declares |
 | `NEXO4502` | A module's contents declaring what a module does not declare | A module error naming what a module declares |
 | `NEXO4503` | A module's declarations of one kind, or a type's or an extension's `members`, that are not a list | A module error naming the kind |

@@ -79,7 +79,7 @@ export class NexoRegistry {
     /** @param {import('./NexoModule.mjs').NexoModule[]} modules The modules registered at the start. */
     constructor(modules = []) {
         if (!Array.isArray(modules)) {
-            throw NexoErrors.module('NEXO4546', 'A registry is created from a list of modules, each as createModule makes it', { module: String(modules) });
+            throw NexoErrors.module('NEXO4546', 'A registry is created from a list of modules, each as createModule makes it', {});
         }
 
         modules.forEach(module => this.registerModule(module));
@@ -122,7 +122,7 @@ export class NexoRegistry {
      */
     registerModule(module) {
         if (!NexoModule.isModule(module)) {
-            throw NexoErrors.module('NEXO4546', 'A module is registered as createModule makes it', { module: String(module?.name) });
+            throw NexoErrors.module('NEXO4546', 'A module is registered as createModule makes it', typeof module?.name === 'string' ? { module: module.name } : {});
         }
 
         const fail = (code, message, declarationName, declarationKey, typeName) => {

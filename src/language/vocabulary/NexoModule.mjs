@@ -99,15 +99,15 @@ export class NexoModule {
      */
     constructor(name, contents = {}) {
         if (!Names.isIdentifier(name)) {
-            throw NexoErrors.module('NEXO4500', 'A module is named as a name is', { module: String(name) });
+            throw NexoErrors.module('NEXO4500', 'A module is named as a name is', typeof name === 'string' ? { module: name } : {});
         }
 
-        // A declaration nested in a type is located at the type it stands in, as well as at its module.
+        // A declaration nested in a type is located at the type it stands in, as well as at its module, each by its name where it is a string, since a name of another value names nothing.
         const failWithin = typeName => (code, message, declarationName, declarationKey) => {
             throw NexoErrors.module(code, message, {
                 module: name,
-                ...(typeName === undefined ? {} : { type: typeName }),
-                ...(declarationName === undefined ? {} : { declaration: declarationName }),
+                ...(typeof typeName === 'string' ? { type: typeName } : {}),
+                ...(typeof declarationName === 'string' ? { declaration: declarationName } : {}),
                 ...(declarationKey === undefined ? {} : { declarationKey }),
             });
         };
@@ -234,10 +234,10 @@ export class NexoModule {
      */
     static #validateKeys(declaration, keys, what, fail, name, { notObjectCode = 'NEXO4504', unknownKeyCode = 'NEXO4030', declaringSubject = what } = {}) {
         if (!ObjectUtils.isNonArrayObject(declaration)) {
-            fail(notObjectCode, `${what} ${name === null ? 'are' : 'is'} an object declaring ${keys.join(', ')}`, name === undefined || name === null ? undefined : String(name));
+            fail(notObjectCode, `${what} ${name === null ? 'are' : 'is'} an object declaring ${keys.join(', ')}`, name);
         }
 
-        const declarationName = name === null ? undefined : String(name ?? declaration.name);
+        const declarationName = name === null ? undefined : (name ?? declaration.name);
 
         for (const key of Object.keys(NexoModule.#withoutUndefinedValues(declaration))) {
             if (!keys.includes(key)) {
@@ -399,7 +399,7 @@ export class NexoModule {
         const parsed = NexoModule.#parseDeclaredName(written);
 
         if (parsed.failure !== undefined) {
-            fail('NEXO4010', parsed.failure, String(parsed.name), declarationKey);
+            fail('NEXO4010', parsed.failure, parsed.name, declarationKey);
         }
 
         const repeated = parsed.typeParameters.find((parameter, index) => parsed.typeParameters.indexOf(parameter) < index);
@@ -413,7 +413,7 @@ export class NexoModule {
 
     static #validateTypeDeclaration(type, fail, failWithin) {
         if (ObjectUtils.isNonArrayObject(type) && !TYPE_KINDS.includes(type.kind)) {
-            fail('NEXO4554', type.kind === undefined ? `A type declares its kind, ${TYPE_KINDS.join(' or ')}` : `A type is of the kind ${TYPE_KINDS.join(' or ')}, and '${String(type.kind)}' is none of them`, String(type.name), 'kind');
+            fail('NEXO4554', type.kind === undefined ? `A type declares its kind, ${TYPE_KINDS.join(' or ')}` : `A type is of the kind ${TYPE_KINDS.join(' or ')}, and '${String(type.kind)}' is none of them`, type.name, 'kind');
         }
 
         NexoModule.#validateKeys(type, TYPE_KEYS_BY_KIND[type?.kind] ?? TYPE_KEYS_BY_KIND.structured, type?.kind === 'extension' ? 'An extension' : `A ${type?.kind ?? 'structured'} type`, fail);
@@ -421,7 +421,7 @@ export class NexoModule {
         const { name, typeParameters } = NexoModule.#validateDeclaredName(type.name, fail);
 
         if (!Names.isIdentifier(name)) {
-            fail('NEXO4552', 'A type is named by an identifier, a letter followed by letters and digits', String(name), 'name');
+            fail('NEXO4552', 'A type is named by an identifier, a letter followed by letters and digits', name, 'name');
         }
 
         // A type's data is never generic, so only an extension's name declares type parameters.
@@ -531,7 +531,7 @@ export class NexoModule {
             NexoModule.#validateKeys(selector, TYPE_SELECTOR_KEYS, 'A type selector', fail);
 
             if (!Names.isIdentifier(selector.name)) {
-                fail('NEXO4006', 'A type selector is named as a name is', String(selector.name), 'name');
+                fail('NEXO4006', 'A type selector is named as a name is', selector.name, 'name');
             }
 
             if (names.has(selector.name)) {
@@ -713,7 +713,7 @@ export class NexoModule {
             NexoModule.#validateKeys(target, OBSERVATION_TARGET_KEYS, 'An observation target', fail);
 
             if (!Names.isIdentifier(target.name)) {
-                fail('NEXO4006', 'An observation target is named as a name is', String(target.name), 'name');
+                fail('NEXO4006', 'An observation target is named as a name is', target.name, 'name');
             }
 
             if (target.name === 'receiver') {
@@ -757,7 +757,7 @@ export class NexoModule {
         const identity = type?.identity ?? [];
 
         if (!Names.isIdentifier(type?.name) || !OBSERVATION_CONTRACTS.includes(type.contract)) {
-            fail(Names.isIdentifier(type?.name) ? 'NEXO4520' : 'NEXO4006', `An observation type is named as a name is and is one of ${OBSERVATION_CONTRACTS.join(', ')}`, String(type?.name), Names.isIdentifier(type?.name) ? 'contract' : 'name');
+            fail(Names.isIdentifier(type?.name) ? 'NEXO4520' : 'NEXO4006', `An observation type is named as a name is and is one of ${OBSERVATION_CONTRACTS.join(', ')}`, type?.name, Names.isIdentifier(type?.name) ? 'contract' : 'name');
         }
 
         if (!Array.isArray(identity) || !identity.every(argument => Names.isIdentifier(argument))) {
@@ -818,7 +818,7 @@ export class NexoModule {
 
         // A member is read after a dot or, an indexer, after a colon, where only a member's name stands, so a keyword names one.
         if (!isUnnamedIndexer && !Names.isIdentifier(name)) {
-            fail(name === undefined ? 'NEXO4002' : 'NEXO4523', 'A member is named as a name is, a keyword among them', String(name), 'name');
+            fail(name === undefined ? 'NEXO4002' : 'NEXO4523', 'A member is named as a name is, a keyword among them', name, 'name');
         }
 
         if (!MEMBER_KINDS.includes(member.kind)) {

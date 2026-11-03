@@ -632,6 +632,9 @@ describe('the module error codes', () => {
         it('NEXO4546: registering what createModule did not make', () => {
             expectModuleCode(registering({ name: 'fake', members: [] }), 'NEXO4546');
             expectModuleCode(() => nexo.createRegistry(null), 'NEXO4546');
+            expect(errorThrownBy(registering({ name: 'fake', members: [] })).location).toEqual({ module: 'fake' });
+            expect(errorThrownBy(registering({ name: 3 })).location).toEqual({});
+            expect(errorThrownBy(() => nexo.createRegistry({ name: 'list' })).location).toEqual({});
             expect(nexo.createRegistry([]).getImplementation(null)).toBeUndefined();
             expect(nexo.createRegistry([]).getImplementation({ impl: () => 1 })).toBeUndefined();
         });
