@@ -5,6 +5,7 @@
 import { ArrayUtils } from '../common/ArrayUtils.mjs';
 import { ObjectUtils } from '../common/ObjectUtils.mjs';
 import { Dictionary } from './Dictionary.mjs';
+import { Limits } from './Limits.mjs';
 import { NexoErrors } from './NexoError.mjs';
 import { Names } from './Names.mjs';
 import { Pair } from './Pair.mjs';
@@ -131,6 +132,10 @@ export class ParameterBindings {
                 throw NexoErrors.structure('NEXO2022', `A binding holds a cycle, a list or an object that reaches itself, which data never does${path === '' ? '' : `, at '${path}'`}`, { binding: name });
             }
 
+            if (reason === 'depth') {
+                throw NexoErrors.structure('NEXO2047', `The data bound to '${name}' nests deeper than ${Limits.dataNesting} levels, the most data nests${path === '' ? '' : `, at '${path}'`}`, { binding: name });
+            }
+
             if (reason === 'duplicate') {
                 throw NexoErrors.structure('NEXO2045', `The value bound to '${name}' is declared ${type}, and holds a key twice, at '${path}', which a dictionary never does`, { binding: name });
             }
@@ -222,6 +227,10 @@ export class ParameterBindings {
 
             if (ancestors.has(value)) {
                 throw NexoErrors.structure('NEXO2022', 'A binding holds a cycle, a list or an object that reaches itself, which data never does', { binding: name });
+            }
+
+            if (ancestors.size >= Limits.dataNesting) {
+                throw NexoErrors.structure('NEXO2047', `The data bound to '${name}' nests deeper than ${Limits.dataNesting} levels, the most data nests`, { binding: name });
             }
 
             if (Array.isArray(value) && ArrayUtils.findMissingIndex(value) === -1) {

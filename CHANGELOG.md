@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.30` · definition format 38*
+*Unpublished · language `1.0.0-beta.31` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -55,3 +55,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - The hosting document's example imports the module it reads.
 - A module giving an observation an expression, a predicate or a function within a list is refused, NEXO4055, and so is one declaring a fixed parameter optional, NEXO4072. Module errors name the key a notation stands at, a mapping by its key, an unnamed indexer as `[]` and the type a member stands in.
 - Resolving reads each part of a script once: a key nested within keys, a generic argument within arguments, and a function calling the one before it twice each resolve in time linear in their depth, where each level doubled the time, and the account summary resolves about 9% faster.
+- Data nesting deeper than 1,000 levels, bound, supplied or answered, is refused with NEXO2047, NEXO5015 or NEXO5052 rather than overflowing the stack, and a host call declared `Any` takes the values its host supplies, where it refused every one.

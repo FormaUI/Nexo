@@ -7,6 +7,19 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-31"></a>
+
+## `1.0.0-beta.31`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- [Data nests at most 1,000 levels](spec/runtime/bindings.md#runtime-bindings-nesting): data a host binds nesting deeper is refused, NEXO2047, a value a host call supplies, NEXO5015, a value of `Any` a deferred access types, and a result holding such data, NEXO5052, rather than each overflowing the stack as a RangeError.
+- A host call whose result is declared `Any` is supplied a value of any type, captured as it is, where it refused every value.
+
+**Breaking:** data nesting deeper than 1,000 levels is refused; none could be evaluated before.
+
 <a id="v1-0-0-beta-30"></a>
 
 ## `1.0.0-beta.30`

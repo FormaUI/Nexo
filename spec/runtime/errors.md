@@ -102,6 +102,7 @@ An evaluation error fails the entire result and is delivered to the host in its 
 | `NEXO2038` | A reference type declared for a value that is not a reference, null aside where the type is nullable | A structure error naming the binding |
 | `NEXO2044` | A declared binding type no binding holds: a notation that writes no type, `Any`, `Never`, a position, a type holding one at any depth, a structure's data shape among it, or a dictionary keyed by no key type | A structure error naming the binding and the type |
 | `NEXO2045` | A value its binding's declared data type, or a part of it, doesn't admit, as [declared types](bindings.md#runtime-bindings) set out, a dictionary holding a key twice among them | A structure error naming the binding, the part and the type |
+| `NEXO2047` | Bound data nesting deeper than 1,000 levels, the most data nests, as [binding data](bindings.md#runtime-bindings) sets out | A structure error naming the binding, and the part where a declared type captures it |
 | `NEXO2039` | A type declared for anything but a top-level binding | A structure error naming the binding |
 | `NEXO2024` | Resolving or evaluating with a binding set another registry made | A structure error saying to bind with that registry |
 | `NEXO2025` | Creating an evaluator with bindings of another resolution key | A structure error saying to resolve again |
@@ -268,6 +269,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO5007` | A member failing unexpectedly while it evaluates, its implementation throwing | An evaluation error at the member, its `cause` exactly what the implementation threw, as [the evaluator](evaluation.md#runtime-evaluation) sets out |
 | `NEXO5008` | A function given to a member called after that member's invocation has ended | An evaluation error |
 | `NEXO5051` | A function a host call gave its host called after the host disposed the prepared call, as [kept functions](host-calls.md#runtime-host-calls-kept-functions) set out | An evaluation error at the argument that gave it |
+| `NEXO5052` | A result nesting deeper than 1,000 levels, the most data nests, which only data a member answered as a value of `Any` can | An evaluation error at the result |
 | `NEXO5009` | A hook that throws: `beforeInvoke`, a host refusing a member among them, `afterInvoke`, or `afterEvaluation` after a completed evaluation; or a `beforeInvoke` answering neither samples, nor `{ pending: true }` for a member that reads maintained values, nor nothing | An evaluation error at that member, its `cause` exactly what the hook threw, as [a hook that throws](evaluation.md#runtime-evaluation) sets out; after a failed evaluation, the cleanup's failure is recorded on the original error |
 | `NEXO5010` | Evaluating an evaluator from within its own evaluation | An evaluation error |
 | `NEXO5011` | Evaluating without `beforeInvoke` a script that reads a maintained member | An evaluation error |

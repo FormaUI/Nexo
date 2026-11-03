@@ -8,4 +8,10 @@ export class Limits {
      * resolving, evaluating and writing a definition each follow its nesting, and each reads 256 levels with room to spare.
      */
     static nesting = 256;
+
+    /**
+     * The most levels the data a host gives nests, each list, dictionary, pair, object or structure within another a level deeper: data it binds, data a host call supplies, and a result holding data a member answered.
+     * Binding, capturing, typing, checking and copying data each follow its nesting, and each reads 1,000 levels with room to spare; data costs less for each level than a script does, so it nests deeper.
+     */
+    static dataNesting = 1000;
 }

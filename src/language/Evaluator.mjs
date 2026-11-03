@@ -14,6 +14,7 @@ import { StructureTypes } from './StructureTypes.mjs';
 import { Type } from './Type.mjs';
 import { ValueCapture } from './ValueCapture.mjs';
 import { ItemPositions } from './vocabulary/ItemPositions.mjs';
+import { Limits } from './Limits.mjs';
 import { NexoModule } from './vocabulary/NexoModule.mjs';
 import { ListOrdering } from './vocabulary/ListOrdering.mjs';
 import { MemberFailure } from './vocabulary/MemberFailure.mjs';
@@ -419,6 +420,10 @@ export class Evaluator {
 
             if (reason === 'duplicate') {
                 this.#fail('NEXO5015', `The host call '${NexoModule.writtenNameOf(declaration)}' supplied a dictionary that holds a key twice, at '${path}', which a dictionary never does`, pointer);
+            }
+
+            if (reason === 'depth') {
+                this.#fail('NEXO5015', `The host call '${NexoModule.writtenNameOf(declaration)}' supplied a value nesting deeper than ${Limits.dataNesting} levels, the most data nests${path === '' ? '' : `, at '${path}'`}`, pointer);
             }
 
             const supplied = path === '' ? Evaluator.#describe(part) : part === undefined ? `a value without '${path}'` : `a value whose '${path}' is ${Evaluator.#describe(part)}`;
@@ -1533,6 +1538,10 @@ export class Evaluator {
 
         if (ancestors.has(value)) {
             fail('it reaches itself, which data never does');
+        }
+
+        if (ancestors.size >= Limits.dataNesting) {
+            fail(`it nests deeper than ${Limits.dataNesting} levels, the most data nests`);
         }
 
         ancestors.add(value);
@@ -2749,6 +2758,8 @@ export class Evaluator {
         try {
             const result = this.#evaluateNode(node, null);
 
+            this.#resultNode = node;
+
             // Resolution proved every other part of the result data.
             if (this.#checksResultData && !this.#isData(result)) {
                 this.#fail('NEXO5028', 'The result holds a value of Any that is no data, as a reference or a function is; read the facts it needs through an object expression', this.#pointerOf(node));
@@ -2764,8 +2775,20 @@ export class Evaluator {
         }
     }
 
+    /** The node whose result is being checked and copied, which a result nesting deeper than data nests fails at. @type {object | null} */
+    #resultNode = null;
+
+    /** Refuses a result nesting deeper than `Limits.dataNesting`, which only data a member answered as a value of Any can, at the node that gave it. */
+    #failNesting() {
+        this.#fail('NEXO5052', `The result nests deeper than ${Limits.dataNesting} levels, the most data nests`, this.#pointerOf(this.#resultNode));
+    }
+
     /** Whether the value is data at any depth: null, a string, a Boolean, a finite number, a list holding data at every index, or a plain object of data no module recognizes as a reference. */
-    #isData(value) {
+    #isData(value, depth = 0) {
+        if (depth > Limits.dataNesting) {
+            this.#failNesting();
+        }
+
         if (value === null || typeof value === 'string' || typeof value === 'boolean') {
             return true;
         }
@@ -2775,19 +2798,19 @@ export class Evaluator {
         }
 
         if (Array.isArray(value)) {
-            return ArrayUtils.findMissingIndex(value) === -1 && value.every(item => this.#isData(item));
+            return ArrayUtils.findMissingIndex(value) === -1 && value.every(item => this.#isData(item, depth + 1));
         }
 
         // A dictionary is data where every key and every value is, and a pair where both its parts are.
         if (value instanceof Dictionary) {
-            return value.keys.every(key => this.#isData(key)) && value.values.every(entry => this.#isData(entry));
+            return value.keys.every(key => this.#isData(key, depth + 1)) && value.values.every(entry => this.#isData(entry, depth + 1));
         }
 
         if (value instanceof Pair) {
-            return this.#isData(value.key) && this.#isData(value.value);
+            return this.#isData(value.key, depth + 1) && this.#isData(value.value, depth + 1);
         }
 
-        return ObjectUtils.isPlainObject(value) && this.#registry.recognize(value, 'the result').length === 0 && Object.values(value).every(field => this.#isData(field));
+        return ObjectUtils.isPlainObject(value) && this.#registry.recognize(value, 'the result').length === 0 && Object.values(value).every(field => this.#isData(field, depth + 1));
     }
 
     /**
@@ -2801,7 +2824,11 @@ export class Evaluator {
      * Copies the data, from one traversal, into a frozen copy sharing no structure with the original, which it answers, and the identities that follow its structure, which it leaves in `#copiedIdentities`. Each
      * call leaves its own, so a caller reads the identities of the part it copied.
      */
-    #copyResult(value) {
+    #copyResult(value, depth = 0) {
+        if (depth > Limits.dataNesting) {
+            this.#failNesting();
+        }
+
         this.#copiedIdentities = null;
 
         if (value === null || typeof value !== 'object') {
@@ -2810,7 +2837,7 @@ export class Evaluator {
 
         // A result exports a dictionary as its entries, in their order, and a pair as its key and its value, each a frozen object of data, so it never turns back into a dictionary or a pair when it is bound again.
         if (value instanceof Dictionary) {
-            const entries = Object.freeze(value.entries.map(entry => this.#copyResult(entry)));
+            const entries = Object.freeze(value.entries.map(entry => this.#copyResult(entry, depth + 1)));
 
             this.#copiedIdentities = null;
 
@@ -2818,8 +2845,8 @@ export class Evaluator {
         }
 
         if (value instanceof Pair) {
-            const key = this.#copyResult(value.key);
-            const copied = Object.freeze({ key, value: this.#copyResult(value.value) });
+            const key = this.#copyResult(value.key, depth + 1);
+            const copied = Object.freeze({ key, value: this.#copyResult(value.value, depth + 1) });
 
             this.#copiedIdentities = null;
 
@@ -2832,7 +2859,7 @@ export class Evaluator {
             let hasIdentities = false;
 
             for (const item of value) {
-                copy.push(this.#copyResult(item));
+                copy.push(this.#copyResult(item, depth + 1));
 
                 const identities = this.#copiedIdentities;
 
@@ -2854,7 +2881,7 @@ export class Evaluator {
             let fieldIdentities = null;
 
             for (const name of Object.keys(value)) {
-                const field = this.#copyResult(value[name]);
+                const field = this.#copyResult(value[name], depth + 1);
                 const copied = this.#copiedIdentities;
 
                 // A read copies every field of every row, so an ordinary field is assigned here, where the assignment sees only the copies' shapes; sharing the one in `defineDataProperty` with live state's writes made reads measurably slower.

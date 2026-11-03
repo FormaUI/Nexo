@@ -92,6 +92,31 @@ describe('the runtime codes', () => {
             expectNexoError(errorThrownBy(() => createImportingRegistry().createBindings({ weight: Number.NaN })), 'NEXO2034', 'structure');
         });
 
+        it('NEXO2047 and NEXO5052: data nesting deeper than 1,000 levels, bound, supplied or answered, and none at 1,000', () => {
+            const nested = depth => Array.from({ length: depth }).reduce(inner => ({ inner }), 1);
+            const deep = nexo.createModule('deep', {
+                types: [{ name: 'Link', kind: 'structured', members: dataPropertyDeclarations({ next: 'Link?' }) }],
+                members: [
+                    createFunctionDeclaration('answer', 'Any', { updates: { changes: 'constant', reads: 'fresh' }, parameters: [createValueParameterDeclaration('depth', 'Number')], impl: ({ args }) => nested(args.depth) }),
+                    createFunctionDeclaration('watch', 'Link', { invokedBy: 'host' }),
+                ],
+            });
+            const registry = nexo.createRegistry([deep]);
+            const evaluate = text => registry.resolve(text, {}, { imports: ['deep'] }).createEvaluator({}).evaluate().value;
+
+            expect(() => registry.createBindings({ d: nested(1000) })).not.toThrow();
+            expect(errorThrownBy(() => registry.createBindings({ d: nested(1001) }))).toMatchObject({ code: 'NEXO2047', kind: 'structure', location: { binding: 'd' } });
+            expect(evaluate('deep.answer(999)')).toEqual(nested(999));
+            expect(errorThrownBy(() => evaluate('deep.answer(1200)'))).toMatchObject({ code: 'NEXO5052', kind: 'evaluation', location: { pointer: '/expression' } });
+
+            const prepared = registry.resolve('deep.watch()', {}, { imports: ['deep'] }).createEvaluator({}).prepareHostCall();
+
+            const linked = depth => Array.from({ length: depth }).reduce(next => ({ next }), null);
+
+            expect(prepared.project(linked(999)).value).toEqual(linked(999));
+            expect(errorThrownBy(() => prepared.project(linked(1001)))).toMatchObject({ code: 'NEXO5015', message: expect.stringContaining('nesting deeper than 1000 levels') });
+        });
+
         it('NEXO2022: a bound value holding a cycle', () => {
             const shelf = { name: 'top' };
 

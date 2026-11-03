@@ -1,6 +1,6 @@
-# Nexo Design v1.0.0-beta.30
+# Nexo Design v1.0.0-beta.31
 
-The [Nexo specification](../spec/README.md) is the contract: the [language](../spec/README.md#the-language), and the [runtime](../spec/README.md#the-runtime) its implementations offer a host. This design sets out how this implementation is built to meet it, and the reasons behind the choices that shape it. It describes language version `1.0.0-beta.30` and definition version 38, as the specification does; [the status overview](features-status.md) says where the implementation still differs.
+The [Nexo specification](../spec/README.md) is the contract: the [language](../spec/README.md#the-language), and the [runtime](../spec/README.md#the-runtime) its implementations offer a host. This design sets out how this implementation is built to meet it, and the reasons behind the choices that shape it. It describes language version `1.0.0-beta.31` and definition version 38, as the specification does; [the status overview](features-status.md) says where the implementation still differs.
 
 In this document:
 
@@ -25,7 +25,7 @@ A script passes through five stages. Each stage's output is the next one's input
 
 The domain enters as late as it can. Reading knows the language and the script's imports alone, which the parser reads, since an import decides whether a module's name written where a value stands begins a namespace; the tokenizer reads an identifier by its spelling alone, and reading asks no registry and knows nothing else of any module. Lowering and validation know the language alone, so a text is checked, stored and formatted without a vocabulary: a collection expression's written form decides whether it is a list or a dictionary, and validation refuses its duplicate keys, before any type is known. Resolution reads a module's declarations as data and runs none of its code; evaluation is the one stage that invokes implementations. That split is what lets a tool check a script before running it, and a host know what an evaluation will depend on before it starts.
 
-Every stage follows a script's nesting, so each holds to one bound, `Limits.nesting`: the parser counts the values it reads within one another and refuses text past it, and validation counts a definition's nodes and refuses one past it, before any later stage reads it. The bound sits below the depth each stage reads before the stack overflows, so a deep script fails with its code rather than a `RangeError`.
+Every stage follows a script's nesting, so each holds to one bound, `Limits.nesting`: the parser counts the values it reads within one another and refuses text past it, and validation counts a definition's nodes and refuses one past it, before any later stage reads it. The bound sits below the depth each stage reads before the stack overflows, so a deep script fails with its code rather than a `RangeError`. The data a host gives holds to a bound of its own, `Limits.dataNesting`, which binding, capture, typing a value of `Any`, and checking and copying a result each count as they walk it.
 
 `src/nexo.js`, the entry point, composes these stages into the public API and re-exports nothing internal. Nothing in `src/` imports from outside it or reads a browser global, so the implementation runs in any JavaScript host.
 

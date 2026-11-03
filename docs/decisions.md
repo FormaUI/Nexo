@@ -813,7 +813,7 @@ Forty decisions were taken while implementing the declarations, member selection
 *November 3, 2026*
 
 - **Kind:** Approved rule.
-- **Decision:** A script nests at most 256 levels, each expression within another a level deeper. The parser refuses text nesting deeper where it does, NEXO1072, and validation refuses a definition at its node, NEXO2046, a chain of operators nesting a level for each operator after its first. Validation refuses a node that holds itself, and an array with a missing entry, NEXO2000. A bound on the data a host binds or a member answers is deferred, as the status records.
+- **Decision:** A script nests at most 256 levels, each expression within another a level deeper. The parser refuses text nesting deeper where it does, NEXO1072, and validation refuses a definition at its node, NEXO2046, a chain of operators nesting a level for each operator after its first. Validation refuses a node that holds itself, and an array with a missing entry, NEXO2000. The data a host gives is bounded as [D60](#d60) records.
 - **Why:**
   - Reading text, validating, resolving, evaluating and writing a definition each follow its nesting, so a deep script overflowed the stack as a `RangeError`, from about 440 nested parentheses, which no host can tell from a fault, and a cyclic or sparse definition passed validation and failed later.
   - The parser reads at least 437 levels of every construct, so 256 leaves room on smaller stacks, and one limit for text and definitions keeps every definition validation accepts writing text that reads back.
@@ -845,3 +845,17 @@ Forty decisions were taken while implementing the declarations, member selection
   - Calls whose arguments resolve alike resolve a body alike, and an origin, a hook request and a failure already name the body's own expression whichever call reached it, so sharing a copy changes nothing a script or a host observes.
 - **Measured** in paired runs against the commit before it, nine rounds: resolving the account summary −8.9% and allocating −8.7%, resolving and evaluating it once −14.6%; the script of 150 fields unchanged. The nested cases above each resolve in under 2 ms.
 - **Declined:** A copy of a body for each call, resolved once and copied for alike calls, which keeps a copy for each of exponentially many calls.
+
+<a id="d60"></a>
+
+## D60 — Data nests at most 1,000 levels
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:** Data a host gives nests at most 1,000 levels. Binding refuses deeper data, NEXO2047, capturing a supplied value NEXO5015, typing a value of `Any` a deferred access reads fails it, and a result holding deeper data is refused, NEXO5052. A value a host call declared `Any` supplies is captured as it is.
+- **Why:**
+  - Binding data overflowed the stack from about 1,960 levels and evaluation from about 2,900, each as a RangeError no host can tell from a fault.
+  - Data costs less for each level than a script does, so its bound is its own, below where every path that walks data overflows, binding, capturing, typing, checking and copying.
+  - Capture had no rule for `Any`, so a host call declared `Any` refused every value its host supplied, though `Any` admits a value of any type.
+- **Declined:** One bound for scripts and data alike, 256 levels, which would refuse data, as a chain of linked records, that every stage reads.

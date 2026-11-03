@@ -9,6 +9,10 @@
 - **Its registry.** A binding set is the registry's that made it, and resolving or evaluating against another registry is refused, saying to bind with that one. Plain values given to `registry.resolve` or to an evaluator are bound by that registry, as `registry.createBindings` binds them.
 - **What it answers.** It answers whether it holds a binding of a name, `has`, the value, `readValue`, and the type, `getType`, of each, in type notation and undefined for a name it does not bind, and its resolution key, `resolutionKey`, a string, as soon as it is made.
 
+<a id="runtime-bindings-nesting"></a>
+
+Data nests at most 1,000 levels, each list, dictionary, pair, object or structure within another a level deeper. Data a host binds nesting deeper is refused (NEXO2047), a value a host call supplies (NEXO5015), a value of `Any` a deferred access types, and a result holding such data (NEXO5052), so each fails with its code rather than overflowing the stack of what walks it.
+
 A binding set has a **resolution key**: each binding's type, and the value of each binding that is a string, a Boolean or null, since a string a script reads can select what a member reads, as a computed property access's name does, and a Boolean and null decide a condition by their truthiness. A number decides nothing, always truthy, never null and never a string, so bindings that differ in their numbers alone share a resolution. A field name of bound data that is no name is written quoted in the key, as JSON writes a string, so no two binding sets of different types share one.
 
 In this document:

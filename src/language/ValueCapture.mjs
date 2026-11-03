@@ -6,6 +6,7 @@
 import { ArrayUtils } from '../common/ArrayUtils.mjs';
 import { ObjectUtils } from '../common/ObjectUtils.mjs';
 import { Dictionary } from './Dictionary.mjs';
+import { Limits } from './Limits.mjs';
 import { Pair } from './Pair.mjs';
 import { StructureTypes } from './StructureTypes.mjs';
 import { NexoModule } from './vocabulary/NexoModule.mjs';
@@ -63,10 +64,11 @@ export class ValueCapture {
      * order and no uniqueness kept; nothing, or null, null where its type is nullable; and a
      * reference of another type null where a nullable reference type is declared, so the value keeps only the reference its type names. Anything else is given to `fail`, which throws, with the part of the value
      * by its path within it, the value itself by none, the part and the type it is declared; and data that reaches itself, a list or an object holding one of the lists or objects it lies within, is given to `fail`
-     * as well, with the reason `'cycle'`, since data never does, and a dictionary holding a key twice, once captured, with the reason `'duplicate'` at the later key, since a dictionary holds each key once.
+     * as well, with the reason `'cycle'`, since data never does, data nesting deeper than `Limits.dataNesting` with the reason `'depth'`, and a dictionary holding a key twice, once captured, with the reason
+     * `'duplicate'` at the later key, since a dictionary holds each key once.
      * @param {unknown} value
      * @param {import('./Type.mjs').Type} type
-     * @param {(path: string, part: unknown, type: import('./Type.mjs').Type, reason?: 'cycle' | 'duplicate') => never} fail
+     * @param {(path: string, part: unknown, type: import('./Type.mjs').Type, reason?: 'cycle' | 'depth' | 'duplicate') => never} fail
      * @param {string} [asked] What asks for the capture, as a recognition's fault names it.
      */
     capture(value, type, fail, asked = 'capturing a supplied value') {
@@ -116,6 +118,10 @@ export class ValueCapture {
     #enter(value, type, fail) {
         if (this.#enclosing.has(value)) {
             fail(this.#path(), value, type, 'cycle');
+        }
+
+        if (this.#enclosing.size >= Limits.dataNesting) {
+            fail(this.#path(), value, type, 'depth');
         }
 
         this.#enclosing.add(value);
@@ -214,6 +220,8 @@ export class ValueCapture {
         }
 
         switch (type.kind) {
+            // A value of Any is of any type, which the evaluation that reads it checks where a type is declared for it, as a member's answer of Any is.
+            case 'any':
             case 'typeParameter':
                 return value;
             case 'object':

@@ -376,6 +376,18 @@ describe('prepared calls', () => {
     });
 });
 
+describe('values a host supplies for a call of Any', () => {
+    it('are captured as they are, a value of any type, and null refused where Any is not nullable', () => {
+        const watching = nexo.createModule('watching', { members: [createFunctionDeclaration('watch', 'Any', { invokedBy: 'host' })] });
+        const registry = nexo.createRegistry([watching]);
+        const prepared = text => registry.resolve(text, {}, { imports: ['watching'] }).createEvaluator({}).prepareHostCall();
+
+        expect([1, 'a', { a: 1 }, [1]].map(value => prepared('watching.watch()').project(value).value)).toEqual([1, 'a', { a: 1 }, [1]]);
+        expect(prepared('watching.watch() { n = it.a }').project({ a: 5 }).value).toEqual({ n: 5 });
+        expect(errorThrownBy(() => prepared('watching.watch()').project(null))).toMatchObject({ code: 'NEXO5015' });
+    });
+});
+
 describe('values a host supplies', () => {
     /** A light and a thermostat, references of two types the home declares, which its typeOf recognizes. */
     const lamp = new Light('lamp');
