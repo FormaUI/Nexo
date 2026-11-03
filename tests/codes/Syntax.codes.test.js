@@ -270,6 +270,10 @@ describe('the codes of syntax errors', () => {
             expectSyntaxCode('NEXO1054', ['if a then return 1 else 2 end']);
         });
 
+        it('gives NEXO1055 to a call of the result of a call, which a name holding it calls', () => {
+            expect(errorThrownBy(() => nexo.parse('let f = x => x\nreturn f(1)(2)'))).toMatchObject({ code: 'NEXO1055', message: expect.stringContaining("A call's result is called through a name that holds it"), location: { line: 2, column: 12 } });
+        });
+
         it('gives NEXO1055 to anything after a body result', () => {
             expectSyntaxCode('NEXO1055', [
                 'let x = 1 return x let y = 2',

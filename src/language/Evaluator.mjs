@@ -948,8 +948,13 @@ export class Evaluator {
      * @param {{ failure: string, rejection: string }} codes The codes of the operator's faults.
      */
     static #invokeOperator(evaluator, implementation, value, node, subject, codes) {
-        const rejection = { isRejected: false, reason: null };
+        const rejection = { isRejected: false, reason: null, isClosed: false };
+        // `reject` answers this call alone, so one an operator keeps and calls once it has returned refuses the call, rather than throwing Nexo's signal into its host's code.
         const reject = reason => {
+            if (rejection.isClosed) {
+                evaluator.#fail(codes.rejection, `${subject} rejected a value after it answered, which it rejects only while it is called`, evaluator.#pointerOf(node));
+            }
+
             rejection.isRejected = true;
             rejection.reason = reason;
 
@@ -960,6 +965,8 @@ export class Evaluator {
         try {
             answered = implementation({ value, reject });
         } catch (error) {
+            rejection.isClosed = true;
+
             // A failure Nexo raised keeps its own code and place; anything else the operator threw but its rejection, a NexoError it built among them, is the cause of Nexo's own, exactly as thrown.
             if (NexoErrors.isRaisedByNexo(error)) {
                 throw error;
@@ -975,6 +982,8 @@ export class Evaluator {
 
             return { isAccepted: false, reason: rejection.reason };
         }
+
+        rejection.isClosed = true;
 
         if (rejection.isRejected) {
             evaluator.#fail(codes.rejection, `${subject} rejected its value and then answered one`, evaluator.#pointerOf(node));
@@ -2767,6 +2776,9 @@ export class Evaluator {
 
             const value = this.#copyResult(result);
             const copiedIdentities = this.#copiedIdentities;
+
+            // The identities go with the result they describe, so the evaluator keeps none of a host's values past it.
+            this.#copiedIdentities = null;
 
             // The metadata is described where it is first read, from identities no later evaluation changes, so a caller that reads the value alone pays nothing for it.
             return { node, value, identities: Evaluator.#withSelections(copiedIdentities, this.#selections) };

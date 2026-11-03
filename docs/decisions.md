@@ -859,3 +859,16 @@ Forty decisions were taken while implementing the declarations, member selection
   - Data costs less for each level than a script does, so its bound is its own, below where every path that walks data overflows, binding, capturing, typing, checking and copying.
   - Capture had no rule for `Any`, so a host call declared `Any` refused every value its host supplied, though `Any` admits a value of any type.
 - **Declined:** One bound for scripts and data alike, 256 levels, which would refuse data, as a chain of linked records, that every stage reads.
+
+<a id="d61"></a>
+
+## D61 — Every public operation refuses what it doesn't take
+
+*November 3, 2026*
+
+- **Kind:** Runtime contract, closing a gap between the specification and the code.
+- **Decision:** Options and hooks holding a key their operation takes none of are refused, NEXO2048, and so is a hook that is no function. A `typeOf` answering nothing is a fault, NEXO5002.
+- **Why:**
+  - A misspelled option was left out silently: `createBindings(values, { typez })` dropped every declared type, and `evaluate({ beforeinvoke })` read no sample, each failing far from the typo, where a module's declarations already refuse a key they take none of.
+  - A `typeOf` that never returns answers nothing, and recognizing nothing then let a host's references pass as data.
+- **Declined:** Accepting `undefined` from `typeOf` as null, which reads the common slip of a missing `return` as a deliberate answer.

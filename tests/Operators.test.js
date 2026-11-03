@@ -52,6 +52,20 @@ describe('a conversion operator', () => {
         expect(evaluateWith(cast, 'try "warm" to Temperature')).toBeNull();
         expect(errorThrownBy(() => evaluateWith(cast, '"warm" to Temperature'))).toMatchObject({ code: 'NEXO5016', message: expect.stringContaining('The conversion from String to Temperature rejected its value: "warm" is no temperature') });
     });
+
+    it('refuses a rejection its operator makes once it has answered, as a fault, rather than throwing Nexo\'s own signal into its host', () => {
+        let kept = null;
+        const keeping = nexo.createModule('Keeping', {
+            types: [
+                { name: 'Mark', kind: 'structured', members: [...dataPropertyDeclarations({ label: 'String' })] },
+                extensionDeclaration('Marks', 'String', [operatorDeclaration('convert', 'Mark', ({ value, reject }) => (kept = reject, { label: value }))]),
+            ],
+        });
+        const registry = nexo.createRegistry([keeping]);
+
+        expect(registry.resolve('"a" to Mark', {}, { imports: ['Keeping'] }).createEvaluator({}).evaluate().value).toEqual({ label: 'a' });
+        expect(errorThrownBy(() => kept('late'))).toMatchObject({ code: 'NEXO5018', kind: 'evaluation', message: expect.stringContaining('after it answered') });
+    });
 });
 
 describe('a cast operator', () => {

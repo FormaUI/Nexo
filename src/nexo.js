@@ -22,7 +22,41 @@ import { Vocabulary } from './language/vocabulary/Vocabulary.mjs';
 const PARAMETER_BINDINGS = new WeakMap();
 
 /** The imports a host supplies in a call's options, as a definition records them, checked as a definition's are; none where it supplies none. */
-const suppliedImportsOf = options => Imports.createSuppliedImports(options?.imports);
+/** Refuses options holding a key the operation takes none of, so a misspelled option fails rather than being left out (NEXO2048); options that are no object are the operation's own to refuse. */
+const requireOptions = (options, keys, operation) => {
+    if (options === null || typeof options !== 'object' || Array.isArray(options)) {
+        return;
+    }
+
+    const unknown = Object.keys(options).find(key => !keys.includes(key));
+
+    if (unknown !== undefined) {
+        throw NexoErrors.structure('NEXO2048', `${operation} takes the options ${keys.map(key => `'${key}'`).join(' and ')}, and '${unknown}' is none of them`, {});
+    }
+};
+
+/** The hooks an evaluation is given, each a function of the names an evaluation calls, refused otherwise as an option is (NEXO2048). */
+const HOOK_NAMES = Object.freeze(['beforeInvoke', 'afterInvoke', 'afterEvaluation']);
+
+const requireHooks = (hooks, operation) => {
+    if (hooks !== null && hooks !== undefined && (typeof hooks !== 'object' || Array.isArray(hooks))) {
+        throw NexoErrors.structure('NEXO2048', `${operation} takes its hooks as an object of ${HOOK_NAMES.map(name => `'${name}'`).join(', ')}`, {});
+    }
+
+    requireOptions(hooks, HOOK_NAMES, operation);
+
+    const notFunction = HOOK_NAMES.find(name => hooks?.[name] !== undefined && typeof hooks[name] !== 'function');
+
+    if (notFunction !== undefined) {
+        throw NexoErrors.structure('NEXO2048', `${operation} takes '${notFunction}' as a function`, {});
+    }
+};
+
+const suppliedImportsOf = (options, operation) => {
+    requireOptions(options, ['imports'], operation);
+
+    return Imports.createSuppliedImports(options?.imports);
+};
 
 /**
  * The definition a script gives: its source read with the imports a host supplies and checked, or its definition checked, each the same frozen definition its canonical text would give. A definition records its imports, so
@@ -36,12 +70,12 @@ const parse = (source, options) => {
         throw NexoErrors.structure('NEXO2645', "What parse reads is a script's source", {});
     }
 
-    return ParsedTexts.parse(source, suppliedImportsOf(options));
+    return ParsedTexts.parse(source, suppliedImportsOf(options, 'parse'));
 };
 
 /** The canonical text of a script, laid out or compact, read with the imports its destination supplies and leaving them out. */
 const write = (script, options, isCompact) => {
-    const supplied = suppliedImportsOf(options);
+    const supplied = suppliedImportsOf(options, isCompact ? 'quote' : 'format');
     const definition = definitionOf(script, supplied);
 
     return isCompact ? DefinitionWriter.quoteScript(definition, supplied) : DefinitionWriter.formatScript(definition, supplied);
@@ -52,6 +86,8 @@ const write = (script, options, isCompact) => {
  * that says which resolutions they may reuse.
  */
 const createBindings = (registry, values = {}, options = {}) => {
+    requireOptions(options, ['types'], 'createBindings');
+
     const parameterBindings = new ParameterBindings(registry, values, options);
     const bindings = Object.freeze({
         resolutionKey: parameterBindings.resolutionKey,
@@ -183,11 +219,11 @@ const resolutionOf = (registry, definition, parameterBindings) => {
             const kept = call.declaration.parameters.filter(parameter => parameter.kind === 'function' && typeof call.args[parameter.name] === 'function');
             const args = kept.length === 0 ? call.args : { ...call.args, ...Object.fromEntries(kept.map(({ name }) => [name, (...values) => enter(() => call.args[name](...values))])) };
 
-            return Object.freeze({ ...call, args, ...(call.project === undefined ? {} : { project: (value, hooks = null) => enter(() => call.project(value, hooks)) }) });
+            return Object.freeze({ ...call, args, ...(call.project === undefined ? {} : { project: (value, hooks = null) => (requireHooks(hooks, 'project'), enter(() => call.project(value, hooks))) }) });
         };
 
         return Object.freeze({
-            evaluate: (hooks = null) => enter(() => evaluator.evaluate(hooks)),
+            evaluate: (hooks = null) => (requireHooks(hooks, 'evaluate'), enter(() => evaluator.evaluate(hooks))),
             prepareHostCall,
         });
     };
@@ -248,7 +284,7 @@ const createRegistry = modules => {
         createBindings: (values = {}, options = {}) => createBindings(registry, values, options),
         resolve: (script, bindings = {}, options = {}) => {
             // The script is read before its bindings, so one that does not follow the syntax or the structure asks no module's `typeOf`.
-            const definition = definitionOf(script, suppliedImportsOf(options));
+            const definition = definitionOf(script, suppliedImportsOf(options, 'resolve'));
 
             return resolutionOf(registry, definition, getParameterBindings(registry, bindings) ?? new ParameterBindings(registry, bindings ?? {}));
         },

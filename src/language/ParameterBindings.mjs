@@ -105,7 +105,7 @@ export class ParameterBindings {
         const fail = (code, message) => {
             throw NexoErrors.structure(code, `The type declared for '${name}': ${message}`, { binding: name });
         };
-        const type = typeof typeName === 'string' ? this.#registry.resolveBindingType(typeName, fail) : fail('NEXO2036', `${String(typeName)} is no public type`);
+        const type = typeof typeName === 'string' ? this.#registry.resolveBindingType(typeName, fail) : fail('NEXO2044', `${String(typeName)} is no type's notation, which is a string`);
 
         if (this.#registry.isReferenceType(type)) {
             if (value === null && type.isNullable) {

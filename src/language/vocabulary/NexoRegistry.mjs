@@ -557,8 +557,13 @@ export class NexoRegistry {
                 throw NexoErrors.evaluation('NEXO5026', `The typeOf of the module '${module.name}' threw as ${asked} asked for a value's type`, { module: module.name }, { cause: error });
             }
 
-            if (name === null || name === undefined) {
+            if (name === null) {
                 continue;
+            }
+
+            // A typeOf answers a type's name or null, so one answering nothing, as one that never returns does, names no type, which recognizing nothing would hide.
+            if (name === undefined) {
+                throw NexoErrors.evaluation('NEXO5002', `The typeOf of the module '${module.name}' answered nothing, neither a type's name nor null, as ${asked} asked for a value's type`, { module: module.name });
             }
 
             const type = typeof name === 'string' ? Type.createNamedType(name, false, module.name) : null;
@@ -802,8 +807,8 @@ export class NexoRegistry {
      * @param {(code: string, message: string) => never} fail
      */
     resolveBindingType(notation, fail) {
-        // A notation that writes no type parses to none.
-        const parsed = Type.parse(notation);
+        // A notation that writes no type parses to none, and what is no string writes none.
+        const parsed = typeof notation === 'string' ? Type.parse(notation) : null;
 
         if (parsed === null) {
             fail('NEXO2044', `${JSON.stringify(notation)} is no type's notation`);

@@ -7,6 +7,23 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-32"></a>
+
+## `1.0.0-beta.32`
+
+*November 3, 2026 · definition format 38*
+
+**Runtime**
+
+- An operation given options or hooks holding a key it takes none of, `createBindings({ … }, { typez })` or `evaluate({ beforeinvoke })` among them, or a hook that is no function, refuses them, NEXO2048, where the key was left out silently.
+- A `typeOf` answering nothing is a fault, NEXO5002, as one naming no type is, where it recognized nothing.
+- A conversion's `reject` answers its own attempt alone, and one kept and called once the operator has answered fails, NEXO5018 or NEXO5004, where it threw Nexo's own signal into the host's code.
+- A declared binding type that is no string is refused as no notation, NEXO2044.
+- A call of a call's result, `f(1)(2)`, is refused saying a name that holds the result calls it.
+- A call refused before any evaluation starts tells no `afterEvaluation`, as the specification now says.
+
+**Breaking:** a misspelled option, a hook that is no function and a `typeOf` answering nothing are refused; spell the option, give the hook as a function, and answer null where a value is of no type.
+
 <a id="v1-0-0-beta-31"></a>
 
 ## `1.0.0-beta.31`

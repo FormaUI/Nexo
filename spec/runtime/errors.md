@@ -71,7 +71,7 @@ A **location** says where a failure stands by one group of fields, never two, th
 - **A position counts from the text's start.** `offset` counts the text's UTF-16 code units from 0, and `line` and `column` count from 1. Each line break, LF, CRLF or a lone CR, begins a line, so CRLF begins one, its two characters both counted in the offset.
 - **An unnamed indexer and a mapping** have no name, so a module error names an unnamed indexer `[]` as its `declaration`, and a mapping by its key. Two unnamed indexers that collide (NEXO4068) stand at the declaration key `kind`.
 - **A node without text of its own** is positioned at the nearest node enclosing it that has some, its `pointer` still its own.
-- **A failure of the API's use that stands nowhere** carries an empty location, `{}`: imports a host supplies that are refused, `NEXO2008`, bindings or their options that are not a plain object, `NEXO2020`, bindings another registry made, `NEXO2024`, bindings of another resolution key, `NEXO2025`, a resolution no longer current, `NEXO2040`, a pointer that is no JSON Pointer, `NEXO2643`, reading what is not a script's source, `NEXO2645`, a result path of another shape, `NEXO2646`, and evaluating an evaluator from within its own evaluation, `NEXO5010`.
+- **A failure of the API's use that stands nowhere** carries an empty location, `{}`: imports a host supplies that are refused, `NEXO2008`, bindings or their options that are not a plain object, `NEXO2020`, options or hooks holding a key the operation takes none of, `NEXO2048`, bindings another registry made, `NEXO2024`, bindings of another resolution key, `NEXO2025`, a resolution no longer current, `NEXO2040`, a pointer that is no JSON Pointer, `NEXO2643`, reading what is not a script's source, `NEXO2645`, a result path of another shape, `NEXO2646`, and evaluating an evaluator from within its own evaluation, `NEXO5010`.
 
 An evaluation error fails the entire result and is delivered to the host in its place.
 
@@ -103,6 +103,7 @@ An evaluation error fails the entire result and is delivered to the host in its 
 | `NEXO2044` | A declared binding type no binding holds: a notation that writes no type, `Any`, `Never`, a position, a type holding one at any depth, a structure's data shape among it, or a dictionary keyed by no key type | A structure error naming the binding and the type |
 | `NEXO2045` | A value its binding's declared data type, or a part of it, doesn't admit, as [declared types](bindings.md#runtime-bindings) set out, a dictionary holding a key twice among them | A structure error naming the binding, the part and the type |
 | `NEXO2047` | Bound data nesting deeper than 1,000 levels, the most data nests, as [binding data](bindings.md#runtime-bindings) sets out | A structure error naming the binding, and the part where a declared type captures it |
+| `NEXO2048` | Options or hooks holding a key the operation takes none of, a hook that is no function, or hooks that are no object | A structure error with an empty location, naming the key |
 | `NEXO2039` | A type declared for anything but a top-level binding | A structure error naming the binding |
 | `NEXO2024` | Resolving or evaluating with a binding set another registry made | A structure error saying to bind with that registry |
 | `NEXO2025` | Creating an evaluator with bindings of another resolution key | A structure error saying to resolve again |
@@ -257,7 +258,7 @@ A module whose declarations break the declaration contract, a type or a member n
 
 | Code | Situation | Result |
 | --- | --- | --- |
-| `NEXO5002` | A `typeOf` that does not name a reference type of its module, an abstract one, an internal one, or one the value does not belong to | A fault naming the module and what asked |
+| `NEXO5002` | A `typeOf` that answers nothing, that does not name a reference type of its module, or that names an abstract one, an internal one, or one the value does not belong to | A fault naming the module and what asked |
 | `NEXO5026` | A `typeOf` that throws | A fault naming the module and what asked, its `cause` exactly what `typeOf` threw |
 | `NEXO5017` | An `isInstance` answering what isn't a Boolean | A fault naming the type and what asked |
 | `NEXO5027` | An `isInstance` that throws | A fault naming the type and what asked, its `cause` exactly what `isInstance` threw |

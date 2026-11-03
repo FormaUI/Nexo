@@ -117,6 +117,22 @@ describe('the runtime codes', () => {
             expect(errorThrownBy(() => prepared.project(linked(1001)))).toMatchObject({ code: 'NEXO5015', message: expect.stringContaining('nesting deeper than 1000 levels') });
         });
 
+        it('NEXO2048: options or hooks holding a key the operation takes none of, or a hook that is no function', () => {
+            const registry = createImportingRegistry();
+            const resolution = registry.resolve('1');
+
+            expect(errorThrownBy(() => registry.createBindings({ x: 1 }, { typez: { x: 'String' } }))).toMatchObject({ code: 'NEXO2048', message: expect.stringContaining("'typez' is none of them"), location: {} });
+            expect(errorThrownBy(() => registry.resolve('1', {}, { importz: [] }))).toMatchObject({ code: 'NEXO2048' });
+            expect(errorThrownBy(() => nexo.parse('1', { import: [] }))).toMatchObject({ code: 'NEXO2048' });
+            expect(errorThrownBy(() => resolution.createEvaluator({}).evaluate({ beforeinvoke: () => [] }))).toMatchObject({ code: 'NEXO2048', message: expect.stringContaining("'beforeinvoke'") });
+            expect(errorThrownBy(() => resolution.createEvaluator({}).evaluate({ afterEvaluation: 'done' }))).toMatchObject({ code: 'NEXO2048', message: expect.stringContaining('as a function') });
+            expect(resolution.createEvaluator({}).evaluate({ afterInvoke: () => {} }).value).toBe(1);
+        });
+
+        it('NEXO2044: a declared type that is no string, which writes no notation', () => {
+            expectNexoError(errorThrownBy(() => createImportingRegistry().createBindings({ x: 1 }, { types: { x: 5 } })), 'NEXO2044', 'structure');
+        });
+
         it('NEXO2022: a bound value holding a cycle', () => {
             const shelf = { name: 'top' };
 
@@ -205,7 +221,8 @@ describe('the runtime codes', () => {
         it('NEXO5002: a typeOf naming what is no reference type of its module, an abstract one, or one the value does not belong to', () => {
             const abstract = [{ name: 'Device', kind: 'reference', abstract: true, isInstance: value => value instanceof Device }];
 
-            for (const [typeOf, types] of [[() => 'Lantern', homeTypes], [() => 5, homeTypes], [() => 'Device', abstract], [() => 'Room', homeTypes]]) {
+            // A typeOf answering nothing, as one that never returns does, names no type, as one naming a number does.
+            for (const [typeOf, types] of [[() => 'Lantern', homeTypes], [() => 5, homeTypes], [() => undefined, homeTypes], [() => 'Device', abstract], [() => 'Room', homeTypes]]) {
                 expectNexoError(errorThrownBy(() => recognizing(typeOf, types).createBindings({ lamp: new Light('lamp') })), 'NEXO5002', 'evaluation');
             }
         });

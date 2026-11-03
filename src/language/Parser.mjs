@@ -1731,6 +1731,11 @@ export class Parser {
             return this.#createUnexpectedTokenError(code, expected);
         }
 
+        // Parentheses after a call's own call a function its result is, which only a name holding it calls.
+        if (this.#token.type === '(' && this.#tokens[this.#index - 1]?.type === ')') {
+            return this.#createSyntaxError('NEXO1055', "A call's result is called through a name that holds it: write let g = f(…), and call g(…)", this.#token.start);
+        }
+
         return this.#createSyntaxError('NEXO1055', "Nothing follows a body's result, which ends it", this.#token.start);
     }
 
