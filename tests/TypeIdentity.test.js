@@ -96,8 +96,20 @@ describe('type identity', () => {
             const registry = nexo.createRegistry([units]);
 
             expect(registry.resolve('count + 1', registry.createBindings({ count: 2 }, { types: { count: 'Nexo.Number' } })).type).toBe('Number');
-            expect(errorThrownBy(() => registry.createBindings({ count: 2 }, { types: { count: 'Number' } }))).toMatchObject({ code: 'NEXO2037', location: { binding: 'count' }, message: expect.stringContaining('named qualified: Nexo.Number or units.Number') });
+            expect(errorThrownBy(() => registry.createBindings({ count: 2 }, { types: { count: 'Number' } }))).toMatchObject({ code: 'NEXO2037', location: { binding: 'count' }, message: expect.stringContaining('each is written as it alone is named: Nexo.Number or units.Number') });
             expect(errorThrownBy(() => registry.createBindings({ count: 2 }, { types: { count: 'Nexo.Any' } }))).toMatchObject({ code: 'NEXO2044', location: { binding: 'count' } });
+        });
+
+        it("names Nexo's generic type in an ambiguity among a module's type of its name by its type parameters, which its qualified name alone writes none of", () => {
+            const shelves = nexo.createModule('shelves', { types: [{ name: 'List', kind: 'structured', members: dataPropertyDeclarations({ size: 'Number' }) }] });
+            const registry = nexo.createRegistry([shelves]);
+
+            expect(errorThrownBy(() => registry.createBindings({ shelf: { size: 1 } }, { types: { shelf: 'List' } }))).toMatchObject({ code: 'NEXO2037', location: { binding: 'shelf' }, message: expect.stringContaining('each is written as it alone is named: List<T> or shelves.List') });
+
+            const bindings = registry.createBindings({ shelf: { size: 1 } }, { types: { shelf: 'shelves.List' } });
+
+            expect(registry.resolve('import shelves\nshelf.size', bindings).createEvaluator(bindings).evaluate().value).toBe(1);
+            expect(String(registry.createBindings({ shelf: [1] }, { types: { shelf: 'List<Number>' } }).getType('shelf'))).toBe('List<Number>');
         });
 
         it("refuses a script's type qualified by Nexo's module, whose types a script names unqualified", () => {

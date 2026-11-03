@@ -7,6 +7,18 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-36"></a>
+
+## `1.0.0-beta.36`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [A diagnostic listing several types of one name](spec/language/types.md#types-type-identity) writes one of Nexo's generic types by its name and its type parameters, `List<T>`, where it gave `Nexo.List`, a name that writes no type: a declared binding's `List`, where a module declares a `List`, is refused naming `List<T> or shelves.List`.
+
+**Breaking:** nothing.
+
 <a id="v1-0-0-beta-35"></a>
 
 ## `1.0.0-beta.35`

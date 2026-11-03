@@ -108,7 +108,7 @@ A module's own type comes before Nexo's own of its name in its declarations, so 
 - **A generic type's name written alone** is looked up alike: where `Home` declares `Pair`, `Pair` in `Home`'s declarations names `Home.Pair`. A module's types take no type arguments, so `Pair<K, V>`, written with them, is always Nexo's, and a qualified name takes none: `Nexo.Pair<K, V>` writes no type (NEXO4512).
 - **Nexo's generic types are written with their type arguments.** Written alone where no nearer tier declares a type of its name, `List`, `Dictionary` and `Pair` are refused (NEXO4070), as is `Nexo.List`, and a declared binding's type so written (NEXO2044).
 
-A diagnostic that gives several types of one name lists their qualified names, Nexo's own first, as `Nexo.Number`, and then the modules' in the order they registered.
+A diagnostic that gives several types of one name lists their qualified names, Nexo's own first, as `Nexo.Number`, and then the modules' in the order they registered. It writes one of Nexo's generic types by its name and its type parameters, `List<T>`, since its qualified name alone writes no type and its type arguments select it alone.
 
 <a id="types-type-parameters"></a>
 

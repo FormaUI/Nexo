@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.35` · definition format 38*
+*Unpublished · language `1.0.0-beta.36` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -60,3 +60,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A conversion of a value of `Any`, `value to String`, resolves and converts by the type the value turns out to be, failing with NEXO5053 where nothing converts it, where it was refused at resolution. Its candidate conversions are among the resolution's candidate declarations.
 - A module error locates a module, a type or a declaration only by a name that is a string, leaving the field out where the name is another value or missing, rather than naming it `'undefined'` or `'[object Object]'`.
 - `Home.["rooms"]` reads `Home.rooms`, as `@Home.["rooms"]` did, where it was a syntax error, and `Home.[p]` is refused with NEXO2521 at its name, as `@Home.[p]` is.
+- A declared binding type several types share, `List` where a module declares one, is refused naming Nexo's as `List<T>`, the way to write it, rather than `Nexo.List`, which writes no type.

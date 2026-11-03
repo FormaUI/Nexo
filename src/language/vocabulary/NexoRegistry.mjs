@@ -839,7 +839,7 @@ export class NexoRegistry {
                     }
 
                     if (types.length > 1) {
-                        fail('NEXO2037', `${notation} names ${type.name}, which is several types' name, so it is named qualified: ${types.map(found => found.toString(true)).join(' or ')}`);
+                        fail('NEXO2037', `${notation} names ${type.name}, which is several types' name, so each is written as it alone is named: ${types.map(found => NexoRegistry.#writtenAloneOf(found)).join(' or ')}`);
                     }
 
                     this.#refuseBareGeneric(types[0], notation, fail, 'NEXO2044');
@@ -854,18 +854,32 @@ export class NexoRegistry {
         return resolve(parsed);
     }
 
+    /** Whether the type is one of Nexo's own generic types written without its type arguments, as `Pair` alone. */
+    static #isBareGeneric(type) {
+        return type.moduleName === null && type.typeArguments.length === 0 && Object.hasOwn(Type.genericTypeArities, type.name);
+    }
+
+    /**
+     * The type as a diagnostic writes it to name it alone: by its qualified name, or, one of Nexo's own generic types, which its qualified name alone writes none of, by its name and its type parameters, `List<T>`,
+     * since written with type arguments it is always Nexo's.
+     */
+    static #writtenAloneOf(type) {
+        if (!NexoRegistry.#isBareGeneric(type)) {
+            return type.toString(true);
+        }
+
+        return `${type.name}<${Type.genericTypeArities[type.name] === 1 ? 'T' : 'K, V'}>`;
+    }
+
     /**
      * Refuses a name that resolved to one of Nexo's own generic types written without its type arguments, as `Pair` alone: a generic type is written with them, `Pair<K, V>`, and its bare name names a type only where
      * a nearer tier declares one of that name, as a module's own `Pair` does in its declarations; another module's is named qualified.
      */
     #refuseBareGeneric(type, notation, fail, code) {
-        const arity = type.moduleName === null && type.typeArguments.length === 0 && Object.hasOwn(Type.genericTypeArities, type.name) ? Type.genericTypeArities[type.name] : 0;
-
-        if (arity > 0) {
+        if (NexoRegistry.#isBareGeneric(type)) {
             const foreign = this.getModuleNamesDeclaringType(type.name).map(moduleName => `${moduleName}.${type.name}`);
-            const written = `${type.name}<${arity === 1 ? 'T' : 'K, V'}>`;
 
-            fail(code, `'${notation}' names Nexo's generic type ${written}, which is written with its type arguments${foreign.length === 0 ? '' : `, and another module's ${type.name} qualified: ${foreign.join(' or ')}`}`);
+            fail(code, `'${notation}' names Nexo's generic type ${NexoRegistry.#writtenAloneOf(type)}, which is written with its type arguments${foreign.length === 0 ? '' : `, and another module's ${type.name} qualified: ${foreign.join(' or ')}`}`);
         }
     }
 
