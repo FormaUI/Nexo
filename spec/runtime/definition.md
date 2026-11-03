@@ -144,6 +144,7 @@ Text must follow the syntax. A directly created definition must follow the same 
 | Coalescing | Both value and fallback are present. |
 | Casts and conversions | The type is a name; a cast's whole operand has the form text writes a cast's operand in. |
 | Literals | A literal is a string, a finite number, a Boolean or null, so a number no finite number holds, as `1e999`, is refused in text as in a definition. |
+| Strings | Every string a definition holds as a value, a literal's, an interpolated string's text and a dictionary's key, is well-formed text, holding no surrogate standing alone, which no text writes (NEXO2000). |
 
 A cast's operand is checked whole: a receiver, which is the implicit parameter, a script parameter, `root`, a namespace's member, a local, a literal, an interpolated string, a function call, an object expression following no value or a grouped cast, and the property accesses, calls and indexers after it, an optional chain of them included; or a coalescing operator or a cast as it is, grouped, as the [cast rules](../language/types.md#casts) set out. A definition whose cast operand is otherwise is a structure error, so every definition accepted writes text that parses.
 

@@ -256,6 +256,10 @@ export class Tokenizer {
             return this.#readInvalidToken(start, start + 1, 'NEXO1000', "Unexpected '?': a script names a type bare, and a cast or a conversion answers null where its operand can be null", start);
         }
 
+        if (Tokenizer.#isLoneSurrogateAt(this.#text, start)) {
+            return this.#readInvalidToken(start, start + 1, 'NEXO1000', `Unexpected U+${character.charCodeAt(0).toString(16).toUpperCase()}, a surrogate standing alone, which is no character`, start);
+        }
+
         // A character outside the Basic Multilingual Plane is one character, two code units long.
         const unexpected = String.fromCodePoint(this.#text.codePointAt(start));
 
@@ -606,9 +610,35 @@ export class Tokenizer {
                 continue;
             }
 
+            // A surrogate stands in a string's text only as half of a pair, one character outside the Basic Multilingual Plane, as no escape names one alone.
+            if (Tokenizer.#isLoneSurrogateAt(this.#text, offset)) {
+                diagnostic ??= { code: 'NEXO1049', message: `A string's text holds a surrogate only as half of a pair, and U+${character.charCodeAt(0).toString(16).toUpperCase()} stands alone`, offset };
+                offset++;
+                continue;
+            }
+
             value += character;
             offset++;
         }
+    }
+
+    /** Whether the code unit at the offset is a surrogate that is no half of a pair: a high one no low one follows, or a low one no high one precedes. */
+    static #isLoneSurrogateAt(text, offset) {
+        const unit = text.charCodeAt(offset);
+
+        if (unit >= 0xD800 && unit <= 0xDBFF) {
+            const next = text.charCodeAt(offset + 1);
+
+            return !(next >= 0xDC00 && next <= 0xDFFF);
+        }
+
+        if (unit >= 0xDC00 && unit <= 0xDFFF) {
+            const previous = text.charCodeAt(offset - 1);
+
+            return !(previous >= 0xD800 && previous <= 0xDBFF);
+        }
+
+        return false;
     }
 
     /**

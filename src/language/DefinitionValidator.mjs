@@ -60,6 +60,9 @@ const CAST_RECEIVER_KINDS = new Set(['it', 'scriptParameter', 'root', 'namespace
 /** The keys a dictionary's entry holds, both written: its key, the string its key literal writes, and its value. */
 const DICTIONARY_ENTRY_PROPERTIES = { properties: ['key', 'value'], required: ['key', 'value'] };
 
+/** A surrogate standing alone, which a Unicode pattern reads as one, a pair being one character outside the Basic Multilingual Plane. */
+const LONE_SURROGATE = /\p{Cs}/u;
+
 /** The operators an arithmetic node holds. */
 const ARITHMETIC_OPERATORS = ['+', '-', '*', '/', '%'];
 
@@ -598,6 +601,8 @@ export class DefinitionValidator {
                 this.#fail('NEXO2000', "A dictionary entry's key is a string, which a collection expression writes as an inline string literal", `${entryPointer}/key`);
             }
 
+            this.#requireWellFormed(entry.key, `${entryPointer}/key`);
+
             if (keys.has(entry.key)) {
                 this.#fail('NEXO2043', `A dictionary holds each key once, and ${JSON.stringify(entry.key)} is the key of an entry before this one`, entryPointer);
             }
@@ -743,6 +748,8 @@ export class DefinitionValidator {
             if (typeof part.value !== 'string') {
                 this.#fail('NEXO2000', 'The text of an interpolated string is a string', `${partPointer}/value`);
             }
+
+            this.#requireWellFormed(part.value, `${partPointer}/value`);
 
             if (part.value === '') {
                 return;
@@ -946,7 +953,18 @@ export class DefinitionValidator {
             this.#fail(typeof value === 'number' ? 'NEXO2019' : 'NEXO2000', 'A literal is a string, a finite number, a Boolean or null', `${pointer}/value`);
         }
 
+        if (typeof value === 'string') {
+            this.#requireWellFormed(value, `${pointer}/value`);
+        }
+
         return Object.freeze({ kind: 'literal', value });
+    }
+
+    /** Refuses a string a definition holds that holds a surrogate standing alone, which no text writes, so that every string a script holds is text a host's text and canonical text hold alike. */
+    #requireWellFormed(value, pointer) {
+        if (LONE_SURROGATE.test(value)) {
+            this.#fail('NEXO2000', 'A string a definition holds is well-formed text, and this one holds a surrogate standing alone', pointer);
+        }
     }
 
     /**

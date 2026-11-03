@@ -222,7 +222,7 @@ A string and a string block take these escape sequences:
 
 Examples of Unicode escapes are `\u{A0}` for a no-break space, `\u{200B}` for a zero-width space and `\u{1F600}` for 😀.
 
-A surrogate value from D800 through DFFF, a value above 10FFFF, or any unrecognized escape is a syntax error.
+A surrogate value from D800 through DFFF, a value above 10FFFF, or any unrecognized escape is a syntax error, and so is a surrogate standing alone in a string's literal text, raw or not, which no escape writes either: a surrogate stands in text only as half of a pair, one character outside the Basic Multilingual Plane, so every string a script holds is well-formed.
 
 Characters other than a line break may also appear literally, tabs included. `"😀"` and `"\u{1F600}"` have the same value, as do `"\e"` and `"\u{1B}"`.
 

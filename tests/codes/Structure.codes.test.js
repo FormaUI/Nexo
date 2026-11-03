@@ -80,6 +80,21 @@ describe('the structure codes of a definition', () => {
         expressions.forEach(expression => expectNexoError(refusalOf(expression), 'NEXO2000', 'structure'));
     });
 
+    it('NEXO2000: a string a definition holds as a value that holds a surrogate standing alone, at the string, and a pair it holds whole', () => {
+        const refused = [
+            [literal('a\uD800'), '/expression/value'],
+            [literal('\uDC00b'), '/expression/value'],
+            [{ kind: 'interpolatedString', parts: [{ kind: 'text', value: 'x\uDBFF' }] }, '/expression/parts/0/value'],
+            [{ kind: 'dictionary', entries: [{ key: '\uD83D', value: literal(1) }] }, '/expression/entries/0/key'],
+        ];
+
+        for (const [expression, pointer] of refused) {
+            expect(refusalOf(expression)).toMatchObject({ code: 'NEXO2000', kind: 'structure', location: { pointer }, message: expect.stringContaining('holds a surrogate standing alone') });
+        }
+
+        expect(() => nexo.validate(definitionOf(literal('😀')))).not.toThrow();
+    });
+
     it('NEXO2001: a comparison chain whose operators point two ways', () => {
         expectNexoError(refusalOf({ kind: 'comparison', operands: [literal(1), literal(2), literal(3)], operators: ['<', '>'] }), 'NEXO2001', 'structure');
     });

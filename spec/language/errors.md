@@ -37,7 +37,7 @@ In this document:
 | `NEXO1004` | `=` anywhere but between an object field's, a local's or a conditional binding's name and its value | A syntax error saying `==` compares values |
 | `NEXO1005` | `$` anywhere but directly before a quote | A syntax error; with a space before the quote, `$ "…"`, saying no space may separate them |
 | `NEXO1006` | An escape no string takes, as `\{` | A syntax error at the escape |
-| `NEXO1049` | A `\u{…}` naming a surrogate or a value above `10FFFF` | A syntax error at the escape |
+| `NEXO1049` | A `\u{…}` naming a surrogate or a value above `10FFFF`, or a surrogate standing alone in a string's literal text | A syntax error at the escape or the surrogate |
 | `NEXO1007` | An unclosed block comment | A syntax error |
 | `NEXO1008` | `@` in a declaration or before an object field's or a member's name | A syntax error giving the form to write |
 | `NEXO1050` | `@` with no identifier directly after it | A syntax error saying an identifier must follow `@` directly |

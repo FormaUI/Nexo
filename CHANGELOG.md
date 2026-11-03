@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.1`
 
-*Unpublished · language `1.0.0-beta.37` · definition format 38*
+*Unpublished · language `1.0.0-beta.38` · definition format 38*
 
 - The first beta, and the first release. The [language history](LANGUAGE-HISTORY.md) records what came before it.
 - `NexoError.module` is declared for a host, which builds a module error of its own with it.
@@ -62,3 +62,4 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - `Home.["rooms"]` reads `Home.rooms`, as `@Home.["rooms"]` did, where it was a syntax error, and `Home.[p]` is refused with NEXO2521 at its name, as `@Home.[p]` is.
 - A declared binding type several types share, `List` where a module declares one, is refused naming Nexo's as `List<T>`, the way to write it, rather than `Nexo.List`, which writes no type.
 - `value to List<Number>` and `device as Light?` are refused saying a cast or a conversion names its type bare, NEXO1026 and NEXO1000, rather than as a comparison chain turning its direction or an unexpected `?`.
+- A string holding a surrogate standing alone, in a script's text or a definition, is refused, NEXO1049 or NEXO2000, rather than read into a value canonical text would write as ill-formed text.

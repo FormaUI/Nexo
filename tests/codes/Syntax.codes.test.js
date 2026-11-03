@@ -420,6 +420,13 @@ describe('the codes of syntax errors', () => {
             expectSyntaxCode('NEXO1049', ['"\\u{D800}"', '"\\u{110000}"']);
         });
 
+        it('gives NEXO1049 to a surrogate standing alone in a string\'s text, raw or not, at the surrogate, and reads a pair as one character', () => {
+            expectSyntaxCode('NEXO1049', ['"a\uD800"', "'\uDC00'", '$"x\uD800{y}"', '"""\n    \uDBFF\n    """']);
+            expect(errorThrownBy(() => nexo.parse('"ab\uD800"'))).toMatchObject({ message: expect.stringContaining('U+D800 stands alone'), location: { offset: 3 } });
+            expect(nexo.parse('"😀"').expression).toEqual({ kind: 'literal', value: '\u{1F600}' });
+            expect(errorThrownBy(() => nexo.parse('a + \uD800'))).toMatchObject({ code: 'NEXO1000', message: expect.stringContaining('U+D800, a surrogate standing alone') });
+        });
+
         it('gives NEXO1050 to @ with no identifier directly after it', () => {
             expectSyntaxCode('NEXO1050', ['@ a', '@', '@1']);
         });

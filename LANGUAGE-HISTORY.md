@@ -7,6 +7,22 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-38"></a>
+
+## `1.0.0-beta.38`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [A surrogate standing alone in a string's literal text](spec/language/lexical-structure.md#strings-and-escapes-escapes), raw or not, is a syntax error, NEXO1049, as an escape naming one is, where it was read into the string's value; a pair is one character, as before. One in code says it is a surrogate standing alone, NEXO1000.
+
+**Runtime**
+
+- [A string a definition holds as a value](spec/runtime/definition.md#definition), a literal's, an interpolated string's text and a dictionary's key, holding a surrogate standing alone is a structure error, NEXO2000, so every string a script holds is well-formed, and canonical text never writes one.
+
+**Breaking:** a script or a definition holding a lone surrogate in a string is refused; write the character it stands half of, or give the text through a binding.
+
 <a id="v1-0-0-beta-37"></a>
 
 ## `1.0.0-beta.37`
