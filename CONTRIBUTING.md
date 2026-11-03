@@ -51,6 +51,19 @@ Keep each change focused, and follow the surrounding code's conventions. Use `.e
 
 Nexo depends on no domain and no browser: nothing in `src/` imports from outside it, which a test enforces, and its tests run in Node.
 
+<a id="cut-a-release"></a>
+
+## Cut a release
+
+A release is a signed tag on the commit that dates it. The [changelog](CHANGELOG.md) says what each release changed in the implementation, and the [language history](LANGUAGE-HISTORY.md) what each language version changed in the contracts.
+
+1. Date the changelog's newest entry by the day of the release, and the language history's newest entry where it reads *Unreleased*.
+2. Pass the gate, `./build.ps1`, and commit.
+3. Tag the commit with a signed tag named for the release, as `git tag -s v1.0.0-beta.1`, and push the tag.
+4. Pack both packages from the tag with `./publish.ps1`, and publish them.
+
+After a release, the next change a host can notice opens the changelog's next entry, and the next change to either contract the language history's.
+
 ## Measure performance
 
 The benchmark compares a billing app written in plain JavaScript with the same app written as Nexo scripts. Save a run before a change, and compare a run after it:

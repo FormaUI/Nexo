@@ -24,6 +24,7 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 | [Release](#release) | The beta is declared; publishing remains |
 
 - **A change is a commit,** each passing the gate, and moving each aspect once: a declaration, a test or a document takes its final form the first time the aspect changes.
+- **A language version collects the changes between two releases.** A change to either contract joins the [language history](../LANGUAGE-HISTORY.md)'s newest entry while it reads *Unreleased*, and opens the next version's entry once it is released.
 - **A breaking change says how to migrate.** Since the beta, a version's entry in the [language history](../LANGUAGE-HISTORY.md) says how to migrate beside each thing it breaks.
 - **A change a host can notice is in the [changelog](../CHANGELOG.md),** listed by its rules.
 - **Documents move with their change.** The specification, the README, the [embedding guide](embedding-guide.md), the type declarations and this file change in the commit that changes what they describe.
@@ -88,6 +89,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Formatting that keeps a text's source form | [Tooling](#tooling) | Waits for its design | — |
 | Editor diagnostics and completion | [Tooling](#tooling) | Waits for its design | — |
 | The beta, its promise and the changelog | [Language history](../LANGUAGE-HISTORY.md#v1-0-0-beta-1), [changelog](../CHANGELOG.md) | Implemented | [`beta.1`](../LANGUAGE-HISTORY.md#v1-0-0-beta-1) |
+| Language and definition versions advanced once per release | [Versions](../spec/runtime/versions.md#runtime-versions), [cutting a release](../CONTRIBUTING.md#cut-a-release) | Implemented, as [decisions](decisions.md#d66) records | [`beta.40`](../LANGUAGE-HISTORY.md#v1-0-0-beta-40) |
 | Published packages | [Release](#release) | Planned | — |
 
 The bundle and type declarations are built, as [the build](../README.md#build) sets out.
@@ -129,7 +131,7 @@ References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design
 
 Publish both, and test them as consumers install them: NuGet in a published application, and npm installed, bundled, and loaded in Chromium.
 
-The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare. Publishing a version dates its entry in the [changelog](../CHANGELOG.md).
+The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare. Cutting a release dates its entry in the [changelog](../CHANGELOG.md) and tags its commit, as [contributing](../CONTRIBUTING.md#cut-a-release) sets out, and its packages are published from that tag.
 
 **Beta.** Nexo entered the beta at `1.0.0-beta.1`, as [decisions](decisions.md#d27) records:
 

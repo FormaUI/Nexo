@@ -1,6 +1,10 @@
 # Language history
 
-Each version of the Nexo language, newest first, with what it changed. A language version names the [specification](spec/README.md)'s whole contract, the [language](spec/README.md#the-language) a script is written in and the [runtime](spec/README.md#the-runtime) a host builds on, so an entry lists the changes to both; the definition format, the JSON a host and its tools exchange, has a version of its own, which each entry names. Each version is dated by the day the specification first described it, and each change stands in the first version whose implementation follows it, named by the section of the specification that states it now.
+Each version of the Nexo language, newest first, with what it changed. A language version names the [specification](spec/README.md)'s whole contract, the [language](spec/README.md#the-language) a script is written in and the [runtime](spec/README.md#the-runtime) a host builds on, so an entry lists the changes to both; the definition format, the JSON a host and its tools exchange, has a version of its own, which each entry names.
+
+- **A version collects the changes made between two releases.** The first change to either contract after a [release](CHANGELOG.md) opens the next version's entry, which reads *Unreleased*, and each later change joins it. The release that first implements the version dates it, and fixes it.
+- **Versions before `1.0.0-beta.40` advanced with each change,** before Nexo's first release, each dated by the day the specification first described it.
+- **Each change stands in the first version whose implementation follows it,** named by the section of the specification that states it now.
 
 Each entry says what its version breaks:
 
@@ -11,11 +15,15 @@ Each entry says what its version breaks:
 
 ## `1.0.0-beta.40`
 
-*November 3, 2026 · definition format 38*
+*Unreleased · definition format 38*
 
 **Language**
 
 - [A member no module declares](spec/language/errors.md#preparation-and-type-errors), read on a number literal by an exponent's name, `1.e3`, says a number's exponent follows its digits directly, `1e3`, since a dot after them begins an access.
+
+**Runtime**
+
+- [The language and definition versions](spec/runtime/versions.md#runtime-versions) advance at most once per release, each collecting the changes made since the release before it, so a version is fixed once a release implements it. Each advanced with each change.
 
 **Breaking:** nothing.
 

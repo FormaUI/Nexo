@@ -10,4 +10,10 @@ An implementation says which it is, and what it follows, in `nexo.info.versions`
 | `language` | The language specification version the implementation follows |
 | `definition` | The definition format version the implementation supports |
 
-Each is declared, never computed, and advances for its own reason: the implementation's version with each of its releases, the specification version as the language's contract changes, and the definition version as the serialized definition's does. Their numbers may coincide, and neither determines another, so one specification version is followed by many releases of an implementation, and a specification can describe a version ahead of the one an implementation follows.
+Each is declared, never computed, and advances for its own reason:
+
+- **The implementation's version** advances with each of its releases.
+- **The specification version** advances at most once per release, for the changes to the language's contract made since the release before it.
+- **The definition version** advances at most once per release, for the changes to the serialized definition's contract made since then.
+
+A specification or definition version is fixed once a release implements it; until then, the newest may still gain changes. Their numbers may coincide, and neither determines another, so one specification version is followed by many releases of an implementation, and a specification can describe a version ahead of the one an implementation follows.

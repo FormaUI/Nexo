@@ -927,3 +927,24 @@ Forty decisions were taken while implementing the declarations, member selection
   - Only closing punctuation follows a block's `end` on its line, so the next argument starts a line.
   - It started that line at the call's own indentation, `end,` then `2)`, which reads as though the argument stood outside the call.
 - **Declined:** Laying out every call that spans lines one argument per line, which would break the common form whose last argument is an object or a function, `items.map(x => {`.
+
+<a id="d66"></a>
+
+## D66 — A language version collects the changes between two releases
+
+*November 3, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:**
+  - The language and definition versions advance at most once per release. The first change to either contract after a release opens the next version's entry, which reads *Unreleased*, and each later change joins it. The release that first implements a version dates it.
+  - A release is a signed tag, `v` and its version, on the commit that dates its changelog entry. Its packages are published from that tag.
+  - `1.0.0-beta.40` is the first version collected so. The versions before it stand as they were declared.
+- **Why:**
+  - Forty beta versions in four days, one change each, told a host nothing a commit didn't.
+  - A host following Nexo moved to each in turn, and DOMQL's documents named each commit.
+  - A release is what a host pins, so a version is what changed between two of them.
+  - It narrows [D1](#d1)'s rule that a version names one contract: a released version names one, and an unreleased one names the contract in progress, which a host pinning releases never meets.
+- **Declined:**
+  - Renumbering the versions before `1.0.0-beta.40` into one, which DOMQL's records and these decisions name.
+  - An entry named *Unreleased* with no number, which the sources could not declare, so a build of an unreleased commit couldn't say which contract it follows.
+  - Dating a release when its packages are published, which leaves a host nothing to pin until a registry holds them.

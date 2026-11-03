@@ -16,7 +16,7 @@ Read the documents that govern the affected contract:
 | [Guide](docs/embedding-guide.md) | Embedding Nexo, by example |
 | `.editorconfig` | Code style; read it before writing C# |
 
-Update the specification before implementing a language change, and the design before changing a module or tooling contract. Advance the language version whenever either contract changes, and add the version's entry to the [language history](LANGUAGE-HISTORY.md) in the same commit; since the beta, a break needs guidance on migrating. List a change a host can notice in the [changelog](CHANGELOG.md), by its rules. Each subject has one home: state a rule where it belongs and link to it elsewhere. Record a gap between the design and the code in the status overview until it closes, and update the status entries a change affects in the same commit as the change.
+Update the specification before implementing a language change, and the design before changing a module or tooling contract. Advance the language version once per release: the first change to either contract after a release opens the next version's entry in the [language history](LANGUAGE-HISTORY.md), and the sources and the specification declare that version in the same commit; each later change before the next release joins that entry. Since the beta, a break needs guidance on migrating. Cut a release only as [contributing](CONTRIBUTING.md#cut-a-release) sets out. List a change a host can notice in the [changelog](CHANGELOG.md), by its rules. Each subject has one home: state a rule where it belongs and link to it elsewhere. Record a gap between the design and the code in the status overview until it closes, and update the status entries a change affects in the same commit as the change.
 
 ## Repository structure
 

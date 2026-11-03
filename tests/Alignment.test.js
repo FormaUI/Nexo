@@ -65,6 +65,17 @@ describe('Alignment', () => {
         expect([newest, language, Number(format)]).toEqual([nexo.info.versions.implementation, nexo.info.versions.language, nexo.info.versions.definition]);
     });
 
+    it('dates the newest entries of the language history and the changelog, or marks them unreleased, a language version staying unreleased only while the release that implements it does', () => {
+        const dateOf = path => read(path).match(/^## `[^`]+`\r?\n\r?\n\*([^·*]+?) ·/m)[1];
+        const language = dateOf('LANGUAGE-HISTORY.md');
+        const release = dateOf('CHANGELOG.md');
+        const dated = /^(January|February|March|April|May|June|July|August|September|October|November|December) [1-9]\d?, \d{4}$/;
+
+        [language, release].forEach(date => expect(date === 'Unreleased' || dated.test(date), date).toBe(true));
+        // A release fixes the language version it implements, so a dated release implements a dated version.
+        expect(release === 'Unreleased' || language !== 'Unreleased', `a release of ${release} implements an unreleased language version`).toBe(true);
+    });
+
     it('has a README that names the implementation\'s version and the language version it implements, the one the specification describes', () => {
         const readme = read('README.md');
         const [, described] = specification.match(/^# Nexo Specification v(\S+)$/m);
