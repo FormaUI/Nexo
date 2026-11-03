@@ -2,9 +2,11 @@
  * DefinitionValidator — a definition checked against Nexo's structure, as its canonical, frozen copy
  */
 
+import { ArrayUtils } from '../common/ArrayUtils.mjs';
 import { ObjectUtils } from '../common/ObjectUtils.mjs';
 import { DefinitionLocations } from './DefinitionLocations.mjs';
 import { Imports } from './Imports.mjs';
+import { Limits } from './Limits.mjs';
 import { NexoErrors } from './NexoError.mjs';
 import { Names } from './Names.mjs';
 import { Versions } from './Versions.mjs';
@@ -117,6 +119,9 @@ export class DefinitionValidator {
 
     /** The optional chain the node being validated continues, with whether an access of it is optional so far; null where it continues none. @type {{ hasOptional: boolean } | null} */
     #optionalChain = null;
+
+    /** The nodes holding the node being validated, outermost first, so a definition nesting past `Limits.nesting` is refused, and a node holding itself is refused as no tree. @type {Set<object>} */
+    #enclosingNodes = new Set();
 
     /**
      * The simple expression the node being validated stands in, an argument, an indexer's key, a computed property access's name or an interpolation's expression, with the subject its messages open with and whether a conditional holds the node;
@@ -253,6 +258,32 @@ export class DefinitionValidator {
     }
 
     #validateNode(node, pointer, contextAvailability) {
+        // A definition is a tree, so no node holds itself, and it nests as deep as a text may.
+        if (this.#enclosingNodes.has(node)) {
+            this.#fail('NEXO2000', 'A definition is a tree, and this node holds itself', pointer);
+        }
+
+        if (this.#enclosingNodes.size >= Limits.nesting) {
+            this.#fail('NEXO2046', `A definition nests at most ${Limits.nesting} levels, and this node stands deeper`, pointer);
+        }
+
+        const isNode = ObjectUtils.isNonArrayObject(node);
+
+        if (isNode) {
+            this.#enclosingNodes.add(node);
+        }
+
+        try {
+            return this.#validateNodeOfKind(node, pointer, contextAvailability);
+        } finally {
+            if (isNode) {
+                this.#enclosingNodes.delete(node);
+            }
+        }
+    }
+
+    /** Validates a node by its kind, within the nesting `#validateNode` holds it to. */
+    #validateNodeOfKind(node, pointer, contextAvailability) {
         // A member that takes an argument is written as a call or an indexer, so an infix call is no node, and the message says which nodes take its place.
         if (ObjectUtils.isNonArrayObject(node) && node.kind === 'infixCall') {
             this.#fail('NEXO2000', 'An infixCall is not a node: a function is a call node, or an indexer node for a named or unnamed indexer', pointer);
@@ -545,9 +576,7 @@ export class DefinitionValidator {
 
     /** Validates a list a collection expression writes: its items, a list, each a simple expression, which evaluates against the implicit parameter around it. */
     #validateList(node, pointer, contextAvailability) {
-        if (!Array.isArray(node.items)) {
-            this.#fail('NEXO2000', "A list's items are a list of nodes, in order", `${pointer}/items`);
-        }
+        this.#requireArray(node.items, `${pointer}/items`, "A list's items are a list of nodes, in order");
 
         return Object.freeze({ kind: 'list', items: Object.freeze(node.items.map((item, index) => this.#validateSimpleExpression(item, `${pointer}/items/${index}`, contextAvailability, "A list's item"))) });
     }
@@ -557,9 +586,7 @@ export class DefinitionValidator {
      * (NEXO2043).
      */
     #validateDictionary(node, pointer, contextAvailability) {
-        if (!Array.isArray(node.entries)) {
-            this.#fail('NEXO2000', "A dictionary's entries are a list, each its key and its value, in order", `${pointer}/entries`);
-        }
+        this.#requireArray(node.entries, `${pointer}/entries`, "A dictionary's entries are a list, each its key and its value, in order");
 
         const keys = new Set();
         const entries = node.entries.map((entry, index) => {
@@ -1194,9 +1221,16 @@ export class DefinitionValidator {
         }
     }
 
-    #requireArray(value, pointer) {
+    /** Refuses what is no array, with the message given, and an array with no entry at an index, since a definition's arrays hold one at each, at the first index missing. */
+    #requireArray(value, pointer, message = 'This part of a definition is an array') {
         if (!Array.isArray(value)) {
-            this.#fail('NEXO2000', 'This part of a definition is an array', pointer);
+            this.#fail('NEXO2000', message, pointer);
+        }
+
+        const hole = ArrayUtils.findMissingIndex(value);
+
+        if (hole !== -1) {
+            this.#fail('NEXO2000', 'This part of a definition is an array with an entry at every index', `${pointer}/${hole}`);
         }
     }
 

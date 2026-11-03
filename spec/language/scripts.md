@@ -38,6 +38,12 @@ A script is its [imports](modules.md#scripts-imports) and a [body](#bodies): one
 
 A script reads three kinds of names: its script parameters, which its host binds; the names it declares itself, its locals, object fields, conditional bindings and function parameters; and its vocabulary's, the members, types and module namespaces of the modules it imports. How a host resolves and evaluates a script, the [host contract](../runtime/hosting.md) sets out.
 
+<a id="scripts-nesting"></a>
+
+### How deep a script nests
+
+A script nests at most 256 levels: each expression within another is a level deeper than the one holding it. In text, a value within brackets, braces or parentheses stands a level deeper than they do, and a text nesting deeper is refused where it does (NEXO1072). In a definition each node within another is a level deeper, so a chain of operators nests a level for each operator after its first, `a + b + c` two levels, and a definition nesting deeper is refused at its node (NEXO2046). A script that sums more than 256 terms groups them, as `(a + b) + (c + d)` does.
+
 <a id="scripts-script-parameters"></a>
 <a id="names-and-resolution-parameters-and-roots"></a>
 

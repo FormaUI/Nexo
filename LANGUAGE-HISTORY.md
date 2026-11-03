@@ -7,6 +7,22 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-28"></a>
+
+## `1.0.0-beta.28`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [A script nests at most 256 levels](spec/language/scripts.md#scripts-nesting): a text nesting deeper is refused where it does, NEXO1072, and a definition at its node, NEXO2046, rather than either overflowing the stack of what reads it.
+
+**Runtime**
+
+- [Structural validation](spec/runtime/definition.md) refuses a node that holds itself, and an array with no entry at an index, NEXO2000, which passed and then failed resolution or evaluation with a TypeError or a RangeError.
+
+**Breaking:** a script nesting deeper than 256 levels, a chain of more than 256 operators among them, is refused. Group a long chain, as `(a + b) + (c + d)` does.
+
 <a id="v1-0-0-beta-27"></a>
 
 ## `1.0.0-beta.27`

@@ -198,6 +198,13 @@ describe('the codes of syntax errors', () => {
             expectSyntaxCode('NEXO1026', ['a as "Light"', "a to 'Number'"]);
         });
 
+        it('gives NEXO1072 to a value nesting deeper than 256 levels, at the value, where reading it would overflow the stack', () => {
+            expect(() => nexo.parse(`${'['.repeat(255)}1${']'.repeat(255)}`)).not.toThrow();
+            expect(errorThrownBy(() => nexo.parse(`${'('.repeat(1000)}1${')'.repeat(1000)}`))).toMatchObject({ code: 'NEXO1072', kind: 'syntax', location: { line: 1, column: 257 } });
+            // A chain of operators nests a level for each operator after its first, which validation holds to the same limit.
+            expect(errorThrownBy(() => nexo.parse(Array.from({ length: 300 }, () => 'x').join(' + ')))).toMatchObject({ code: 'NEXO2046', kind: 'structure' });
+        });
+
         it('gives NEXO1027 to a conditional or a do block used ungrouped as a condition or an operand', () => {
             expectSyntaxCode('NEXO1027', ['if if a then b else c end then 1 else 2 end', '1 + if a then b else c end', '1 + do 1 end']);
             expectSyntaxCode('NEXO1027', ['if a then 1 else 2 end + 1', 'do 1 end ?? 3', 'if a then 1 else 2 end as T', 'if a then 1 else 2 end and b', 'do 1 end..2', 'let x = do 1 end + 1\nreturn x']);

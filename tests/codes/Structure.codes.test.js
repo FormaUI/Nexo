@@ -16,6 +16,31 @@ const member = (receiver, name, more = {}) => ({ kind: 'memberAccess', receiver,
 const callWith = (...argumentNodes) => ({ kind: 'call', callee: member(parameter('x'), 'f'), arguments: argumentNodes });
 
 describe('the structure codes of a definition', () => {
+    it('NEXO2000: an array with no entry at an index, at that index, and a node that holds itself', () => {
+        const items = [literal(1), literal(2)];
+
+        delete items[0];
+
+        expect(refusalOf({ kind: 'list', items })).toMatchObject({ code: 'NEXO2000', location: { pointer: '/expression/items/0' } });
+
+        const negation = { kind: 'arithmeticNegation', operand: null };
+
+        negation.operand = { kind: 'not', operand: negation };
+
+        expect(refusalOf(negation)).toMatchObject({ code: 'NEXO2000', message: expect.stringContaining('holds itself'), location: { pointer: '/expression/operand/operand' } });
+        // A node two parts of a definition share is no cycle.
+        const shared = literal(2);
+
+        expect(nexo.validate(definitionOf({ kind: 'arithmetic', operator: '+', left: shared, right: shared })).expression.right).toEqual(shared);
+    });
+
+    it('NEXO2046: a definition nesting deeper than 256 levels, at the node that does, and none at 256', () => {
+        const nested = depth => Array.from({ length: depth - 1 }).reduce(node => ({ kind: 'not', operand: node }), parameter('a'));
+
+        expect(() => nexo.validate(definitionOf(nested(256)))).not.toThrow();
+        expect(refusalOf(nested(257))).toMatchObject({ code: 'NEXO2046', kind: 'structure', location: { pointer: `/expression${'/operand'.repeat(256)}` } });
+    });
+
     it('NEXO2000: a definition that does not follow its structure', () => {
         const expressions = [
             { kind: 'infixCall' },

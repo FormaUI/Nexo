@@ -3,6 +3,7 @@
  */
 
 import { Imports } from './Imports.mjs';
+import { Limits } from './Limits.mjs';
 import { NexoErrors } from './NexoError.mjs';
 import { LineStructure } from './LineStructure.mjs';
 import { Names } from './Names.mjs';
@@ -60,6 +61,9 @@ export class Parser {
 
     /** How many bodies' locals are being read, where a name on a new line after a value is a statement no body holds rather than a member written without its dot. */
     #bodyLocalsBeingRead = 0;
+
+    /** How many value expressions are being read, each within the one before it, which the brackets, braces and parentheses holding them nest, so a text nesting past `Limits.nesting` is refused where it does. */
+    #valueDepth = 0;
 
     /** The coalescing operators read where no group holds them, which no `and`, `or` or equality may stand beside. @type {WeakSet<SyntaxNode>} */
     #ungroupedCoalescings = new WeakSet();
@@ -422,6 +426,21 @@ export class Parser {
 
     /** Reads a simple value expression: a range, a disjunction, or an or-operand alone, a coalescing operator among them, which stands beside neither `and` nor `or`. */
     #parseSimpleValueExpression() {
+        if (this.#valueDepth >= Limits.nesting) {
+            throw this.#createSyntaxError('NEXO1072', `A script nests at most ${Limits.nesting} levels, and this value stands deeper`, this.#token.start);
+        }
+
+        this.#valueDepth++;
+
+        try {
+            return this.#parseNestedSimpleValueExpression();
+        } finally {
+            this.#valueDepth--;
+        }
+    }
+
+    /** Reads a simple value expression where it stands within the nesting `#parseSimpleValueExpression` counts. */
+    #parseNestedSimpleValueExpression() {
         // A range's `..` stands after its start, or begins it where its start is left out.
         if (this.#token.type === '..') {
             return this.#parseRange(null);

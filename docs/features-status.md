@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.27` and definition version 38, the twenty-seventh beta.** What remains is [tooling](#tooling) and [the release](#release), and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.28` and definition version 38, the twenty-eighth beta.** What remains is [tooling](#tooling) and [the release](#release), and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.27` | `1.0.0-beta.27` |
+| Language | `1.0.0-beta.28` | `1.0.0-beta.28` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records.
@@ -153,6 +153,7 @@ Deferred items below require their stated trigger before design or implementatio
 | Collection conversions, `values to List` and `entries to Dictionary` | Collections are constructed by members; conversions to or from a collection would extend conversion targets and contracts. | A use members do not serve |
 | Unions of structured types | One shape of nullable fields, and a field telling which of them a value fills, holds data of several families, its consumer validating each family; a union would need a notation, narrowing and a projection rule of its own. | A host whose data no one shape holds |
 | Rounding a number to decimal digits | Rounding a binary value's decimal expansion is a contract of its own; a step is written by arithmetic around `round`. | A host that needs digits a step can't give |
+| A bound on how deep a host's data nests | A script nests at most 256 levels; the data a host binds or a member answers is the host's own, which bindings read past 1,900 levels and evaluation past 2,900, deeper data overflowing the stack as a `RangeError` rather than a `NexoError`. A bound needs a depth counted on every path that walks data, binding, capturing, checking and copying, whose cost is measured first. | A host whose data nests that deep, or one that binds data it does not control |
 | Explicit application identity, `identifyBy` | Sources and lineage serve the collection foundation; identities apart from keys and sources need scoping rules of their own. | A host that matches by identities its sources cannot give |
 | Incremental reparsing, specialized tree machinery, and a public tree schema shared by C# and JavaScript | No tool needs them yet. | A concrete tooling need |
 | Expression and predicate arguments to host calls | Each is a body of each item of a list its member follows, which a host call reads none of; a function argument, kept by its host, serves a host call that calls back into its script. | A host call that follows a list and needs a body of each of its items |

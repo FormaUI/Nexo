@@ -805,3 +805,18 @@ Forty decisions were taken while implementing the declarations, member selection
   - Bindings differing in a number alone were refused a shared resolution, each resolving anew, about four times the cost of reusing one.
   - An internal type, which no script names, was accepted as a binding's declared type.
 - **Declined:** Keying by the bindings a resolution read for its decisions alone, which would track every read at resolution for a gain the rule above already gives.
+
+<a id="d57"></a>
+
+## D57 — A script nests at most 256 levels
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:** A script nests at most 256 levels, each expression within another a level deeper. The parser refuses text nesting deeper where it does, NEXO1072, and validation refuses a definition at its node, NEXO2046, a chain of operators nesting a level for each operator after its first. Validation refuses a node that holds itself, and an array with a missing entry, NEXO2000. A bound on the data a host binds or a member answers is deferred, as the status records.
+- **Why:**
+  - Reading text, validating, resolving, evaluating and writing a definition each follow its nesting, so a deep script overflowed the stack as a `RangeError`, from about 440 nested parentheses, which no host can tell from a fault, and a cyclic or sparse definition passed validation and failed later.
+  - The parser reads at least 437 levels of every construct, so 256 leaves room on smaller stacks, and one limit for text and definitions keeps every definition validation accepts writing text that reads back.
+- **Declined:**
+  - Counting a chain of operators as one level, which would leave a chain of thousands of terms overflowing validation and resolution.
+  - Catching the stack's overflow, which engines report apart, as `RangeError` or `InternalError`, and which can leave what was being read half done.
