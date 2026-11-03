@@ -689,7 +689,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 - **Kind:** Approved rule.
 - **Decision:** `and` and `or` mean the same in every expression, and are evaluated as before, left to right, stopping at the operand that decides. Their values must share a type only where the value is used:
-  - **Used:** a result, a function's among them, a local's initializer, an object field, an argument, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation.
+  - **Used:** a result, a function's among them, a local's initializer, an object field, an argument other than a predicate's, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation.
   - **Tested for truthiness alone:** a condition, the operand of `not`, an operand of another `and` or `or`, and a predicate argument written as an expression of `it`. Their values need share no type.
   - **Bound:** a conditional binding binds the truthy values, which share one.
 

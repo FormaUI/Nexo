@@ -15,7 +15,7 @@ Each entry says what its version breaks:
 
 **Language**
 
-- [The type of a logical expression](spec/language/expressions.md#logical-expressions-negations-and-groups-type): `and` and `or` mean the same in every expression, and their values share a type only where the value is used. A condition, the operand of `not`, an operand of another `and` or `or`, and a predicate test truthiness alone, and a conditional binding binds the truthy values. So `metered and light.brightness or 0` is a `Number`: the false that selects `0` reaches nothing. NEXO3040 refuses values of no one type where the value is used, and a conditional binding whose truthy values are of none.
+- [The type of a logical expression](spec/language/expressions.md#logical-expressions-negations-and-groups-type): `and` and `or` mean the same in every expression, and their values share a type only where the value is used. A condition, the operand of `not`, an operand of another `and` or `or`, and a predicate written as an expression of `it` test truthiness alone, and a conditional binding binds the truthy values. So `metered and light.brightness or 0` is a `Number`: the false that selects `0` reaches nothing. NEXO3040 refuses values of no one type where the value is used, and a conditional binding whose truthy values are of none.
 - [Not a conditional](spec/language/expressions.md#logical-expressions-negations-and-groups-not-a-conditional) is a note on behavior: `c and x or y` gives `y` where `x` is falsey, which a conditional doesn't.
 
 **Breaking:** nothing. Every script accepted before keeps its type, and some it refused are accepted.

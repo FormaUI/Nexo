@@ -401,7 +401,7 @@ A logical expression can give values of several types. Which of them must share 
 - **Where a conditional binding binds it,** its truthy values share a type, since the name is bound only where the value is truthy: `if let level = metered and device.battery then level else 0 end` binds a `Number`.
 - **Wherever else it stands,** its value is used, and the values that can reach that place merge to one type, as [merging](types.md#types-assignability-and-merging) sets out. Values of no one type are a validation error (NEXO3040).
 
-Its value is used as a result, a function's result among them, a local's initializer, an object field, an argument, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation. Parentheses group an expression and add no requirement of their own, so `(metered and light.brightness) or 0` is typed as `metered and light.brightness or 0` is.
+Its value is used as a result, a function's result among them, a local's initializer, an object field, an argument other than a predicate's, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation. Parentheses group an expression and add no requirement of their own, so `(metered and light.brightness) or 0` is typed as `metered and light.brightness or 0` is.
 
 The values that can reach a place:
 
