@@ -872,3 +872,16 @@ Forty decisions were taken while implementing the declarations, member selection
   - A misspelled option was left out silently: `createBindings(values, { typez })` dropped every declared type, and `evaluate({ beforeinvoke })` read no sample, each failing far from the typo, where a module's declarations already refuse a key they take none of.
   - A `typeOf` that never returns answers nothing, and recognizing nothing then let a host's references pass as data.
 - **Declined:** Accepting `undefined` from `typeOf` as null, which reads the common slip of a missing `return` as a deliberate answer.
+
+<a id="d62"></a>
+
+## D62 — A value of `Any` converts by the type it turns out to be
+
+*November 3, 2026*
+
+- **Kind:** Approved rule.
+- **Decision:** A conversion of a value of `Any` resolves to its target, and selects its operator as it is evaluated, by the value's actual type, among the conversions to its target the imports make available, the most specific where several apply. A value already of its target is itself. One no conversion applies to fails with NEXO5053, within `try` too, which answers null for a rejection alone.
+- **Why:**
+  - Every other operation a value of `Any` takes part in is checked as it is evaluated: a member it reads, arithmetic, ordering, an interpolation, an equality. Refusing its conversion at resolution was the one exception, so `value to String` was refused whatever the value turned out to be.
+  - The selection is the one a known type gets, made from the actual type, as a deferred member's is.
+- **Declined:** Answering null within `try` where no conversion applies, which would hide a value of a type nothing converts, as resolution refuses the conversion of a known one.

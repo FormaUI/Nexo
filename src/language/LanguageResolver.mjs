@@ -974,6 +974,18 @@ export class LanguageResolver {
         }
 
         const source = from.toNonNullable();
+
+        // A value of Any converts as it is evaluated, by the conversion from its actual type among those the imports make available to the type, or to itself where it is of that type already.
+        if (source.kind === 'any') {
+            const candidates = this.#memberSelector.getAccessible(this.#imported.getAvailable(this.#registry.getOperators('convert'))).filter(operator => this.#registry.getOperatorDestination(operator).equals(to));
+
+            const candidateUses = candidates.map(declaration => ({ declaration, qualifiedName: this.#registry.formatOperator(declaration), pointer }));
+
+            this.#resolutions.set(pointer, { kind: 'conversion', declaration: undefined, candidates, candidateUses, type: to });
+
+            return { type: from.isNullable ? to.toNullable() : to, kind: 'value', isFixed: false };
+        }
+
         const isIdentity = source.kind === 'named' && source.equals(to);
         const declaration = isIdentity ? undefined : this.#selectOperator('convert', source, to, `The conversion from ${source} to ${to}`, pointer);
 

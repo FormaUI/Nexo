@@ -882,14 +882,25 @@ export class Evaluator {
      */
     #compileConversion(node, isAttempted) {
         const evaluateOperand = this.#getCompiledFunction(node.operand);
-        const { declaration, type } = this.#resolvedDefinition.resolutionOf(node);
+        const { declaration, type, candidates } = this.#resolvedDefinition.resolutionOf(node);
 
         if (declaration === null) {
             return evaluateOperand;
         }
 
-        const name = this.#registry.formatOperator(declaration);
-        const attempt = Evaluator.#compileConversionAttempt(declaration, type, this.#registry);
+        const registry = this.#registry;
+        // A conversion of a value of Any selects its operator by the value's actual type as it is evaluated, each operator's attempt compiled the first time it is selected and kept with the compiled conversion.
+        const attempts = new Map();
+        const attemptOf = selected => {
+            let attempt = attempts.get(selected);
+
+            if (attempt === undefined) {
+                attempt = Evaluator.#compileConversionAttempt(selected, type, registry);
+                attempts.set(selected, attempt);
+            }
+
+            return attempt;
+        };
 
         return (evaluator, context) => {
             const value = evaluateOperand(evaluator, context);
@@ -898,7 +909,27 @@ export class Evaluator {
                 return null;
             }
 
-            const outcome = attempt(evaluator, value, node);
+            let selected = declaration;
+
+            if (candidates !== undefined) {
+                const fail = message => evaluator.#fail('NEXO5053', `'to ${type}' converts a value of Any whose type ${message}`, evaluator.#pointerOf(node));
+                const actual = evaluator.#getActualType(value, `the conversion to ${type}`, fail);
+
+                if (actual.equals(type)) {
+                    return value;
+                }
+
+                const applying = registry.typeChecker.mostSpecificOf(candidates, actual);
+
+                if (applying.length !== 1) {
+                    evaluator.#fail('NEXO5053', applying.length === 0 ? `No conversion from ${actual} to ${type} is available, so a value of Any that is one converts to nothing of it` : `The conversions from ${applying.map(operator => registry.formatOperator(operator)).join(' and ')} all apply to a value of Any that is ${actual}, and none is more specific`, evaluator.#pointerOf(node));
+                }
+
+                [selected] = applying;
+            }
+
+            const name = registry.formatOperator(selected);
+            const outcome = attemptOf(selected)(evaluator, value, node);
 
             if (!outcome.isAccepted) {
                 if (isAttempted) {

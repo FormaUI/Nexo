@@ -7,6 +7,22 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-33"></a>
+
+## `1.0.0-beta.33`
+
+*November 3, 2026 · definition format 38*
+
+**Language**
+
+- [A conversion of a value of `Any`](spec/language/types.md#types-any-operands) selects its operator as it is evaluated: the conversion from the value's actual type to its target among those the imports make available, the most specific where several apply, a value already of its target being itself. One no conversion applies to fails, NEXO5053, where every conversion of a value of `Any` was refused at resolution, NEXO3022.
+
+**Runtime**
+
+- A resolution's candidate declarations hold, at each such conversion, the conversions it may select, and are an overestimate wherever one stands.
+
+**Breaking:** nothing. A conversion refused before resolves.
+
 <a id="v1-0-0-beta-32"></a>
 
 ## `1.0.0-beta.32`

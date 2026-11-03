@@ -236,6 +236,7 @@ In this document:
 | --- | --- | --- |
 | `NEXO5001` | A value a strict cast rejects, by its destination's membership or by its operator's `reject` | An evaluation error naming the cast, the reason it gave and where it stands, as `The cast to Light rejected its value: it is a Thermostat`; null under `try` |
 | `NEXO5016` | A value a conversion rejects | An evaluation error naming the conversion, the reason it gave and where it stands; null under `try` |
+| `NEXO5053` | A conversion of a value of `Any` whose actual type no conversion to its type the imports make available converts from, or that several do, none more specific | An evaluation error at the conversion, naming the value's type, even within `try`, which answers null for a rejection alone |
 | `NEXO5005` | A division or a remainder by zero | An evaluation error at the operation |
 | `NEXO5020` | An arithmetic result, a `sum`, or a number a `sequence` reaches, that no finite number holds | An evaluation error at the operation or the call |
 | `NEXO5012` | A deferred access whose receiver's actual type has no member of its name in the form it is written | An evaluation error naming the access and the actual type |

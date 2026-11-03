@@ -171,11 +171,21 @@ export class ResolvedDefinition {
     }
 
     /**
-     * Every declaration evaluation could select: the used declarations, and each deferred access's candidates at its pointer, every accessible declaration of its name and form, which its value's actual type selects one
-     * of or none of, so they are an overestimate wherever a deferred access remains.
+     * Every declaration evaluation could select: the used declarations, each deferred access's candidates at its pointer, every accessible declaration of its name and form, and each conversion of a value of Any's,
+     * every conversion to its type the imports make available, which its value's actual type selects one of or none of, so they are an overestimate wherever either remains.
      */
     get candidateDeclarations() {
-        return this.#definitionUsesOf([...this.#usedDeclarations, ...this.#deferredAccesses.flatMap(access => access.candidates)]);
+        return this.#definitionUsesOf([...this.#usedDeclarations, ...this.#deferredAccesses.flatMap(access => access.candidates), ...this.#deferredConversionUses()]);
+    }
+
+    /** Whether evaluation selects a declaration of its own, at a deferred access or a conversion of a value of Any, so the candidate declarations overestimate what it uses. */
+    get selectsAsEvaluated() {
+        return this.#deferredAccesses.length > 0 || this.#deferredConversionUses().length > 0;
+    }
+
+    /** The candidates of each conversion of a value of Any, at its pointer. */
+    #deferredConversionUses() {
+        return [...this.#resolutions.values()].flatMap(resolution => (resolution.kind === 'conversion' && resolution.candidateUses !== undefined ? resolution.candidateUses : []));
     }
 
     /**

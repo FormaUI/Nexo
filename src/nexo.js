@@ -247,7 +247,7 @@ const resolutionOf = (registry, definition, parameterBindings) => {
         type: resolved.type === null ? null : String(resolved.type),
         usedDeclarations,
         deferredAccesses,
-        getCandidateDeclarations: () => Object.freeze({ declarations: Object.freeze(resolved.candidateDeclarations.map(useOf)), isOverestimate: deferredAccesses.length > 0 }),
+        getCandidateDeclarations: () => Object.freeze({ declarations: Object.freeze(resolved.candidateDeclarations.map(useOf)), isOverestimate: resolved.selectsAsEvaluated }),
         typeAt,
         getLocation: pointer => locate(definition, pointer),
         get isCurrent() {

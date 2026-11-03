@@ -319,6 +319,18 @@ describe('LanguageResolver', () => {
             expect(refusalOf('{ a = 1, b = Probe.give(root) }')).toMatchObject({ code: 'NEXO3071', message: expect.stringContaining('root, the object being built, is none'), location: { pointer: '/expression/objectFields/1/value/arguments/0' } });
         });
 
+        it('converts a value of Any as it is evaluated, through the conversion from its actual type, to itself where it is of the type, and refuses one no conversion applies to even within try', () => {
+            expect(String(resolveWith([probe], 'Probe.give(5) to String').resolution.type)).toBe('String');
+            expect([evaluate('Probe.give(5) to String'), evaluate('Probe.give("12") to Number'), evaluate('Probe.give("x") to String'), evaluate('try Probe.give("abc") to Number')]).toEqual(['5', 12, 'x', null]);
+            expect(errorThrownBy(() => evaluate('Probe.give("abc") to Number'))).toMatchObject({ code: 'NEXO5016' });
+            expect(errorThrownBy(() => evaluate('try Probe.give(true) to Number'))).toMatchObject({ code: 'NEXO5053', kind: 'evaluation', location: { pointer: '/expression/operand' } });
+
+            const { declarations, isOverestimate } = resolveWith([probe], 'Probe.give(5) to String').resolution.getCandidateDeclarations();
+
+            expect(declarations.filter(use => use.pointer === '/expression').map(use => use.qualifiedName)).toEqual(['Number to String', 'Boolean to String']);
+            expect(isOverestimate).toBe(true);
+        });
+
         it('applies an object expression following a value of Any to that value once, a list it holds among them, as its resolution types it', () => {
             expect(String(resolveWith([probe], '{ v = Probe.give([1, 2]) { n = it.count } }').resolution.type)).toBe('{ v: { n: Any } }');
             expect(evaluate('{ v = Probe.give([1, 2]) { n = it.count } }')).toEqual({ v: { n: 2 } });
