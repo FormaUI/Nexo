@@ -1034,6 +1034,7 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Why:**
   - A value of `Any` given where a structure is declared was checked by membership and passed on as it was, while each member's answer was copied to the declared shape. One parameter gave a host two shapes, by where the script's value came from, and a later list member stripped what an earlier check had kept, which [D25](#d25) found as it declined copying less. A design review asked that the rule be settled before release.
   - Projecting where the value enters matches every other way a value becomes a structure: binding with a declared type and a host call's supplied value are captured as the shape, a construction holds it, and a member's answer and a conversion's are copied to it.
+- **Measured** in paired runs against the commit before it, seven rounds: every case of the billing benchmark within the noise an unchanged copy shows, the portfolio report's evaluation +4.8% (−2.6% to +9.7%) and its allocation +2.3%, its rounds mixed.
 - **Declined:**
   - Keeping a value of `Any` as it is once it belongs to the structure, which the review preferred. A result typed as a structure would hold properties its type doesn't declare, which a host's records and DOMQL's change sets read and compare, and binding and answers, which project today, would have to stop.
   - Refusing a value of `Any` that holds properties its structure doesn't declare, which would refuse the data a host's own objects commonly carry.
@@ -1051,6 +1052,7 @@ Forty decisions were taken while implementing the declarations, member selection
   - `concat`'s size is known before it is made too, and every other list member of Nexo's makes no more items than its receiver holds, so the two are every list a script can make larger than what it was given.
   - The limit is the evaluator's, not the registry's, so one host can evaluate an interaction and an offline report under different budgets.
 - **What it bounds:** each such list alone. A chain of `concat`s doubling a list is refused at the first that passes the limit. Many lists a script makes below it, as `[0.sequence(10), 0.sequence(10)]` under a limit of 10, pass, and so does text a script builds, and what a module's implementation answers, which its own host bounds. DOMQL and Forma evaluate their developers' scripts, so neither needs a bound on the whole evaluation yet; a host evaluating scripts it doesn't trust needs one, or a time limit, which waits for that host.
+- **Measured** in paired runs against the commit before it, seven rounds, twice: on a quiet machine evaluating stays within the noise, the account summary +1.0% (−4.9% to +5.2%) and the portfolio report +2.5% (−4.4% to +6.6%); a first run beside another session's builds put both 3% to 5% slower in every round, which the second didn't repeat.
 - **Declined:**
   - A limit in the language, which D53 declined for every host alike.
   - An instruction count or a budget across the evaluation now, before a host's use shows what it must count.
@@ -1130,6 +1132,7 @@ Forty decisions were taken while implementing the declarations, member selection
     - **A result never described.** Its metadata, described when first read, held the evaluator that would describe it. It now describes through the compilation's own evaluator, which [D55](#d55) gives empty bindings and environment, and the metadata tests show the descriptions alike.
     - **An error never read.** The engine kept the frames it was raised in, the evaluator among their receivers, until its stack was first read, and its cause's the same. Nexo now writes both stacks as it makes the error, which changes nothing a stack reads.
   - Eleven other cases, a call never disposed, a preparation that fails, a resolution kept and the rest, already let everything go, and the same file of tests holds them.
+- **Measured** in paired runs against the commit before it, seven rounds: evaluating with hooks 6% slower in every round (+4.5% to +10.4%), the portfolio report 3% slower (+1.7% to +9.2%), and up to 2% more allocation, the price of reaching the evaluator through the lifetime. A lifetime made with every field it holds and a failure path every callback shares took back 1% to 4% of the allocation and none of the time in three runs, so it was not kept.
 - **Declined:** Stating only what a disposed function refuses, which leaves a host unable to reason about when what it captured can go.
 
 <a id="d79"></a>
