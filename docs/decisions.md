@@ -908,12 +908,13 @@ Forty decisions were taken while implementing the declarations, member selection
 
 <a id="d64"></a>
 
-## D64 — Every string a script holds is well-formed
+## D64 — Every string a script writes is well-formed
 
 *November 3, 2026*
 
 - **Kind:** Language and runtime contracts, approved.
 - **Decision:** A surrogate standing alone in a string's literal text, raw or not, is a syntax error, NEXO1049. A string a definition holds as a value, a literal's, an interpolated string's text and a dictionary's key, holding one is a structure error, NEXO2000.
+- **Scope:** The guarantee covers what a script writes: a script's literals, in its text, and a definition's strings, as it is serialized. A string a host gives, a binding's or a member's answer, may hold a surrogate standing alone, and a script holds it as it is given; Nexo's own members keep such a string as it is, and slice none apart. This entry first said every string a script holds, which a host's string contradicts.
 - **Why:**
   - An escape naming a surrogate was already refused, but the character itself was read into the value, so the rule depended on how it was written.
   - Canonical text then wrote ill-formed text, which a UTF-8 file can't hold, so a script saved and read back changed.

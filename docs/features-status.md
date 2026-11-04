@@ -150,7 +150,7 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 
 | Requirement | Why | State |
 | --- | --- | --- |
-| **Contracts settled.** No decision is open, no gap stands between the specification and the code, and each [deferred](#deferred) item is shown to land without a break. | What may still change after 1.0 must be able to change compatibly. | No decision is open and no gap stands; the deferred items are not yet reviewed. |
+| **Contracts settled.** No decision is open, no gap stands between the specification and the code, and each [deferred](#deferred) item is shown to land without a break. | What may still change after 1.0 must be able to change compatibly. | Holds: no decision is open, no gap stands, and each [deferred](#deferred) item lands as an addition, rounding to digits as an optional argument of `round()` and wrapping canonical text as an option. |
 | **Robust against any text.** A fuzzing test in the gate reads, resolves and evaluates generated scripts, and meets no failure but a `NexoError`: no hang, no stack overflow, no escaped `TypeError`. | The maintenance sweep, `1.0.0-beta.21` to `1.0.0-beta.40`, found such faults by reading the code. | Not started. |
 | **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-beta.1` is released; publishing it remains. |
 | **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against the release `1.0.0-beta.1`, from its tag, and replacing Forma's scripts is planned. |
@@ -195,6 +195,12 @@ Deferred items below require their stated trigger before design or implementatio
 | Calling a module's internal declarations through Nexo | JavaScript implementations can reach their own values directly. | An internal-call API with a defined module context |
 | Wrapping canonical text by width | `format` follows the structural layout alone and never wraps; a width needs a layout policy of its own that keeps canonical text deterministic and every one-line construct whole past it | A host or a tool that needs text kept within a width |
 | Equality of structured values, objects and lists, as keys, members and distinct items | Key equality covers numbers, strings, Booleans, references and null; the equality of the rest needs its hashing, type identity and capture designed together | A host whose keys or distinct items are data of those kinds |
+
+Each lands after 1.0 without a break, which [1.0 requires](#what-1-0-requires):
+
+- **As an addition,** what is refused or absent today becoming valid: collection conversions, unions of structured types, `identifyBy`, the tree and its schema, expression and predicate arguments to host calls, an extension of several targets, selecting a module's operator, structured-data casts and the operators beyond `cast` and `convert`, object-typed defaults, a value of `Any` passed to a typed reference (refused with NEXO3036 today), a function given to a deferred call, calling a module's internal declarations, and the equality of structured values, objects and lists.
+- **As an optional argument,** rounding to decimal digits, `round(digits)`, since `round()` is a function.
+- **As an option `format` takes,** wrapping canonical text by width, its default the layout [canonical text](../spec/runtime/definition.md) lays out now, which a host comparing it relies on.
 
 <a id="temporary-implementation-coverage"></a>
 
