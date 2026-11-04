@@ -444,7 +444,7 @@ describe('a member\'s answer', () => {
             types: [{ name: 'Lamp', kind: 'reference', isInstance: value => ++asked > 0 && value?.isLamp === true }],
         })]);
         const bindings = registry.createBindings({ fixtures: [{ isLamp: true }, { isLamp: true }] }, { types: { fixtures: 'List<lamps.Lamp>' } });
-        const evaluator = registry.resolve('fixtures.reverse.count', bindings).createEvaluator(bindings, {});
+        const evaluator = registry.resolve('fixtures.reverse().count', bindings).createEvaluator(bindings, {});
 
         asked = 0;
 
@@ -461,7 +461,7 @@ describe('a member\'s answer', () => {
             ],
         })]);
         const bindings = registry.createBindings({ sockets: [{ lamp: { isLamp: true } }, { lamp: { isLamp: true } }] }, { types: { sockets: 'List<lamps.Socket>' } });
-        const evaluator = registry.resolve('sockets.reverse.count', bindings).createEvaluator(bindings, {});
+        const evaluator = registry.resolve('sockets.reverse().count', bindings).createEvaluator(bindings, {});
 
         asked = 0;
 

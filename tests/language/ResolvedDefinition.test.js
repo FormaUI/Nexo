@@ -64,7 +64,7 @@ describe('ResolvedDefinition', () => {
         ["an equality 'not' negates", 'not (word == "oat")'],
         ['an extension access, by its extension and by its name alone', '{ named = word:Strings.trim(1), alone = word:trim(2) }'],
         ['a module function given by reference, and an arrow function given as it is written', 'numbers.where(shop.isSmall).count + numbers.where(n => n > 1).count'],
-        ['an access before brackets', 'numbers.reverse[0]'],
+        ['an access before brackets', 'numbers.reverse()[0]'],
         ["a function's calls, each resolving a copy of its body", 'let next = x => x + 1\nreturn next(next(1)) + numbers.select(next(it)).count'],
     ])('gives each node of %s the pointer it stands at, and what resolution stored there', (_, text) => {
         const resolved = resolve(text);

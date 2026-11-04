@@ -582,7 +582,7 @@ describe('the runtime codes', () => {
         });
 
         it('NEXO5042: contains, indexOf or distinct on a list whose actual item type is no key type', () => {
-            expectNexoError(holding([{ size: 1 }], '(word:held).distinct'), 'NEXO5042', 'evaluation');
+            expectNexoError(holding([{ size: 1 }], '(word:held).distinct()'), 'NEXO5042', 'evaluation');
         });
 
         it('NEXO5021: a value of Any its parameter does not admit', () => {

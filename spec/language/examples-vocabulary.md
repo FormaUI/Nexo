@@ -43,16 +43,22 @@ An example's bindings are supplied parameters, each bound by the host to a value
 
 A setting is a string, so an example that needs a number converts it, as `device["level"] to Number` does.
 
-**Boolean functions.** The home's tests, each a function of its receiver that takes no arguments and answers a `Boolean`, called as `device.active()` or passed by reference, as `room.devices.where(Home.active)` passes it:
+**States.** The home's Boolean properties, each a state its receiver is in, read as `device.active` and filtered by, as `room.devices.where(it.active)` is:
+
+| Property | Answers | Changes |
+| --- | --- | --- |
+| `device.active` | Whether the device is switched on | Observable: `state` |
+| `device.offline` | Whether the device has stopped reporting | Partly observable: `state`, missing a device that stops reporting before its timeout |
+| `device.batteryPowered` | Whether the device runs on a battery | Constant |
+| `device.dimmable` | Whether the device can be dimmed | Constant |
+| `room.occupied` | Whether someone is in the room | Observable: `presence` |
+| `room.reserved` | Whether the room is reserved for someone expected | Observable: `presence` |
+
+**A test that does work.** Asking a device whether it answers is work, so it is a function, called as `device.ping()` or passed by reference, as `room.anyDevice(Home.ping)` passes it:
 
 | Function | Answers | Changes |
 | --- | --- | --- |
-| `device.active()` | Whether the device is switched on | Observable: `state` |
-| `device.offline()` | Whether the device has stopped reporting | Partly observable: `state`, missing a device that stops reporting before its timeout |
-| `device.batteryPowered()` | Whether the device runs on a battery | Constant |
-| `device.dimmable()` | Whether the device can be dimmed | Constant |
-| `room.occupied()` | Whether someone is in the room | Observable: `presence` |
-| `room.reserved()` | Whether the room is reserved for someone expected | Observable: `presence` |
+| `device.ping()` | Whether the device answers when it is asked, now | Observable: `state` |
 
 **Observation types.** What a member names to learn that its result may have changed:
 

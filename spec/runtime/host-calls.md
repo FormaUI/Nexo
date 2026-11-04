@@ -42,14 +42,14 @@ A list never holds a missing item. Narrowing a reference is the one thing captur
 
 A projection reads what the call was prepared with, and evaluates the rest anew:
 
-- **The locals before the call.** Each local the script declares before the host call is evaluated once, by `prepareHostCall`, as every local is, and each projection of that prepared call reads the value it was prepared with, never running its initializer again. A local holding a reference holds the reference, and one holding a computed value holds the value. In the example, each projection reads `room.occupied()` of the room the call was prepared with, as that room is when the motion arrives, while `occupied` keeps whether it was occupied when the call was prepared. Both read one receiver, since reading `sensor.room` again could find another room, a sensor being movable.
+- **The locals before the call.** Each local the script declares before the host call is evaluated once, by `prepareHostCall`, as every local is, and each projection of that prepared call reads the value it was prepared with, never running its initializer again. A local holding a reference holds the reference, and one holding a computed value holds the value. In the example, each projection reads `room.occupied` of the room the call was prepared with, as that room is when the motion arrives, while `occupied` keeps whether it was occupied when the call was prepared. Both read one receiver, since reading `sensor.room` again could find another room, a sensor being movable.
 - **Its own evaluation.** Each projection is an evaluation of its own, with its own supplied value, host and state; the result projection's own locals are evaluated in each, and projecting a value for one prepared call never changes what another was prepared with.
 - **Function references.** A function reference a local before the call holds is called in any projection, as one is anywhere within the script; a callback a projection gives a member lasts while that member's invocation does, as every callback given to a member does. A function reaches the host only as a host call's function argument, a kept function.
 
 ```nexo
 let room = sensor.room
-let occupied = room.occupied()
-return sensor.on("motion") { at = it.at, isOccupied = room.occupied(), wasOccupied = occupied }
+let occupied = room.occupied
+return sensor.on("motion") { at = it.at, isOccupied = room.occupied, wasOccupied = occupied }
 ```
 
 A prepared call starts nothing, and the lifetime of whatever its host starts is the host's; one that keeps no function needs no disposal, and `dispose()` of it does nothing. A prepared call holds the locals and the references it was prepared with for as long as it is reachable. Each projection goes through the checks every evaluation does, the refusal of a resolution no longer [current](resolution.md#runtime-reuse) among them.

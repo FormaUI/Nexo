@@ -193,9 +193,9 @@ describe('extension access', () => {
             expect(refusal('fan.usage', ['Home'])).toMatchObject({ code: 'NEXO3090' });
             expect(refusal('fan:power')).toMatchObject({ code: 'NEXO3062', location: { pointer: '/expression' }, message: expect.stringContaining("No extension the script reaches declares 'power' for Device") });
             expect(refusal('fan:Device.power')).toMatchObject({ code: 'NEXO3062', message: expect.stringContaining("The extension 'Device' declares no member 'power'") });
-            expect(refusal('[[1], [2]]:flatten')).toMatchObject({ code: 'NEXO3062', message: expect.stringContaining("write '[[1], [2]].flatten' for its owner's member") });
-            expect(evaluate('[[1], [2]].flatten')).toEqual([1, 2]);
-            expect(refusal('[1, 2].flatten')).toMatchObject({ code: 'NEXO3001', message: expect.stringContaining('it is available on List<List<T>>') });
+            expect(refusal('[[1], [2]]:flatten()')).toMatchObject({ code: 'NEXO3062', message: expect.stringContaining("write '[[1], [2]].flatten()' for its owner's member") });
+            expect(evaluate('[[1], [2]].flatten()')).toEqual([1, 2]);
+            expect(refusal('[1, 2].flatten()')).toMatchObject({ code: 'NEXO3001', message: expect.stringContaining('it is available on List<List<T>>') });
         });
 
         it('takes the extension whose target is the most specific, several none of which is refused as ambiguous, giving each through its extension', () => {

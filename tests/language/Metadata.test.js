@@ -220,9 +220,9 @@ describe('result metadata', () => {
             const lineageOf = text => resolve(text).evaluate().metadata;
             const projected = 'name:crowd { name = it.label }';
 
-            expect(lineageOf(`${projected}.reverse`).provenance).toEqual(references([parts[0], parts[1], parts[0]]));
-            expect(lineageOf(`${projected}.reverse`).sources).toEqual(references([parts[0], parts[1], parts[0]]));
-            expect(lineageOf('name:crowd { name = it.label } { label = it.name }.reverse').sources).toEqual([{ kind: 'data', value: { name: 'a' } }, { kind: 'data', value: { name: 'b' } }, { kind: 'data', value: { name: 'a' } }]);
+            expect(lineageOf(`${projected}.reverse()`).provenance).toEqual(references([parts[0], parts[1], parts[0]]));
+            expect(lineageOf(`${projected}.reverse()`).sources).toEqual(references([parts[0], parts[1], parts[0]]));
+            expect(lineageOf('name:crowd { name = it.label } { label = it.name }.reverse()').sources).toEqual([{ kind: 'data', value: { name: 'a' } }, { kind: 'data', value: { name: 'b' } }, { kind: 'data', value: { name: 'a' } }]);
             expect(lineageOf(`${projected}.drop(1)`).provenance).toEqual(references([parts[1], parts[0]]));
             expect(lineageOf(`${projected}.takeWhile(it.name == "a")`).provenance).toEqual(references([parts[0]]));
             expect(lineageOf(`${projected}.distinctBy(it.name)`).provenance).toEqual(references([parts[0], parts[1]]));
@@ -236,19 +236,19 @@ describe('result metadata', () => {
 
             expect(metadataOf('name:twins.select(it.label).drop(1).select(it)').sources).toEqual(labels(['a', 'b']));
             expect(twinsOf(metadataOf('name:twins.select(it.label).drop(1).select(it)').provenance)).toEqual([1, 2]);
-            expect(metadataOf('name:twins.select(it.label).reverse.select(it)').sources).toEqual(labels(['b', 'a', 'a']));
-            expect(twinsOf(metadataOf('name:twins.select(it.label).reverse.select(it)').provenance)).toEqual([2, 1, 0]);
+            expect(metadataOf('name:twins.select(it.label).reverse().select(it)').sources).toEqual(labels(['b', 'a', 'a']));
+            expect(twinsOf(metadataOf('name:twins.select(it.label).reverse().select(it)').provenance)).toEqual([2, 1, 0]);
             expect(twinsOf(metadataOf('name:twins.select(it.label).orderByDescending(it).select(it)').provenance)).toEqual([2, 0, 1]);
-            expect(twinsOf(metadataOf('name:twins.select(it.label).distinct.select(it)').provenance)).toEqual([0, 2]);
+            expect(twinsOf(metadataOf('name:twins.select(it.label).distinct().select(it)').provenance)).toEqual([0, 2]);
             expect(metadataOf('name:twins.select(it.label).where(it == "c").select(it)')).toMatchObject({ sources: [], provenance: [] });
             // An object projection's reversal, of a sequence that is no palindrome, and a list of lists, whose answer its capture maps to another list.
-            expect([twinsOf(metadataOf('name:twins { n = it.label }.reverse').sources), twinsOf(metadataOf('name:twins { n = it.label }.reverse').provenance)]).toEqual([[2, 1, 0], [2, 1, 0]]);
-            expect(twinsOf(metadataOf('name:twins.select([it.label]).reverse.select(it)').provenance)).toEqual([2, 1, 0]);
+            expect([twinsOf(metadataOf('name:twins { n = it.label }.reverse()').sources), twinsOf(metadataOf('name:twins { n = it.label }.reverse()').provenance)]).toEqual([[2, 1, 0], [2, 1, 0]]);
+            expect(twinsOf(metadataOf('name:twins.select([it.label]).reverse().select(it)').provenance)).toEqual([2, 1, 0]);
         });
 
         it("describes a filter or a reordering of a selection's answer by its own origin and tolerance, with the sources and provenance of the occurrences it kept, though no item has a record", () => {
             const twinsOf = entries => entries.map(entry => twins.indexOf(entry.value));
-            const { objectFields } = metadataOf('{ selected = name:twins.select(it.label), kept = name:twins.select(it.label).where(it == "a"), reversed = name:twins.select(it.label).reverse, none = name:twins.select(it.label).where(false) }');
+            const { objectFields } = metadataOf('{ selected = name:twins.select(it.label), kept = name:twins.select(it.label).where(it == "a"), reversed = name:twins.select(it.label).reverse(), none = name:twins.select(it.label).where(false) }');
 
             expect(objectFields.kept).toEqual({ origin: expect.any(Object), tolerance: null, sources: twins.slice(0, 2).map(twin => ({ kind: 'reference', value: twin })), provenance: expect.any(Array) });
             expect([twinsOf(objectFields.kept.sources), twinsOf(objectFields.kept.provenance)]).toEqual([[0, 1], [0, 1]]);

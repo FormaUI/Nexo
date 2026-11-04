@@ -1754,7 +1754,8 @@ export class LanguageResolver {
             return `${receiver}.${name}`;
         }
 
-        return declaration.kind === 'indexer' ? `${receiver}.${name}[…]` : `${receiver}.${name}(…)`;
+        // A function taking no argument is written with its empty parentheses, one taking some with the arguments to give.
+        return declaration.kind === 'indexer' ? `${receiver}.${name}[…]` : `${receiver}.${name}(${(declaration.parameters ?? []).length === 0 ? '' : '…'})`;
     }
 
     #resolveLiteral(node) {
@@ -2028,7 +2029,7 @@ export class LanguageResolver {
     #refuseAmbiguousNames(node, names, receiverNode, receiverType, first, ways, pointer) {
         const receiver = DefinitionWriter.quote(receiverNode, this.#namespaceNames);
         const colon = first.access.optional === true ? '?:' : ':';
-        const suffix = node.kind === 'call' ? '(…)' : node.kind === 'indexerAccess' ? '[…]' : '';
+        const suffix = node.kind === 'call' ? (node.arguments.length === 0 ? '()' : '(…)') : node.kind === 'indexerAccess' ? '[…]' : '';
         const after = length => `${names.slice(length).map(name => `.${name}`).join('')}${suffix}`;
         const written = `${receiver}${colon}${names.join('.')}${suffix}`;
         const readings = ways.map(({ length, extension }) => {

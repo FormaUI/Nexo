@@ -132,7 +132,7 @@ Declarations keep their own restrictions besides: module names are unique, compa
 A declaration accepts any identifier, a reserved word among them. This applies to object fields, locals, functions, function parameters and conditional bindings. Write the name without `@`:
 
 ```nexo
-light { true = true, it = it.active() }
+light { true = true, it = it.active }
 ```
 
 The same rule applies to member and indexer names after `.` and `?.`. For example, `value.null` reads a member named `null`, and `device.end["key"]` invokes an indexer named `end`.
@@ -314,7 +314,7 @@ Every position between two tokens is one of three kinds: inside a one-line const
 | An indexer's opening bracket, on the line of what it indexes | `setting[`, `rooms[`, `x?[` |
 | A qualified name in a type position, after `as`, `to` or `import` | `as Home.Device`, `to Measures.Temperature` |
 | A cast's or a conversion's keyword with its type | `as Light`, `to Number` |
-| A prefix operator with the start of its operand | `-padding`, `not it.occupied()`, `try value to Number` |
+| A prefix operator with the start of its operand | `-padding`, `not it.occupied`, `try value to Number` |
 | An object expression's `{`, on its receiver's line | `room {` |
 | `function` with its `(` | `function (` |
 | An arrow's parameters with its `=>` | `d =>`, `(a, b) =>` |
@@ -340,14 +340,14 @@ A namespace's member read where a value stands, `Home.rooms`, is a chain, and fo
 ```nexo
 room {
     lit = it.devices
-        .where(it.active())
+        .where(it.active)
         .count,
     gap = ((it.climate?.temperature ?? 0)
         - outside),
-    label = if it.occupied()
-        and not it.reserved() then
+    label = if it.occupied
+        and not it.reserved then
         "busy"
-    elseif it.reserved() then
+    elseif it.reserved then
         "held"
     else
         "free"
@@ -395,7 +395,7 @@ A chain breaks before each step without an enclosure, since a line that starts w
 
 A conditional, a `do` block and a function expression are each written in one of two shapes:
 
-1. **On one line,** from its first keyword to its `end`: `if it.occupied() then "busy" else "free" end`, `do 1 end`.
+1. **On one line,** from its first keyword to its `end`: `if it.occupied then "busy" else "free" end`, `do 1 end`.
 2. **In block form,** once it spans lines at all: `if <condition> then` and `elseif <condition> then` each end their lines, `then` closing a condition's last line; `else`, `do` and a function's head each end their lines; each branch's or body's content starts on the line after; and `end` starts a line of its own, on which only closing punctuation, `,`, `)`, `]` or `}`, may follow it.
 
 A keyword block spans lines when any line break falls between its first keyword and its `end`, one inside a nested object, call, keyword block or block string included, so block form propagates outward through the keyword blocks around it.

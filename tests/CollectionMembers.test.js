@@ -68,15 +68,15 @@ describe('the members of collections', () => {
 
         it('joins lists: concat keeps the receiver\'s item type, flatten a list of lists, and selectMany each item\'s list, refusing a null one', () => {
             expect(valueOf('xs.concat(none)')).toEqual([3, 1, 2]);
-            expect(evaluate('nested.flatten')).toEqual({ value: [1, 2, 3], type: 'List<Number>' });
+            expect(evaluate('nested.flatten()')).toEqual({ value: [1, 2, 3], type: 'List<Number>' });
             expect(evaluate('nested.selectMany(it)')).toEqual({ value: [1, 2, 3], type: 'List<Number>' });
             expect(failureOf('lights.concat(devices)')).toMatchObject({ code: 'NEXO3042', location: { pointer: '/expression/arguments/0' } });
             expect(failureOf('gaps.selectMany(xs)')).toMatchObject({ code: 'NEXO5031', location: { pointer: '/expression' } });
         });
 
         it('reverses and keeps each item\'s first occurrence, by value and by key', () => {
-            expect(valueOf('xs.reverse')).toEqual([2, 1, 3]);
-            expect(valueOf('words.distinct')).toEqual(['tea', 'coffee']);
+            expect(valueOf('xs.reverse()')).toEqual([2, 1, 3]);
+            expect(valueOf('words.distinct()')).toEqual(['tea', 'coffee']);
             expect(valueOf('people.distinctBy(it.team).select(it.name)')).toEqual(['ann', 'bob']);
         });
 
@@ -111,7 +111,7 @@ describe('the members of collections', () => {
             const refusals = [
                 ['people.contains(people.first)', "'List.contains' compares the items of a List<{ name: String, team: String }> by key equality, which compares numbers, strings, Booleans, references and null alone: compare them by a key, as any(it.id == value.id) does"],
                 ['nested.indexOf(none)', "'List.indexOf' compares the items of a List<List<Number>> by key equality"],
-                ['nested.distinct', "'List.distinct' compares the items of a List<List<Number>> by key equality"],
+                ['nested.distinct()', "'List.distinct' compares the items of a List<List<Number>> by key equality"],
                 ['xs.distinctBy({ a = it })', "'List.distinctBy' compares the keys its expression gives, of { a: Number }, by key equality, which compares numbers, strings, Booleans, references and null alone: give a key of one of those"],
             ];
 

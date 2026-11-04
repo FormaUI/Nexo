@@ -181,7 +181,7 @@ Deferred items below require their stated trigger before design or implementatio
 | --- | --- | --- |
 | Collection conversions, `values to List` and `entries to Dictionary` | Collections are constructed by members; conversions to or from a collection would extend conversion targets and contracts. | A use members do not serve |
 | Unions of structured types | One shape of nullable fields, and a field telling which of them a value fills, holds data of several families, its consumer validating each family; a union would need a notation, narrowing and a projection rule of its own. | A host whose data no one shape holds |
-| Rounding a number to decimal digits | Rounding a binary value's decimal expansion is a contract of its own; a step is written by arithmetic around `round`. | A host that needs digits a step can't give |
+| Rounding a number to decimal digits | Rounding a binary value's decimal expansion is a contract of its own; a step is written by arithmetic around `round()`. | A host that needs digits a step can't give |
 | Explicit application identity, `identifyBy` | Sources and lineage serve the collection foundation; identities apart from keys and sources need scoping rules of their own. | A host that matches by identities its sources cannot give |
 | Incremental reparsing, specialized tree machinery, and a public tree schema shared by C# and JavaScript | No tool needs them yet. | A concrete tooling need |
 | Expression and predicate arguments to host calls | Each is a body of each item of a list its member follows, which a host call reads none of; a function argument, kept by its host, serves a host call that calls back into its script. | A host call that follows a list and needs a body of each of its items |

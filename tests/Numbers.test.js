@@ -7,16 +7,16 @@ const evaluate = (text, values = {}) => registry.resolve(text, values).createEva
 
 describe("a number's members", () => {
     it('rounds a half away from zero, so a number and its negation round to a number and its negation', () => {
-        expect(evaluate('[2.5.round, (-2.5).round, 2.4.round, (-2.6).round, 0.5.round, (-0.5).round]')).toEqual([3, -3, 2, -3, 1, -1]);
-        expect(evaluate('(-x).round == -(x.round)', { x: 7.5 })).toBe(true);
+        expect(evaluate('[2.5.round(), (-2.5).round(), 2.4.round(), (-2.6).round(), 0.5.round(), (-0.5).round()]')).toEqual([3, -3, 2, -3, 1, -1]);
+        expect(evaluate('(-x).round() == -(x.round())', { x: 7.5 })).toBe(true);
     });
 
     it('takes the floor, the ceiling and the truncation, and the absolute value', () => {
-        expect(evaluate('[(-1.5).floor, (-1.5).ceiling, (-1.5).truncate, 1.5.truncate, (-3).abs, 3.abs]')).toEqual([-2, -1, -1, 1, 3, 3]);
+        expect(evaluate('[(-1.5).floor(), (-1.5).ceiling(), (-1.5).truncate(), 1.5.truncate(), (-3).abs(), 3.abs()]')).toEqual([-2, -1, -1, 1, 3, 3]);
     });
 
     it('answers 0 where it would answer -0', () => {
-        const values = evaluate('[(-0.4).round, (-0.5).ceiling, (-0.5).truncate, n.abs, n.min(0), n.max(0), n.clamp(0, 1)]', { n: -0 });
+        const values = evaluate('[(-0.4).round(), (-0.5).ceiling(), (-0.5).truncate(), n.abs(), n.min(0), n.max(0), n.clamp(0, 1)]', { n: -0 });
 
         expect(values.map(value => Object.is(value, -0))).toEqual(values.map(() => false));
     });
@@ -30,6 +30,6 @@ describe("a number's members", () => {
     });
 
     it('reads a member of a number after a group, a step written by arithmetic around it', () => {
-        expect(evaluate('(x * 2).round / 2', { x: 1.26 })).toBe(1.5);
+        expect(evaluate('(x * 2).round() / 2', { x: 1.26 })).toBe(1.5);
     });
 });

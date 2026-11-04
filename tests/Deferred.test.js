@@ -177,8 +177,8 @@ describe('values of Any', () => {
         });
 
         it('compares by key equality the items of a list whose actual item type is a key type alone, failing one of objects or of values of Any', () => {
-            expect([evaluate('shelf.item("numbers").contains(2)'), evaluate('shelf.item("numbers").indexOf(2)'), evaluate('shelf.item("numbers").distinct')]).toEqual([true, 1, [1, 2]]);
-            expect(failure('shelf.wrap([shelf.item("record")]).distinct')).toMatchObject({
+            expect([evaluate('shelf.item("numbers").contains(2)'), evaluate('shelf.item("numbers").indexOf(2)'), evaluate('shelf.item("numbers").distinct()')]).toEqual([true, 1, [1, 2]]);
+            expect(failure('shelf.wrap([shelf.item("record")]).distinct()')).toMatchObject({
                 code: 'NEXO5042',
                 kind: 'evaluation',
                 location: { pointer: '/expression' },

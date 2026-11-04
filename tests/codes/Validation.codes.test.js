@@ -125,7 +125,7 @@ describe('the codes of resolution', () => {
         it('NEXO3026, an extension access whose first name names neither an extension nor an extension member of its receiver, located at that name', () => {
             expect(refusalWithoutImportsOf('import shop\ns:Nothing.size')).toMatchObject({ code: 'NEXO3026', location: { pointer: '/expression/receiver' }, message: expect.stringContaining("'Nothing' names no extension the script reaches, and no extension member of String has it") });
             expect(refusalWithoutImportsOf('import shop\ns:Nothing.pad(1)')).toMatchObject({ code: 'NEXO3026', location: { pointer: '/expression/callee/receiver' } });
-            expect(nexo.createRegistry([createShop()]).resolve('import shop\ns:size.round', values).type).toBe('Number');
+            expect(nexo.createRegistry([createShop()]).resolve('import shop\ns:size.round()', values).type).toBe('Number');
         });
         it('NEXO3027, an extension access whose receiver does not satisfy the extension\'s target', () => expect(refusalWithoutImportsOf('import shop\nxs:Words.size')).toMatchObject({ code: 'NEXO3027', location: { pointer: '/expression' } }));
         it('NEXO3061, an extension access naming one several extensions share unqualified', () => {
@@ -142,7 +142,7 @@ describe('the codes of resolution', () => {
         it('NEXO3091, an extension access whose names read more than one way', () => {
             const sizes = nexo.createModule('sizes', { types: [extensionDeclaration('size', 'String', [property('round', 'Number')])] });
 
-            expect(refusalOf('s:size.round', values, [sizes])).toMatchObject({ code: 'NEXO3091', message: expect.stringContaining("written '(s:size).round'") });
+            expect(refusalOf('s:size.round()', values, [sizes])).toMatchObject({ code: 'NEXO3091', message: expect.stringContaining("written '(s:size).round()'") });
         });
     });
 
@@ -321,7 +321,7 @@ describe('the codes of resolution', () => {
         });
         it('NEXO3043, a field that would contain a reference value', () => expectResolutionCode('{ a = s:device }', 'NEXO3043'));
         it('NEXO3083, a key distinctBy gives of no key type', () => expectResolutionCode('xs.distinctBy({ a = it })', 'NEXO3083'));
-        it('NEXO3083, the items distinct compares of no key type', () => expectResolutionCode('[xs, ys].distinct', 'NEXO3083'));
+        it('NEXO3083, the items distinct compares of no key type', () => expectResolutionCode('[xs, ys].distinct()', 'NEXO3083'));
         it('NEXO3044, a field read through root that is not completed there', () => expectResolutionCode('{ a = root.b, b = 1 }', 'NEXO3044'));
         it('NEXO3047, a field that would hold root', () => expectResolutionCode('{ a = 1, b = root }', 'NEXO3047'));
     });

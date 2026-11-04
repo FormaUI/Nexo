@@ -19,8 +19,8 @@ const state = (extras = {}) => updates('observable', 'fresh', [ofReceiver('state
 const climate = updates('observable', 'fresh', [ofReceiver('climate')]);
 const meter = (extras = {}) => updates('observable', 'fresh', [ofReceiver('meter')], extras);
 
-/** A Boolean function of the receiver that takes no arguments, as the home's tests are, answering what the receiver's field of its name holds. */
-const test = (name, testUpdates) => createFunctionDeclaration(name, 'Boolean', { updates: testUpdates, parameters: [], impl: ({ receiver }) => receiver[name] === true });
+/** A Boolean property of the receiver, a state it is in, as the home's are, answering what the receiver's field of its name holds. */
+const test = (name, testUpdates) => createPropertyDeclaration(name, 'Boolean', { updates: testUpdates, impl: ({ receiver }) => receiver[name] === true });
 
 /** A property answering the receiver's field of its name, null where it holds none. */
 const field = (name, result, fieldUpdates) => createPropertyDeclaration(name, result, { updates: fieldUpdates, impl: ({ receiver }) => receiver[name] ?? null });
@@ -82,6 +82,8 @@ const HOME_MEMBERS = {
         test('offline', updates('partly-observable', 'fresh', [ofReceiver('state')], { misses: 'a device that stops reporting before its timeout' })),
         test('batteryPowered', constant),
         test('dimmable', constant),
+        // Whether the device answers when it is asked now, work a function does, which a member taking a test is given by reference.
+        createFunctionDeclaration('ping', 'Boolean', { updates: state(), impl: ({ receiver }) => receiver.active === true }),
         createFunctionDeclaration('on', '@selected', { invokedBy: 'host', parameters: [createValueParameterDeclaration('type', 'String', { fixed: true, selects: 'type', selector: 'event' })] }),
     ],
     Light: [

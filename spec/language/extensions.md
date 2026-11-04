@@ -75,9 +75,9 @@ Ordinary access continues after the member, on what it answers, in each form:
 
 ```nexo
 {
-    unnamed = device:power.round,                 // Energy's power, then its answer's round.
-    named = device:Device.power.round,            // Through Energy's extension Device.
-    qualified = device:Energy.Device.power.round  // Device qualified by its module.
+    unnamed = device:power.round(),                 // Energy's power, then its answer's round.
+    named = device:Device.power.round(),            // Through Energy's extension Device.
+    qualified = device:Energy.Device.power.round()  // Device qualified by its module.
 }
 ```
 

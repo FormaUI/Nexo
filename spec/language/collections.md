@@ -114,26 +114,26 @@ A member following a list is a member of the list itself: `room.devices.count` c
 | The unnamed indexer, `[index]` | The item at the index counted from zero, and null for an index past the end, for a negative one, which never counts from the end, and for a fractional one; `-0` is `0` |
 | The unnamed indexer, `[^n]` | The item at the [index](#collections-positions) counted from the end, `^1` the last, and null for `^0` and for an index before the start |
 | The unnamed indexer, `[range]` | A `List<T>`, the items within the [range](#collections-positions), applied to the list's length once, in order; a range whose start stands after its end, or either beyond the list, is refused where it is evaluated (NEXO5033), never trimmed, and equal boundaries give an empty list, so `take` and `drop` are the tolerant partitions |
-| `where` | The items its predicate is truthy for, in the list's order, leaving out an item whose predicate is null or false; the predicate may produce any value |
-| `max`, `min`, `sum`, `average` | Evaluate a number expression against each item and require `Number?`; `average` the mean of the numbers |
+| `where(predicate)` | The items its predicate is truthy for, in the list's order, leaving out an item whose predicate is null or false; the predicate may produce any value |
+| `max(expression)`, `min(expression)`, `sum(expression)`, `average(expression)` | Evaluate a number expression against each item and require `Number?`; `average` the mean of the numbers |
 | `entry[index]`, `entry[^n]` | The item at the index as a `Pair<Number, T>`, its index from the start and the item, null wherever the unnamed indexer answers null for an index the list has no item at |
 | `pick(positions)` | A `List<T>`, the item at each of the positions, a `List<Number>`, in the positions' order, a position given twice giving its item twice; a position no item stands at, a fractional or negative one among them, is refused (NEXO5034) |
 | `select(expression)` | A `List<U>`, the expression's value for every item in order, a null item among them, the expression's `it` of the item's type, so `items.select(it)` keeps the list and `items.select(it ?? 0)` replaces its nulls |
 | `selectMany(expression)` | A `List<U>`, the lists the expression gives the items joined in order; an item's list that is null, a null item's among them, is refused (NEXO5031), never treated as empty |
 | `concat(other)` | The items, then those of `other`, a `List<T>` of the receiver's `T`, which a later argument never widens; refused before it is made where it holds more items than its host [limits](../runtime/evaluation.md#runtime-evaluation) a list to (NEXO5054) |
-| `flatten` | On a `List<List<T>>`, the items of each inner list in order, a list whose inner lists can be null having none |
+| `flatten()` | On a `List<List<T>>`, the items of each inner list in order, a list whose inner lists can be null having none |
 | `take(count)`, `drop(count)` | The items at an index less than the count, and those at the count or past it, whatever number the count is: one past the end takes or leaves every item, and one of zero or less none |
-| `takeWhile`, `dropWhile` | The items before the first its predicate is falsy for, and the items from that one on, the predicate evaluated against none after it |
-| `any`, `all` | Whether its predicate is truthy for some item, false for none and stopping at the first it is truthy for, and whether for every item, true for none and stopping at the first it is not |
+| `takeWhile(predicate)`, `dropWhile(predicate)` | The items before the first its predicate is falsy for, and the items from that one on, the predicate evaluated against none after it |
+| `any(predicate)`, `all(predicate)` | Whether its predicate is truthy for some item, false for none and stopping at the first it is truthy for, and whether for every item, true for none and stopping at the first it is not |
 | `contains(value)` | Whether an item equals the value by [key equality](#collections-dictionaries-and-pairs), stopping at the first that does, null equal to a null item |
 | `indexOf(value)` | The position of the value's first occurrence, a `Number?`, compared as `contains` compares, null equal to a null item, and null where no item equals it |
 | `indexWhere(predicate)` | The position of the first item its predicate is truthy for, a `Number?`, null where none is, evaluating it against no item after that one |
 | `single` | The one item, null for an empty list, and refused for a list of several (NEXO5030) |
-| `minBy`, `maxBy` | The first item whose key is the least or the greatest, keys compared as [ordering](#collections-list-ordering) compares them, items whose key is null skipped, null where none gives one |
+| `minBy(key)`, `maxBy(key)` | The first item whose key is the least or the greatest, keys compared as [ordering](#collections-list-ordering) compares them, items whose key is null skipped, null where none gives one |
 | `orderBy(key)`, `orderByDescending(key)` | The items ordered by their keys, ascending or descending, as [ordering](#collections-list-ordering) sets out |
 | `thenBy(key)`, `thenByDescending(key)` | The items of a list `orderBy` ordered, each run of items whose keys so far are equal ordered within itself by another key, as [ordering](#collections-list-ordering) sets out |
-| `distinct`, `distinctBy(expression)` | Each item's first occurrence, in order, items compared by key equality; and each key's first item, its key the expression's value, keys compared alike |
-| `reverse` | The items in the opposite order |
+| `distinct()`, `distinctBy(expression)` | Each item's first occurrence, in order, items compared by key equality; and each key's first item, its key the expression's value, keys compared alike |
+| `reverse()` | The items in the opposite order |
 | `toDictionary(expression)` | A `Dictionary<K, T>` of the items by the key the expression gives each, in the items' order, two items of one key refused (NEXO5029), which `groupBy` collects instead |
 | `groupBy(expression)` | A `Dictionary<K, List<T>>` of the items by their keys, each key's items in their order, the keys in the order their first items stand |
 
@@ -183,7 +183,7 @@ A member following a dictionary is a member of the dictionary itself, and each r
 | `containsKey(key)` | Whether the dictionary holds the key, a key whose value is null among them |
 | `keys`, `values` | The keys, a `List<K>`, and the values, a `List<V>`, in the entries' order |
 | `entries` | The entries, a `List<Pair<K, V>>`, in their order |
-| `where` | The entries whose value its predicate is truthy for, a `Dictionary<K, V>`, each keeping its key and its place |
+| `where(predicate)` | The entries whose value its predicate is truthy for, a `Dictionary<K, V>`, each keeping its key and its place |
 | `select(expression)` | A `Dictionary<K, U>`, each entry's value replaced by the expression's, every value null included, each keeping its key and its place |
 
 A dictionary's value operations read each entry's value as their `it`, so `prices.where(it > 2)` keeps the entries of prices above 2; an operation needing the key reads the `entries`, as `prices.entries.where(it.key != "tea")` does.

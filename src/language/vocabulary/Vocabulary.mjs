@@ -154,7 +154,7 @@ export class Vocabulary {
      * in order. An inner list that can be null is no list of lists, so none is ever treated as empty.
      */
     static #createListType() {
-        const nested = Vocabulary.#createMembers('List<T>', 'List<List<T>>', [Declarations.createPropertyDeclaration('flatten', 'List<T>', { updates: DERIVED_UPDATES, impl: ({ receiver }) => receiver.flat() })]);
+        const nested = Vocabulary.#createMembers('List<T>', 'List<List<T>>', [Declarations.createFunctionDeclaration('flatten', 'List<T>', { updates: DERIVED_UPDATES, impl: ({ receiver }) => receiver.flat() })]);
 
         return Object.freeze({
             name: 'List',
@@ -234,7 +234,9 @@ export class Vocabulary {
      * never parts a surrogate pair.
      */
     static #createStringMembers() {
+        // What a text has is read as a property, and what is made of it is computed by a function.
         const of = (name, result, compute) => Declarations.createPropertyDeclaration(name, result, { updates: DERIVED_UPDATES, impl: ({ receiver }) => compute(receiver) });
+        const made = (name, compute) => Declarations.createFunctionDeclaration(name, 'String', { updates: DERIVED_UPDATES, impl: ({ receiver }) => compute(receiver) });
         const textParameter = name => Declarations.createValueParameterDeclaration(name, 'String');
         const testing = (name, test) => Declarations.createFunctionDeclaration(name, 'Boolean', { updates: DERIVED_UPDATES, parameters: [textParameter('text')], impl: ({ receiver, args }) => test(receiver, args.text) });
         // The empty text stands at every position, so it has no occurrence to replace or to split at.
@@ -247,9 +249,9 @@ export class Vocabulary {
         return [
             of('length', 'Number', text => text.length),
             // Tab, line feed, vertical tab, form feed, carriage return, U+FEFF, U+2028, U+2029 and every space separator, at either end.
-            of('trim', 'String', text => text.trim()),
-            of('lowercase', 'String', text => text.toLowerCase()),
-            of('uppercase', 'String', text => text.toUpperCase()),
+            made('trim', text => text.trim()),
+            made('lowercase', text => text.toLowerCase()),
+            made('uppercase', text => text.toUpperCase()),
             testing('startsWith', (text, prefix) => text.startsWith(prefix)),
             testing('endsWith', (text, suffix) => text.endsWith(suffix)),
             testing('contains', (text, part) => text.includes(part)),
@@ -283,13 +285,13 @@ export class Vocabulary {
     }
 
     /**
-     * The members of a number beside its conversions: its rounding, `round` a half away from zero, `floor`, `ceiling` and `truncate`; its absolute value; the lesser and the greater of it and another, and it clamped
+     * The members of a number beside its conversions, each a function computing a number from it: its rounding, `round` a half away from zero, `floor`, `ceiling` and `truncate`; its absolute value; the lesser and the greater of it and another, and it clamped
      * within two, a low above the high refused; each answering 0 where it would answer -0; and `sequence`, the numbers from it, generated apart from any range.
      */
     static #createNumberMembers() {
         // A number a member answers is never -0, which no script tells from 0 but a host's division could.
         const unsigned = number => (number === 0 ? 0 : number);
-        const of = (name, compute) => Declarations.createPropertyDeclaration(name, 'Number', { updates: DERIVED_UPDATES, impl: ({ receiver }) => unsigned(compute(receiver)) });
+        const of = (name, compute) => Declarations.createFunctionDeclaration(name, 'Number', { updates: DERIVED_UPDATES, impl: ({ receiver }) => unsigned(compute(receiver)) });
         const against = (name, compute) => Declarations.createFunctionDeclaration(name, 'Number', { updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('other', 'Number')], impl: ({ receiver, args }) => unsigned(compute(receiver, args.other)) });
 
         return [
@@ -485,9 +487,9 @@ export class Vocabulary {
                 updates: DERIVED_UPDATES, parameters: [Declarations.createExpressionParameterDeclaration('K')], impl: ({ receiver, args }) => ListOrdering.thenBy(receiver, args.expression, isDescending, name),
             })),
             // Each value's first occurrence, in order, values compared by the language's key equality; and each key's first item, its key the expression's value, keys compared alike.
-            Declarations.createPropertyDeclaration('distinct', 'List<T>', { updates: DERIVED_UPDATES, impl: ({ receiver }) => ItemPositions.createAnswer(receiver, Vocabulary.#firstPositions(receiver, item => item)) }),
+            Declarations.createFunctionDeclaration('distinct', 'List<T>', { updates: DERIVED_UPDATES, impl: ({ receiver }) => ItemPositions.createAnswer(receiver, Vocabulary.#firstPositions(receiver, item => item)) }),
             Declarations.createFunctionDeclaration('distinctBy<K>', 'List<T>', { updates: DERIVED_UPDATES, parameters: [Declarations.createExpressionParameterDeclaration('K')], impl: ({ receiver, args }) => ItemPositions.createAnswer(receiver, Vocabulary.#firstPositions(receiver, item => args.expression(item))) }),
-            Declarations.createPropertyDeclaration('reverse', 'List<T>', { updates: DERIVED_UPDATES, impl: ({ receiver }) => ItemPositions.createAnswer(receiver, ItemPositions.createSpan(0, receiver.length).reverse()) }),
+            Declarations.createFunctionDeclaration('reverse', 'List<T>', { updates: DERIVED_UPDATES, impl: ({ receiver }) => ItemPositions.createAnswer(receiver, ItemPositions.createSpan(0, receiver.length).reverse()) }),
             // A dictionary of the items by the key each gives, in the items' order, two items of one key refused, which grouping collects instead.
             Declarations.createFunctionDeclaration('toDictionary<K>', 'Dictionary<K, T>', {
                 updates: DERIVED_UPDATES, parameters: [Declarations.createExpressionParameterDeclaration('K')],

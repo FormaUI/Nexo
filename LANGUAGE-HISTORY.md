@@ -20,6 +20,10 @@ Each entry says what its version breaks:
 *Unreleased · definition format 38*
 
 ```nexo
+price.round()                // the nearest whole number; price.round before, now NEXO3017, "write 'price.round()'"
+name.trim().lowercase()      // name.trim.lowercase before
+items.reverse().distinct()   // items.reverse.distinct before
+device.active                // a state is a property; device.active() before, in the examples' vocabulary
 if ready then 1else 2 end    // NEXO1000, "write '1 else'"; 1, then else, before
 if ready then 1 else 2 end   // 1 or 2, as before
 0x10                         // NEXO1000, a number is written in decimal digits; a member written without its dot, NEXO1011, before
@@ -36,6 +40,7 @@ evaluator.evaluate();                                  // '0.sequence(count)' wi
 
 **Language**
 
+- [A property names what its receiver is, has or is in, and a function does work](spec/language/vocabulary.md#vocabulary-boolean-functions), as [D77](docs/decisions.md#d77) records. Nexo's own members that make a value of their receiver are functions: a number's `round()`, `floor()`, `ceiling()`, `truncate()` and `abs()`, a text's `trim()`, `lowercase()` and `uppercase()`, and a list's `reverse()`, `distinct()` and `flatten()`, each a property before. A state a module declares is a Boolean property, `device.active`, where a test was declared as a function so a script could pass it by reference; a test that does work stays a function, `device.ping()`.
 - [A value of `Any` enters a structure as its data shape alone](spec/language/types.md#types-any-into-a-structure), wherever a type is declared for it: a member's argument, a property of a structure a script constructs, and a function's argument or result a callback contract declares. A member was given it as it was, the properties its structure doesn't declare among them, while a member's answer was copied to the shape, so one parameter gave a host two shapes, as [D71](docs/decisions.md#d71) records.
 - [A number and a name after it stand apart](spec/language/lexical-structure.md#numbers-and-the-minus-sign): a letter right after a number makes the number and the name it starts one invalid token, NEXO1000, so `1else`, `2end` and `0x10` are refused. The longest match read `1else` as `1` and `else`, and a name after a number as a member written without its dot, NEXO1011, as [D73](docs/decisions.md#d73) records.
 
@@ -46,6 +51,7 @@ evaluator.evaluate();                                  // '0.sequence(count)' wi
 
 **Breaking:**
 
+- The 11 members that make a value of their receiver are called: write `x.round()`, `name.trim()` and `items.reverse()`, which NEXO3017 gives where the property is read. A module declaring a state as a function declares it as a property, and a script reads it without the call, `device.active`, filtering by it with a body, `devices.where(it.active)`, where it passed `Home.active` by reference.
 - A member given a structure from a value of `Any` receives its declared properties alone. A host that reads a property its structure doesn't declare declares it in the structure, or declares its parameter `Any` and reads the value as it is.
 - A number a letter follows with no space is refused. Write a space between them, `1 else`, as canonical text always has, and a dot before a member of a number, `1.e3`.
 

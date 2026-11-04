@@ -10,7 +10,7 @@ Every member declares the types it accepts and returns, and resolution checks ev
 room {
     floorArea = it.floorArea,                         // A number.
     lamp = (it.device("lamp") as Light)?.brightness,  // A device narrowed to a light: a number, or null.
-    lights = it.devices.where(it.dimmable()).count
+    lights = it.devices.where(it.dimmable).count
 }
 ```
 

@@ -58,7 +58,7 @@ In a qualified call to a receiver member, the receiver argument propagates null.
 
 The rule belongs to the receiver argument alone: the member's own arguments keep their declared null policies, and a module member has no receiver argument for it to apply to. A qualified call evaluates its receiver argument first, and a null one skips the member's own arguments as `?.` does, so `Home.device(room, name)` evaluates `name` only where `room` is not null. A null receiver argument skips the member and its arguments, never what the receiver argument reads, so an evaluation still reports every read its receiver argument makes.
 
-A module's function written through its namespace without a call is a [function reference](functions.md#functions-module-functions), which a function parameter, or an expression or a predicate parameter, takes, as `room.devices.where(Home.active)` does, and which the qualified form's rules govern when it is called.
+A module's function written through its namespace without a call is a [function reference](functions.md#functions-module-functions), which a function parameter, or an expression or a predicate parameter, takes, as `room.devices.where(Home.ping)` does, and which the qualified form's rules govern when it is called.
 
 <a id="namespaces-indexers"></a>
 

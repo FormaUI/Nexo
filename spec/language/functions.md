@@ -38,7 +38,7 @@ An **arrow function** is its parameters, `=>` and one simple expression, whose v
 
 ```nexo
 let answer = () => 42
-let isActive = device => device.active()
+let isActive = device => device.active
 let isLit = (light) => light.brightness > 0
 let byPower = (left, right) => left.power - right.power
 return answer()
@@ -46,7 +46,7 @@ return answer()
 
 Parentheses are optional for exactly one parameter and required for none or several. An arrow function declares no locals and does not hold a body, so `x => let y = …` and `x => do … end` are refused, and so is `x => y => x + y`, whose body is not a simple expression; a function that holds more is a regular function bound to a local and passed by its name. Laying the expression out across lines changes nothing.
 
-Either form is a local's initializer, of a body or of an object expression, and an arrow function is also an argument, as `apply(device => device.active(), lamp)` is. Neither stands anywhere else: an object field, an operand, a conditional's branch and a result hold neither, and a regular function written directly as an argument is a syntax error:
+Either form is a local's initializer, of a body or of an object expression, and an arrow function is also an argument, as `apply(device => device.active, lamp)` is. Neither stands anywhere else: an object field, an operand, a conditional's branch and a result hold neither, and a regular function written directly as an argument is a syntax error:
 
 > A function declared with 'function' cannot appear directly as an argument. Bind it to a local and pass its name, or use an arrow function.
 
@@ -70,7 +70,7 @@ A function of a vocabulary keeps its own form, `it.device("lamp")`, with the arg
 A function's name read without a call is a **function reference**, a value that refers to the function together with what calling it needs, held by a local, passed as an argument and returned by a function, as either form is:
 
 ```nexo
-let isActive = device => device.active()
+let isActive = device => device.active
 let shown = isActive
 let apply = function(test, device) test(device) end
 let getTest = () => shown
@@ -89,18 +89,18 @@ A function reference is used within the expression, and the expression's result 
 
 ## References to a module's functions
 
-Reading a module's function through the module's [namespace](modules.md#namespaces) without a call, as `Home.active`, gives a reference to that function. It takes the arguments its [qualified form](modules.md#namespaces-qualified-access) takes, its receiver first where it has one and its own arguments after it, so `Home.active` is the function `device.active()` calls, taking a device, and `Home.device` the one `room.device(name)` calls, taking a room and a name:
+Reading a module's function through the module's [namespace](modules.md#namespaces) without a call, as `Home.ping`, gives a reference to that function. It takes the arguments its [qualified form](modules.md#namespaces-qualified-access) takes, its receiver first where it has one and its own arguments after it, so `Home.ping` is the function `device.ping()` calls, taking a device, and `Home.device` the one `room.device(name)` calls, taking a room and a name:
 
 ```nexo
 let find = Home.device
 return {
-    lit = room.anyDevice(Home.active),
-    active = room.devices.where(Home.active).count,
+    lit = room.anyDevice(Home.ping),
+    answering = room.devices.where(Home.ping).count,
     found = find(room, "lamp")?.name
 }
 ```
 
-- **The declaration it names.** A reference names one declaration, whose implementation, result type, `updates` and observations every call of it follows, as its qualified form's call does, and it names it where it is written, from what that place gives it alone. Passed to a member's function parameter, it names the declaration of its name whose receiver and parameters take the arguments the parameter's callback contract declares, so `room.anyDevice(Home.active)` names `Device`'s `active`, the one a function of a device takes; anywhere else, a local's initializer among them, it names the module's one function of its name, and no later use of the local selects it. So `let test = Home.active` and `room.anyDevice(test)` name the same declaration as `room.anyDevice(Home.active)` where `Home` declares one `active`, and where it declares `active` on unrelated receivers too, the initializer is refused as ambiguous while `room.anyDevice(Home.active)` still names `Device`'s. A reference no declaration takes is a validation error naming the module's declarations of its name, and one that several take is refused as ambiguous where it is written, the error giving an arrow function or an implicit body, whose receiver's type selects one, in its place.
+- **The declaration it names.** A reference names one declaration, whose implementation, result type, `updates` and observations every call of it follows, as its qualified form's call does, and it names it where it is written, from what that place gives it alone. Passed to a member's function parameter, it names the declaration of its name whose receiver and parameters take the arguments the parameter's callback contract declares, so `room.anyDevice(Home.ping)` names `Device`'s `ping`, the one a function of a device takes; anywhere else, a local's initializer among them, it names the module's one function of its name, and no later use of the local selects it. So `let test = Home.ping` and `room.anyDevice(test)` name the same declaration as `room.anyDevice(Home.ping)` where `Home` declares one `ping`, and where it declares `ping` on unrelated receivers too, the initializer is refused as ambiguous while `room.anyDevice(Home.ping)` still names `Device`'s. A reference no declaration takes is a validation error naming the module's declarations of its name, and one that several take is refused as ambiguous where it is written, the error giving an arrow function or an implicit body, whose receiver's type selects one, in its place.
 - **Its calls.** A call of a reference is its qualified form's call, wherever the reference was held, passed or chosen, so `find(room, "lamp")` after `let find = Home.device` is `Home.device(room, "lamp")`: its receiver argument is evaluated first, and a null one answers null without evaluating the function's own arguments or invoking it, so `find(nothing, readName())` never calls the local function `readName` where `nothing` is null. A call of a function reference that may refer to a module's function or to a script's evaluates its receiver argument first either way, and skips the rest only where it refers to the module's. Its type is nullable where its receiver argument's is.
 - **A local that may hold several functions.** Its call gives them one argument list, read by the contract they share, and invokes the one the local holds:
   - where each takes values alone, by position, each takes the values its arguments give;
@@ -157,4 +157,4 @@ A function parameter whose callback contract takes one argument also takes an **
 - **Its type.** It resolves as an arrow function's body does, its `it` of the type the callback contract gives its argument, and its result is checked against the contract's result type.
 - **In the definition.** It is recorded as written, one of its call's argument nodes, with no node of its own, and its canonical text is its expression: whether an argument is an implicit body is the vocabulary's to say, and a definition does not know any vocabulary. The resolution records which arguments are implicit bodies, so an evaluator and a tool read the interpretation from it.
 
-An arrow function given to the same parameter follows the rules of every arrow function: its `it` is the implicit parameter where it is written, so `room.anyDevice(d => it.active())` at the top level, which has none, is an error.
+An arrow function given to the same parameter follows the rules of every arrow function: its `it` is the implicit parameter where it is written, so `room.anyDevice(d => it.active)` at the top level, which has none, is an error.

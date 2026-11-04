@@ -8,7 +8,7 @@ A script's **vocabulary** is everything it can name beyond the language itself: 
 In this document:
 
 1. [Nexo's own vocabulary](#vocabulary-nexos-own)
-2. [Boolean functions](#vocabulary-boolean-functions)
+2. [States and tests](#vocabulary-boolean-functions)
 3. [Type selectors](#events-and-event-types)
 
 <a id="vocabulary-nexos-own"></a>
@@ -21,20 +21,20 @@ Nexo's own module owns the language's types, `List`, `Dictionary`, `Pair`, `Numb
 
 ### Number members
 
-A member following a number is a member of the number itself, and reads and changes as the number does: `rect.width.round` rounds a width.
+A member following a number is a member of the number itself, and reads and changes as the number does: `rect.width.round()` rounds a width.
 
 | Number member | Contract |
 | --- | --- |
-| `round` | The nearest whole number, a half rounded away from zero, so `2.5.round` is `3` and `(-2.5).round` is `-3` |
-| `floor`, `ceiling`, `truncate` | The nearest whole number at or below the number, at or above it, and toward zero |
-| `abs` | The number's absolute value |
+| `round()` | The nearest whole number, a half rounded away from zero, so `2.5.round()` is `3` and `(-2.5).round()` is `-3` |
+| `floor()`, `ceiling()`, `truncate()` | The nearest whole number at or below the number, at or above it, and toward zero |
+| `abs()` | The number's absolute value |
 | `min(other)`, `max(other)` | The lesser and the greater of the number and `other` |
 | `clamp(low, high)` | The number within `low` and `high`, inclusive: `low` where it is less, `high` where it is greater; a `low` greater than `high` is refused where it is evaluated (NEXO5039) |
 | `sequence(count, step)` | The `List<Number>` of the count's numbers from the number, each the step after the one before, `step` 1 where it is left out; a count that is no nonnegative safe integer is refused (NEXO5035), and one above what its host [limits](../runtime/evaluation.md#runtime-evaluation) a list to, before the list is made (NEXO5054) |
 
-- **Properties and functions.** A member that takes nothing is a property, as a list's `reverse` is, and one that takes a number a function.
-- **Rounding.** `round` is symmetric under negation, `(-x).round == -(x.round)`, which offsets and differences that can be negative need, so it rounds a negative half away from zero where ECMAScript's `Math.round` rounds it toward positive infinity. Rounding to a step is written by arithmetic around it, `(x * 2).round / 2`.
-- **Zero.** Each member answers `0` where it would answer `-0`, so `(-0.4).round` is `0`.
+- **Each a function.** Each member makes a number of its receiver, so each is a function, called with its parentheses whether or not it takes an argument, `x.round()` and `x.min(y)`, as [states and tests](#vocabulary-boolean-functions) set out: a property names what its receiver is, has or is in.
+- **Rounding.** `round` is symmetric under negation, `(-x).round() == -(x.round())`, which offsets and differences that can be negative need, so it rounds a negative half away from zero where ECMAScript's `Math.round` rounds it toward positive infinity. Rounding to a step is written by arithmetic around it, `(x * 2).round() / 2`.
+- **Zero.** Each member answers `0` where it would answer `-0`, so `(-0.4).round()` is `0`.
 
 <a id="vocabulary-string-members"></a>
 
@@ -45,8 +45,8 @@ A member following a string is a member of the string itself, and reads and chan
 | String member | Contract |
 | --- | --- |
 | `length` | The number of code units, so a character outside the basic plane counts two |
-| `trim` | The text without the whitespace at either end: tab, line feed, vertical tab, form feed, carriage return, U+FEFF, U+2028, U+2029 and every space separator |
-| `lowercase`, `uppercase` | The text under Unicode's default case conversion, its full mappings, without a locale, so its length can change, as `"ß".uppercase` is `"SS"` |
+| `trim()` | The text without the whitespace at either end: tab, line feed, vertical tab, form feed, carriage return, U+FEFF, U+2028, U+2029 and every space separator |
+| `lowercase()`, `uppercase()` | The text under Unicode's default case conversion, its full mappings, without a locale, so its length can change, as `"ß".uppercase()` is `"SS"` |
 | `startsWith(text)`, `endsWith(text)`, `contains(text)` | Whether the string begins with, ends with or holds `text`, exactly by code unit |
 | `indexOf(text)` | The position of `text`'s first occurrence, a `Number?`, null where it stands nowhere |
 | `replace(old, new)` | The string with every occurrence of `old` replaced by `new`, literally, left to right, no two overlapping |
@@ -76,11 +76,13 @@ A text a conversion refuses fails the conversion, as [conversions](values.md#con
 <a id="vocabulary-boolean-functions"></a>
 <a id="predicates"></a>
 
-## Boolean functions
+## States and tests
 
-A module declares a test of a receiver as a function whose result is a `Boolean`, as `Home` declares `active` and `offline` on `Device` and `occupied` on `Room`. It is a member as any other: its receivers, its implementation, its `updates`, the changes it misses and the observations that cover it are its declaration's, and its failures name it and its module. A script calls it directly, `device.active()`, through its module, `Home.active(device)`, or passes it by reference to a member that takes a function, `room.devices.where(Home.active)`, and each way reaches the one declaration, so a host's policy for a partly observable test concerns that test however it is reached.
+A property names what its receiver is, has or is in, and a function does work or takes the arguments it needs. So a module declares a state its receiver is in as a property whose result is a `Boolean`, as `Home` declares `active` and `offline` on `Device` and `occupied` on `Room`, and a test that does work as a function, as asking a device whether it answers, `ping`, is. Each is a member as any other: its receivers, its implementation, its `updates`, the changes it misses and the observations that cover it are its declaration's, and its failures name it and its module.
 
-A test is declared as a function, since only a function has a [reference](functions.md#functions-module-functions) a script passes; a property is read where it is written. Boolean functions compose as Booleans do: `device.active() and not device.offline()`.
+- **A state** is read where it stands, `device.active`, or through its module, `Home.active(device)`, and filtered by with a body, `room.devices.where(it.active)`. States compose as Booleans do: `device.active and not device.offline`.
+- **A test that does work** is called, `device.ping()`, or passed by reference to a member that takes a function, `room.anyDevice(Home.ping)`, since only a function has a [reference](functions.md#functions-module-functions); a property is read where it is written.
+- **Nexo's own members** follow the same rule: a list's `count` and `first` and a pair's `key` are properties, and `round()`, `trim()` and `reverse()`, which make a value of their receiver, are functions.
 
 Nexo declares no member that tests a receiver of any type, since how a test reads is a domain's: a module that wants one declares it for its own domain, a function taking a test of its receiver in an extension of every type, `{ name: 'Checks<T>', kind: 'extension', target: 'T' }`, as [type parameters](types.md#types-type-parameters) set out.
 

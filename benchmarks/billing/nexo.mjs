@@ -39,7 +39,7 @@ return {
         name = it.name,
         owed = it.owed
     },
-    lateInvoices = customers.select(it.invoices).flatten.where(not it.paid and it.daysOverdue > 30).count
+    lateInvoices = customers.select(it.invoices).flatten().where(not it.paid and it.daysOverdue > 30).count
 }`;
 
 /** How many fields the large script's object holds. */

@@ -102,9 +102,9 @@ Conditions and the operands of `not`, `and` and `or` accept values and test thei
 A test answers a Boolean: a member that answers one, read as every member is.
 
 ```nexo
-room.occupied()
-room.device("lamp")?.active()
-device.batteryPowered()
+room.occupied
+room.device("lamp")?.active
+device.batteryPowered
 room.anyDevice(it.battery != null)
 ```
 
@@ -112,15 +112,15 @@ room.anyDevice(it.battery != null)
 
 ### Tests are members
 
-A test is a property or a function whose result is a `Boolean` or a `Boolean?`: `it.occupied()` asks whether a room is occupied, and `it.batteryPowered()` whether a device runs on a battery. A member that takes a test calls the one it is given, as the home's `room.anyDevice(Home.active)` and `room.anyDevice(it.battery != null)` do, a module declaring such a member for its own domain.
+A test is a property or a function whose result is a `Boolean` or a `Boolean?`: `it.occupied` asks whether a room is occupied, and `it.batteryPowered` whether a device runs on a battery. A member that takes a test calls the one it is given, as the home's `room.anyDevice(Home.ping)` and `room.anyDevice(it.battery != null)` do, a module declaring such a member for its own domain.
 
-A test follows the access rules as every member does, so one of a receiver that can be null is read with `?.` and is a `Boolean?`, and a computed property access reads a Boolean property a binding names as it reads any other. A module declares a test as it declares any member, a [Boolean function](vocabulary.md#vocabulary-boolean-functions).
+A test follows the access rules as every member does, so one of a receiver that can be null is read with `?.` and is a `Boolean?`, and a computed property access reads a Boolean property a binding names as it reads any other. A module declares a state as a Boolean property and a test that does work as a function, as [states and tests](vocabulary.md#vocabulary-boolean-functions) set out.
 
 <a id="tests-no-test-by-name-after-"></a>
 
 ### No test by name after `==`
 
-`==` compares values, so `device == "active"` compares a device with a string, a validation error that gives the test to write, `device.active()`.
+`==` compares values, so `device == "active"` compares a device with a string, a validation error that gives the test to write, `device.active`.
 
 <a id="truthiness"></a>
 
@@ -224,7 +224,7 @@ An equality answers a `Boolean`, never null, evaluating both operands once, from
 
 ### How an equality binds
 
-A dot binds tighter than `==`, and so do an indexer, a cast, a conversion, an attempt and arithmetic, so `device["mode"] == null` tests the setting and `device.active() == false` tests the function's answer.
+A dot binds tighter than `==`, and so do an indexer, a cast, a conversion, an attempt and arithmetic, so `device["mode"] == null` tests the setting and `device.active == false` tests the function's answer.
 
 An equality takes an additive expression on either side, including a chain, cast, conversion, attempt or arithmetic expression, and does not chain, so `a == b == c` is a syntax error and `(a == b) == c` compares the first's result; it stands beside a coalescing operator or a [comparison](#comparisons) only where a group holds one of them, `(count ?? 0) == 0` and `(a < b) == c`.
 
@@ -355,9 +355,9 @@ An evaluation reads what the operands it evaluated read, and an operand a false 
 `and` and `or` answer the operand that decides them, `not` answers whether a value is falsey, and parentheses group any expression.
 
 ```nexo
-light.active() and metered
-device.offline() or (device.batteryPowered() and (device.battery ?? 0) < 10)
-room { free = not it.occupied() and not busy }
+light.active and metered
+device.offline or (device.batteryPowered and (device.battery ?? 0) < 10)
+room { free = not it.occupied and not busy }
 room { let lamp = it.device("lamp"), power = lamp and lamp.power }
 device["label"] or "untitled"
 metered and light.brightness or 0
@@ -376,7 +376,7 @@ An operand of `and` and `or`, and what `not` negates, is any value, a host call 
 
 ### How logical expressions bind
 
-An equality binds tighter than `not`, `not` tighter than `and`, and `and` tighter than `or`, so `device.active() or not lamp == null and enabled` combines the negation of the lamp's equality and `enabled` before the device's test. `not` associates to the right, so `not not a` negates `a` twice, and `and not` and `or not` are `and` and `or` of a negation.
+An equality binds tighter than `not`, `not` tighter than `and`, and `and` tighter than `or`, so `device.active or not lamp == null and enabled` combines the negation of the lamp's equality and `enabled` before the device's test. `not` associates to the right, so `not not a` negates `a` twice, and `and not` and `or not` are `and` and `or` of a negation.
 
 <a id="logical-expressions-negations-and-groups-results"></a>
 
@@ -398,10 +398,10 @@ Each answers a value as it is, never copied or converted: `null and "value"` is 
 A logical expression can give values of several types. Which of them must share a type depends on where it stands:
 
 - **Where its truthiness is tested,** none need to. It is tested as a condition, as the operand of `not`, as an operand of another `and` or `or`, and as a predicate argument written as an expression of `it`.
-- **Where a conditional binding binds it,** its truthy values share a type, since the name is bound only where the value is truthy: `if let level = light.active() and device.battery then level else 0 end` binds a `Number`.
+- **Where a conditional binding binds it,** its truthy values share a type, since the name is bound only where the value is truthy: `if let level = light.active and device.battery then level else 0 end` binds a `Number`.
 - **Wherever else it stands,** its value is used, and the values that can reach that place merge to one type, as [merging](types.md#types-assignability-and-merging) sets out. Values of no one type are a validation error (NEXO3040).
 
-Its value is used as a result, a function's result among them, a local's initializer, an object field, an argument other than a predicate's, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation. Parentheses group an expression and add no requirement of their own, so `(light.active() and light.brightness) or 0` is typed as `light.active() and light.brightness or 0` is.
+Its value is used as a result, a function's result among them, a local's initializer, an object field, an argument other than a predicate's, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation. Parentheses group an expression and add no requirement of their own, so `(light.active and light.brightness) or 0` is typed as `light.active and light.brightness or 0` is.
 
 The values that can reach a place:
 
@@ -410,22 +410,22 @@ The values that can reach a place:
 - **Of an operand:** a value that can be null gives null where it is falsey, and itself without null where it is truthy. A Boolean gives false where it is falsey and true where it is truthy. A value of `Any` may hold false, so where it is falsey it is still of `Any`: `value and 5` is of `Any` where `value` is. Any other value is truthy only.
 - **Of fixed operands,** literals and bound parameters, the one that decides: `true and "value"` is a `String`.
 
-So, where `light.active()` is a `Boolean` that evaluation alone decides, and `metered` a bound one:
+So, where `light.active` is a `Boolean` that evaluation alone decides, and `metered` a bound one:
 
 | Expression | Its type |
 | --- | --- |
-| `light.active() and light.brightness or 0` | A `Number`. Where the light is inactive, `or` selects `0`; where it is active, the brightness is a number. |
-| `light.active() and device.battery or 0` | A `Number`, though the battery is a `Number?`: a null battery selects `0` too. |
-| `light.active() and "lit" or 0` | Refused where its value is used (NEXO3040): `"lit"` and `0` both reach it. |
-| `light.active() and light.brightness`, as a result | Refused (NEXO3040): false and a number both reach it. |
+| `light.active and light.brightness or 0` | A `Number`. Where the light is inactive, `or` selects `0`; where it is active, the brightness is a number. |
+| `light.active and device.battery or 0` | A `Number`, though the battery is a `Number?`: a null battery selects `0` too. |
+| `light.active and "lit" or 0` | Refused where its value is used (NEXO3040): `"lit"` and `0` both reach it. |
+| `light.active and light.brightness`, as a result | Refused (NEXO3040): false and a number both reach it. |
 | `metered and light.brightness`, as a result | A `Number`, where `metered` is bound true: a fixed operand decides. |
-| `not (light.active() and light.brightness)` | A `Boolean`: `not` tests its operand's truthiness alone. |
-| `if light.active() and light.brightness then "lit" else "dark" end` | A `String`: the condition tests truthiness, and both branches are strings. |
-| `if light.active() then light.brightness else 0 end` | A `Number`: the branch selected gives the result. |
+| `not (light.active and light.brightness)` | A `Boolean`: `not` tests its operand's truthiness alone. |
+| `if light.active and light.brightness then "lit" else "dark" end` | A `String`: the condition tests truthiness, and both branches are strings. |
+| `if light.active then light.brightness else 0 end` | A `Number`: the branch selected gives the result. |
 | `room.device(name) and 5` | A `Number?`. |
 | `name or "untitled"` | A `String`, where `name` is a string. |
 
-A local holds one type from its declaration. So `let level = light.active() and light.brightness` is refused, even where the next line reads `level or 0`; write `let level = light.active() and light.brightness or 0`, or a conditional.
+A local holds one type from its declaration. So `let level = light.active and light.brightness` is refused, even where the next line reads `level or 0`; write `let level = light.active and light.brightness or 0`, or a conditional.
 
 <a id="logical-expressions-negations-and-groups-not-a-conditional"></a>
 
@@ -442,7 +442,7 @@ A choice whose chosen value can be false or null is written as a conditional.
 
 ### Evaluating a logical expression
 
-Operands are evaluated from left to right, each once, and evaluation stops at the first that decides the result, a falsey one for `and` and a truthy one for `or`, so the operands after it are unreached: they are still validated, but are not evaluated or observed and cannot produce runtime failures. Where a value is used is a matter of its type alone, and changes nothing of this: `metered and light.active() or false` calls `active` once where `metered` is true, and not at all where it is false.
+Operands are evaluated from left to right, each once, and evaluation stops at the first that decides the result, a falsey one for `and` and a truthy one for `or`, so the operands after it are unreached: they are still validated, but are not evaluated or observed and cannot produce runtime failures. Where a value is used is a matter of its type alone, and changes nothing of this: `metered and light.active or false` calls `active` once where `metered` is true, and not at all where it is false.
 
 An evaluation reads what the operands it reaches read, and nothing of the others.
 
@@ -463,8 +463,8 @@ Each branch is a [body](scripts.md#bodies): one expression, or locals followed b
 ```nexo
 if metered then light else thermostat end
 if let lamp = room.device("lamp") then { name = lamp.name, power = lamp.power } else null end
-if room.device("lamp")?.offline() then "lost" elseif room.device("lamp") == null then "none" else "ok" end
-room { state = if it.occupied() then "busy" else "free" end }
+if room.device("lamp")?.offline then "lost" elseif room.device("lamp") == null then "none" else "ok" end
+room { state = if it.occupied then "busy" else "free" end }
 { let target = if metered then light else thermostat end, power = target.power }
 ```
 
@@ -565,7 +565,7 @@ A coalescing operator answers its value where it is not null, and otherwise its 
 ```nexo
 sensor.temperature ?? 0
 device["label"] ?? device["name"] ?? "untitled"
-room.device("lamp")?.active() ?? true
+room.device("lamp")?.active ?? true
 ```
 
 <a id="coalescing-operators-evaluation"></a>

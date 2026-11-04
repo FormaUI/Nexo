@@ -1095,3 +1095,19 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Kind:** Process.
 - **Decision:** Each entry is a language contract, a runtime contract, both, a current restriction, an implementation decision, an implementation limitation, or process, as the table at the top defines, whether the owner approved it said after its kind. An implementation decision binds no later release: a host relies on what a contract states of it, as a bound on memory, and never on the choice, as [D55](#d55)'s 32 shapes.
 - **Why:** The table named four kinds, while the entries named more, "Approved rule" among them, which said who approved a rule and not which contract states it. A review asked that a public guarantee be told from a measured choice.
+
+<a id="d77"></a>
+
+## D77 — A property names what its receiver is, and a function does work
+
+*November 4, 2026*
+
+- **Kind:** Language contract, approved.
+- **Decision:** A property names what its receiver is, has or is in: a part, a measure or a state, as a list's `count` and `first`, a pair's `key`, a text's `length` and a device's `active`. A function does work or takes the arguments it needs, as rounding, trimming and reversing make a value of their receiver. Nexo's own members follow it: `round()`, `floor()`, `ceiling()`, `truncate()` and `abs()` of a number, `trim()`, `lowercase()` and `uppercase()` of a text, and `reverse()`, `distinct()` and `flatten()` of a list are functions, each a property before. A state a module declares is a Boolean property, and a test that does work a function, as the examples' `device.ping()` is. It replaces the rule that a member taking nothing is a property, and the one that a test is declared as a function so that a script can pass it by reference.
+- **Why:**
+  - The owner's call: an operation is a behaviour, never a characteristic of its receiver, so `price.round` read as though rounding were something a price has. The same holds of eleven members, and the specification stated the opposite rule, that a member taking nothing is a property.
+  - A test was a function only so a script could pass it by reference, `where(Home.active)`, where a body reads as well, `where(it.active)`, and a state read as a call, `checked()`, as though checking were done.
+  - A diagnostic already writes the call a property's reading needs, NEXO3017, so each script that breaks is told what to write.
+- **Declined:**
+  - Keeping the old properties beside new functions of other names, which would give one operation two members.
+  - Refusing a module's Boolean function that takes no argument, which no rule can tell from a test that does work; the specification states the rule, and a module follows it.

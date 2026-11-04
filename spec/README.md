@@ -45,7 +45,7 @@ Where the two meet, a document explains the other contract's part briefly and li
 8. [Members](language/members.md): member kinds, writing a member, computed property access, parameters and arguments, and host calls.
 9. [Modules](language/modules.md): imports, namespaces, module members, qualified access, indexer selection, a module's own collisions and module names in text.
 10. [Extensions](language/extensions.md): how owners and extensions are selected, extensions on different targets, extension access and an extension's type parameters.
-11. [Vocabulary](language/vocabulary.md): Nexo's own vocabulary of numbers and strings, Boolean functions and type selectors.
+11. [Vocabulary](language/vocabulary.md): Nexo's own vocabulary of numbers and strings, states and tests, and type selectors.
 12. [Errors](language/errors.md): the conditions a script fails on, each with its kind and code.
 13. [Grammar](language/grammar.md): the formal grammar, grouped by subject.
 14. [Terms](language/terms.md): the language's glossary.

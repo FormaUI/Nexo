@@ -199,7 +199,7 @@ describe('indexers and computed properties', () => {
 
         it('refuses a receiver whose type has none, giving the computed property access a string key may mean', () => {
             expect(refusalOf('item[0]', { item: 2 }).message).toContain('Number has no unnamed indexer');
-            expect(refusalOf('item["round"]', { item: 2 }).message).toContain("write 'item.[\"round\"]'");
+            expect(refusalOf('item["name"]', { item: { name: 'tea' } }).message).toContain("write 'item.[\"name\"]' for a property read by a computed name");
         });
 
         it('is what a number where a computed property\'s name stands means', () => {

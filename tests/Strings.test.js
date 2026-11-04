@@ -11,12 +11,12 @@ describe("a string's members", () => {
     });
 
     it('trims the whitespace at either end alone, a no-break space, a line separator, an ideographic space and U+FEFF among it, and keeps a zero-width space and a next line, which are none', () => {
-        expect(evaluate('text.trim', { text: '\t\u00A0\u2028 a b \u3000\uFEFF\n' })).toBe('a b');
-        expect(evaluate('text.trim.length', { text: '\u200Ba\u0085' })).toBe(3);
+        expect(evaluate('text.trim()', { text: '\t\u00A0\u2028 a b \u3000\uFEFF\n' })).toBe('a b');
+        expect(evaluate('text.trim().length', { text: '\u200Ba\u0085' })).toBe(3);
     });
 
     it('changes case without a locale, its length changing where a mapping does', () => {
-        expect(evaluate('[word.lowercase, word.uppercase, "ß".uppercase]', { word: 'Istanbul' })).toEqual(['istanbul', 'ISTANBUL', 'SS']);
+        expect(evaluate('[word.lowercase(), word.uppercase(), "ß".uppercase()]', { word: 'Istanbul' })).toEqual(['istanbul', 'ISTANBUL', 'SS']);
     });
 
     it('tells whether it begins with, ends with or holds a text, exactly by code unit, the empty text at every position', () => {
