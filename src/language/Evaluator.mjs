@@ -2279,7 +2279,6 @@ export class Evaluator {
 
                 // It holds the registry alone, never an evaluator, so it holds nothing an evaluation bound.
                 let fields = null;
-                let isFlat = false;
                 // The type each copy keeps through a value of Any.
                 const structured = type.toNonNullable();
 
@@ -2288,14 +2287,13 @@ export class Evaluator {
                         return null;
                     }
 
-                    if (fields === null) {
-                        fields = [...registry.getDataShape(type)].map(([name, fieldType]) => [name, Evaluator.#compileStructureCopy(fieldType, registry)]);
-                        isFlat = fields.every(([, copyField]) => copyField === null);
+                    // A structure Nexo made of the type is its declared shape already, its own fields and the structures they hold, since every value of a structured type holds its data shape alone; a host's own is copied.
+                    if (StructureTypes.getType(value, registry)?.equals(structured) === true) {
+                        return value;
                     }
 
-                    // A structure Nexo made of the type, of none but its declared fields, none of them a structure, is its declared shape already, as each is made, and a host's own is copied.
-                    if (isFlat && StructureTypes.getType(value, registry)?.equals(structured) === true) {
-                        return value;
+                    if (fields === null) {
+                        fields = [...registry.getDataShape(type)].map(([name, fieldType]) => [name, Evaluator.#compileStructureCopy(fieldType, registry)]);
                     }
 
                     const copy = {};

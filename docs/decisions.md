@@ -1128,3 +1128,17 @@ Forty decisions were taken while implementing the declarations, member selection
     - **An error never read.** The engine kept the frames it was raised in, the evaluator among their receivers, until its stack was first read, and its cause's the same. Nexo now writes both stacks as it makes the error, which changes nothing a stack reads.
   - Eleven other cases, a call never disposed, a preparation that fails, a resolution kept and the rest, already let everything go, and the same file of tests holds them.
 - **Declined:** Stating only what a disposed function refuses, which leaves a host unable to reason about when what it captured can go.
+
+<a id="d79"></a>
+
+## D79 — A copy returns a structure Nexo made of its type
+
+*November 4, 2026*
+
+- **Kind:** Implementation decision, measured.
+- **Decision:** Copying a value to a structured type returns the value as it is where `StructureTypes` recorded it as that type, a structure Nexo made: a copy, a construction or a capture. A host's own object is copied as before.
+- **Why:** [D71](#d71) makes every value of a structured type hold exactly its data shape, the structures its fields hold included, so a structure recorded as its type is what a copy would make of it. A copy returned only a structure whose fields hold no structure, and rebuilt the rest at each boundary it crossed: a member's answer, an argument, a list of structures passed on.
+- **Measured** in paired runs against the commit before it, nine rounds, twice:
+  - **Structures holding structures.** 200 order lines, each holding a product that holds its supplier, filtered and taken through Nexo's members: an evaluation took 36% less time, every round 34% to 38% less, and allocated 44% less. Ordered and kept, 29% less time and 30% less allocation.
+  - **Flat structures,** which a copy returned already, are unchanged, and so is the billing benchmark, whose structures hold none.
+- **Declined:** Keeping the copy of a structure that holds structures, which D71 made a copy of what it copies.

@@ -15,6 +15,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A suggestion writes a function taking no argument with its empty parentheses, `x.flatten()`, and one taking some as `x.concat(…)`.
 - A kept function its host disposed, a result whose metadata is never read and an error whose stack is never read each let go of the evaluator, its bindings and its environment, which each kept alive. An error Nexo raises writes its stack, and its cause's, as it is made.
 - `NexoEvaluatorOptions` and `NexoEvaluationLimits` type `createEvaluator`'s options.
+- A copy to a structured type returns a structure Nexo made of that type as it is, where it rebuilt one whose fields hold structures.
 
 <a id="v1-0-0-beta-1"></a>
 
