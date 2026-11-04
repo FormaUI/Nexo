@@ -15,6 +15,7 @@ import { Type } from './Type.mjs';
 import { ValueCapture } from './ValueCapture.mjs';
 import { ItemPositions } from './vocabulary/ItemPositions.mjs';
 import { Limits } from './Limits.mjs';
+import { RecentlyUsed } from './RecentlyUsed.mjs';
 import { NexoModule } from './vocabulary/NexoModule.mjs';
 import { ListOrdering } from './vocabulary/ListOrdering.mjs';
 import { MemberFailure } from './vocabulary/MemberFailure.mjs';
@@ -78,7 +79,7 @@ const SELECTING_KINDS = new Set(['conditional', 'coalescing', 'and', 'or']);
 /** How many of the records an object expression gave last it keeps for objects whose fields give the same records to share. */
 const RECENT_FIELD_RECORDS = 4;
 
-/** The most selections a deferred access keeps, one for each actual type it meets first, so a value of Any meeting objects of ever new shapes keeps a bounded number. */
+/** The most selections a deferred access keeps, of the actual types it met most recently, so a value of Any meeting objects of ever new shapes keeps a bounded number. */
 const MAX_KEPT_SELECTIONS = 32;
 
 /** The samples of a call that reads none. */
@@ -176,7 +177,7 @@ export class Evaluator {
     /** The functions the arguments of this evaluator's members compile to, by each member's resolution. @type {Map<object, (evaluator: Evaluator, context: unknown) => object | null>} */
     #compiledArguments;
 
-    /** The compiled invocations of this evaluator's declarations, by each declaration, one for each result type it answers. @type {Map<object, object[]>} */
+    /** The compiled invocations of the calls resolution selected, by each declaration and then by the text of each result type it answers, and whether its answer is relied on; a deferred access keeps its own. @type {Map<object, Map<string, object>>} */
     #compiledInvocations;
 
     /** Whether the result's type holds a value of Any, which is data or not as it is evaluated, so each result is checked to be data. */
@@ -1157,36 +1158,67 @@ export class Evaluator {
         let invocations = this.#compiledInvocations.get(declaration);
 
         if (invocations === undefined) {
-            invocations = [];
+            invocations = new Map();
             this.#compiledInvocations.set(declaration, invocations);
         }
 
-        let invocation = invocations.find(candidate => candidate.resultType.equals(resultType) && candidate.reliesOnAnswer === reliesOnAnswer);
+        // A type's qualified text names it alone, as a resolution key does, so a lookup compares no types.
+        const key = `${resultType.toString(true)}|${reliesOnAnswer}`;
+        let invocation = invocations.get(key);
 
         if (invocation === undefined) {
-            const takesReceiver = this.#registry.takesReceiver(declaration);
-
-            invocation = Object.freeze({
-                declaration,
-                implementation: this.#registry.getImplementation(declaration),
-                takesReceiver,
-                // What the protocol does with the member's answer, and whether it reads samples, decided once for the declaration rather than at each invocation.
-                answersReceiverItems: takesReceiver && Vocabulary.answersReceiverItems(declaration),
-                projectsItems: takesReceiver && Vocabulary.projectsItems(declaration),
-                readsMaintained: declaration.updates?.reads === 'maintained',
-                // The members of Nexo's own that make a list of a size their receiver doesn't give are given the limits the host set, which no other member is.
-                takesLimits: Vocabulary.takesLimits(declaration),
-                resultType,
-                reliesOnAnswer,
-                // An answer relied on holds the language's collections already, which is all a capture makes.
-                captureCollections: reliesOnAnswer ? null : Evaluator.#compileCollectionCapture(resultType),
-                isOfResultType: Evaluator.#compileTypeCheck(resultType, this.#registry, `the answer of '${NexoModule.writtenNameOf(declaration)}'`),
-                copyStructure: Evaluator.#compileStructureCopy(resultType, this.#registry),
-            });
-            invocations.push(invocation);
+            invocation = this.#compileDeclarationInvocation(declaration, resultType, reliesOnAnswer);
+            invocations.set(key, invocation);
         }
 
         return invocation;
+    }
+
+    /**
+     * The invocation of a declaration a deferred access selected, for a result type: kept by the access, as many as its selections, and never among the invocations resolution's calls share, so a value of Any of ever new
+     * shapes grows none of them further.
+     * @param {Map<object, RecentlyUsed>} invocations The access's invocations, by their declaration and then by their result type's text.
+     */
+    #getDeferredInvocation(declaration, resultType, invocations) {
+        let byType = invocations.get(declaration);
+
+        if (byType === undefined) {
+            byType = new RecentlyUsed(MAX_KEPT_SELECTIONS);
+            invocations.set(declaration, byType);
+        }
+
+        const key = resultType.toString(true);
+        let invocation = byType.get(key);
+
+        if (invocation === undefined) {
+            invocation = this.#compiler.#compileDeclarationInvocation(declaration, resultType, false);
+            byType.offer(key, invocation);
+        }
+
+        return invocation;
+    }
+
+    /** Compiles the invocation of a declaration for a result type: what the protocol does with its answer, decided once for the declaration and the type rather than at each invocation. */
+    #compileDeclarationInvocation(declaration, resultType, reliesOnAnswer) {
+        const takesReceiver = this.#registry.takesReceiver(declaration);
+
+        return Object.freeze({
+            declaration,
+            implementation: this.#registry.getImplementation(declaration),
+            takesReceiver,
+            // What the protocol does with the member's answer, and whether it reads samples, decided once for the declaration rather than at each invocation.
+            answersReceiverItems: takesReceiver && Vocabulary.answersReceiverItems(declaration),
+            projectsItems: takesReceiver && Vocabulary.projectsItems(declaration),
+            readsMaintained: declaration.updates?.reads === 'maintained',
+            // The members of Nexo's own that make a list of a size their receiver doesn't give are given the limits the host set, which no other member is.
+            takesLimits: Vocabulary.takesLimits(declaration),
+            resultType,
+            reliesOnAnswer,
+            // An answer relied on holds the language's collections already, which is all a capture makes.
+            captureCollections: reliesOnAnswer ? null : Evaluator.#compileCollectionCapture(resultType),
+            isOfResultType: Evaluator.#compileTypeCheck(resultType, this.#registry, `the answer of '${NexoModule.writtenNameOf(declaration)}'`),
+            copyStructure: Evaluator.#compileStructureCopy(resultType, this.#registry),
+        });
     }
 
     /**
@@ -1291,8 +1323,10 @@ export class Evaluator {
         // The selection made for each actual type the access meets, by the type's qualified text. It is kept with the compilation, which its resolved definition and its registry hold, and released with the resolved
         // definition. It stays valid while that resolution is current: its candidates were fixed at resolution and no registration changes a type's hierarchy, so only a module declaring a `typeOf`, which changes
         // the actual types values are found of, could change a selection, and such a registration makes the resolution stale, an access on a value of Any always recognizing. It saves selecting, binding the type parameters the receiver writes and compiling the parameters' checks at every evaluation.
-        // It keeps the selections for the first types the access meets alone, as many as `MAX_KEPT_SELECTIONS`, so the objects of ever new shapes a value of Any can hold grow it no further: another type is selected each time it is met.
-        const selections = new Map();
+        // It keeps the selections of the types the access met most recently, as many as `MAX_KEPT_SELECTIONS`, a type entering once that many are kept at its second miss, so the objects of ever new shapes a value of Any
+        // can hold grow it no further and displace none of the types met again: another type is selected each time it is met. The invocations its selections make are kept alike, by their declaration and result type.
+        const selections = new RecentlyUsed(MAX_KEPT_SELECTIONS);
+        const invocations = new Map();
 
         return (evaluator, context) => {
             const receiver = evaluateReceiver(evaluator, context);
@@ -1313,7 +1347,7 @@ export class Evaluator {
             const receiverType = evaluator.#getActualType(receiver, `the access '${written}'`, evaluator.#failSelectionOf(node));
             // A plain object's object fields are its data, found on each object, since objects of one type need not hold the same fields; an extension access reads extension members alone.
             const isObjectField = node.kind === 'memberAccess' && resolution.readsExtensionMembers !== true && receiverType.kind === 'object' && Object.hasOwn(receiver, node.name);
-            const value = isObjectField ? evaluator.#readStoredValue(receiver, node.name) : evaluator.#evaluateDeferredSelection(node, resolution.candidates, receiver, receiverType, selections, evaluateArguments, context);
+            const value = isObjectField ? evaluator.#readStoredValue(receiver, node.name) : evaluator.#evaluateDeferredSelection(node, resolution.candidates, receiver, receiverType, selections, invocations, evaluateArguments, context);
 
             if (value === null) {
                 evaluator.#nullAnswer = node;
@@ -1327,16 +1361,13 @@ export class Evaluator {
      * Carries out a deferred access on a receiver of its actual type, as the selection made at the access's first meeting of that type says, the selection kept for every later one: a property of a structured type's data is
      * read from the data, and any other member is invoked with the values its arguments give, its request marked deferred. A selection that fails, fails each evaluation that meets it.
      */
-    #evaluateDeferredSelection(node, candidates, receiver, receiverType, selections, evaluateArguments, context) {
+    #evaluateDeferredSelection(node, candidates, receiver, receiverType, selections, invocations, evaluateArguments, context) {
         const key = receiverType.toString(true);
         let selection = selections.get(key);
 
         if (selection === undefined) {
-            selection = this.#selectDeferred(node, candidates, receiverType);
-
-            if (selections.size < MAX_KEPT_SELECTIONS) {
-                selections.set(key, selection);
-            }
+            selection = this.#selectDeferred(node, candidates, receiverType, invocations);
+            selections.offer(key, selection);
         }
 
         if (selection.kind === 'failure') {
@@ -1350,7 +1381,7 @@ export class Evaluator {
         const values = evaluateArguments.map(evaluate => evaluate(this, context));
         // An indexer of several signatures takes the one its key's value is of, as resolution takes the one its key's type is, and otherwise its first, which refuses the key.
         const chosen = selection.kind === 'signatures' ? (selection.selections.find(signature => signature.parameters[0]?.isOfType?.(values[0]) === true) ?? selection.selections[0]) : selection;
-        const args = this.#bindDeferredArguments(node, chosen, receiverType, values);
+        const args = this.#bindDeferredArguments(node, chosen, receiverType, values, invocations);
 
         if (args === null) {
             return null;
@@ -1368,7 +1399,7 @@ export class Evaluator {
      * that has no applicable candidate, NEXO5012, or several none is more specific than, NEXO5044, of a host call, NEXO5013, which resolution alone selects, and of a member comparing items of no key type by key
      * equality, NEXO5042.
      */
-    #selectDeferred(node, candidates, receiverType) {
+    #selectDeferred(node, candidates, receiverType, invocations) {
         const written = Evaluator.#writtenNameOf(node);
         const outcome = this.#registry.memberSelector.select(candidates, receiverType);
 
@@ -1411,11 +1442,11 @@ export class Evaluator {
 
         const signatures = this.#registry.getIndexerSignatures(declaration);
 
-        return signatures.length > 1 ? { kind: 'signatures', selections: signatures.map(signature => this.#prepareDeferredInvocation(signature, receiverType, written)) } : this.#prepareDeferredInvocation(declaration, receiverType, written);
+        return signatures.length > 1 ? { kind: 'signatures', selections: signatures.map(signature => this.#prepareDeferredInvocation(signature, receiverType, written, invocations)) } : this.#prepareDeferredInvocation(declaration, receiverType, written, invocations);
     }
 
     /** The invocation a deferred access makes of the declaration on a receiver of the type: the type arguments its receiver binds, each parameter's declared type and its check, and its invocation where it declares no type parameters of its own. */
-    #prepareDeferredInvocation(declaration, receiverType, written) {
+    #prepareDeferredInvocation(declaration, receiverType, written, invocations) {
         const typeArguments = this.#registry.typeChecker.inferReceiverTypeArguments(declaration, receiverType) ?? new Map();
         const hasOwnTypeParameters = (declaration.typeParameters ?? []).length > 0;
         const parameters = (declaration.parameters ?? []).map(parameter => {
@@ -1427,7 +1458,7 @@ export class Evaluator {
         });
         const resultType = this.#registry.getDeclaredType(declaration, declaration.result).resolveTypeParameters(typeArguments);
 
-        return { kind: 'invocation', declaration, written, typeArguments, parameters, invocation: hasOwnTypeParameters ? null : this.#getCompiledInvocation(declaration, resultType) };
+        return { kind: 'invocation', declaration, written, typeArguments, parameters, invocation: hasOwnTypeParameters ? null : this.#getDeferredInvocation(declaration, resultType, invocations) };
     }
 
     /**
@@ -1454,7 +1485,7 @@ export class Evaluator {
         this.#fail('NEXO5032', `${what} is a nonnegative whole number${allowsIndex ? ' or an index' : ''}, and this one is ${Evaluator.#describe(value)}`, this.#pointerOf(node));
     }
 
-    #bindDeferredArguments(node, selection, receiverType, values) {
+    #bindDeferredArguments(node, selection, receiverType, values, invocations) {
         const { declaration, written, parameters } = selection;
         const pointer = this.#pointerOf(node);
         const on = `'${written}' on ${receiverType}`;
@@ -1541,7 +1572,7 @@ export class Evaluator {
             }
         }
 
-        const invocation = selection.invocation ?? this.#getCompiledInvocation(declaration, this.#registry.getDeclaredType(declaration, declaration.result).resolveTypeParameters(typeArguments));
+        const invocation = selection.invocation ?? this.#getDeferredInvocation(declaration, this.#registry.getDeclaredType(declaration, declaration.result).resolveTypeParameters(typeArguments), invocations);
 
         return { invocation, values: args };
     }

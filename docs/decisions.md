@@ -792,6 +792,7 @@ Forty decisions were taken while implementing the declarations, member selection
   - The first evaluator to compile a resolution stayed reachable from the functions it compiled, which the compilation keeps for every evaluator, so its environment and its bindings lived as long as the resolution did.
   - A deferred access kept a selection for every object shape it met through `Any`, without bound: 200,000 shapes kept about 210 MB.
   - Object records shared across evaluations kept host values their sources held, past the evaluations that read them.
+- **Since:** a deferred access keeps the types it met most recently, and bounds the invocations it compiles too, as [D80](#d80) records.
 - **Measured** in paired runs against the commit before it, eleven rounds: evaluating with a reused evaluator −3.7%, and with a new evaluator and new bindings for each evaluation +8% (about 3 µs), with no more allocation; the other cases are unchanged. The added cost comes with compiling through another evaluator, and is the price of releasing the host's values.
 - **Declined:** Compiling through the first evaluator and clearing its host values after it compiles, which would leave a function compiled later during that evaluator's own evaluations reading values cleared under it.
 
@@ -1142,3 +1143,24 @@ Forty decisions were taken while implementing the declarations, member selection
   - **Structures holding structures.** 200 order lines, each holding a product that holds its supplier, filtered and taken through Nexo's members: an evaluation took 36% less time, every round 34% to 38% less, and allocated 44% less. Ordered and kept, 29% less time and 30% less allocation.
   - **Flat structures,** which a copy returned already, are unchanged, and so is the billing benchmark, whose structures hold none.
 - **Declined:** Keeping the copy of a structure that holds structures, which D71 made a copy of what it copies.
+
+<a id="d80"></a>
+
+## D80 — A deferred access keeps the types it met most recently
+
+*November 4, 2026*
+
+- **Kind:** Implementation decision, measured.
+- **Decision:** A deferred access keeps its selections, and the invocations they compile, for the 32 types it met most recently. Once 32 are kept, a type enters at its second miss among the 64 misses it remembers, and the type used least recently leaves. The invocations resolution's calls compile are kept apart from an access's, by their result type's text.
+- **Why:** A measurement of deferred access across changing shapes found two faults in [D55](#d55)'s bound:
+  - **An unbounded list.** A generic member, as `.first` of a list of `Any`, compiled an invocation for each result type it met, added it to the list every call of its declaration shares, and searched that list comparing types. After 22,800 shapes one access took 7.5 ms, and its resolution held 26 MB.
+  - **The first 32 types.** A burst of shapes met once, as at start-up, filled the selections, and the common shapes then missed for the resolution's life: `.first` cost 19.0 µs an access rather than 5.8 µs.
+  - Keeping the types met most recently recovers from such a burst, and admitting a type at its second miss keeps the common ones through a stream of shapes met once. Simulated with 32 entries, it kept 99.9% after a burst where the first 32 kept none, every common shape beside 90% met once, and 48.7% of a Zipf trace against 42.9%.
+- **Measured** in paired runs against the commit before it, in one process, seven rounds, beside another session's builds, so only effects far beyond the rounds' range are counted:
+  - **A stream of new shapes.** An access of `.first` to a shape met for the first time took 28 µs after 22,784 shapes, the resolution holding 0.44 MB, where the commit before took 10.7 ms after 12,544 shapes and held 14.4 MB, each growing with the shapes met.
+  - **A burst of shapes met once.** After 100 of them, an evaluation of 256 accesses of `.first` to the common shapes took 1.58 ms, as long as the common shapes alone do, where the commit before took 4.91 ms, three times as long in every round, and allocated 2.4 MB where it allocated 12.4 MB.
+  - **The billing benchmark,** which makes no deferred access, is unchanged.
+- **Declined:**
+  - Least recently used alone, which keeps nothing where more than 32 recurring types cycle in turn, where admitting at the second miss keeps two thirds.
+  - Keeping the first 32 and starting again after 256 misses in a row, which kept half the common shapes after a partial burst.
+  - A larger bound, which a stream of new shapes passes all the same.

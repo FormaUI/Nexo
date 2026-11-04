@@ -16,6 +16,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - A kept function its host disposed, a result whose metadata is never read and an error whose stack is never read each let go of the evaluator, its bindings and its environment, which each kept alive. An error Nexo raises writes its stack, and its cause's, as it is made.
 - `NexoEvaluatorOptions` and `NexoEvaluationLimits` type `createEvaluator`'s options.
 - A copy to a structured type returns a structure Nexo made of that type as it is, where it rebuilt one whose fields hold structures.
+- A deferred access on a value of `Any` keeps the 32 types it met most recently, a type entering at its second miss, where it kept the first 32 it met, and bounds the invocations a generic member compiles for it, which grew with each new shape.
 
 <a id="v1-0-0-beta-1"></a>
 
