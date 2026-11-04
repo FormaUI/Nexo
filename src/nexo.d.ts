@@ -468,6 +468,16 @@ export interface NexoResultMetadata {
      * projection of a list that carries none records its own sources here too. Absent wherever `sources` is, entries repeated where an input repeats, and never a key nor a promise of a unique correspondence.
      */
     readonly provenance?: readonly NexoProjectionSource[];
+    /**
+     * The reads whose samples were pending, on a result's own record alone, and only where one was: one for each distinct read, the request its host's `beforeInvoke` answered `{ pending: true }` for, and the origin of the
+     * value the read gave, which that value's record carries. Made when the metadata is first read.
+     */
+    readonly pending?: readonly NexoPendingRead[];
+}
+
+/** A read whose sample was pending: the request its host answered pending for, and the origin of the null it gave, which the record of that value carries. */
+export interface NexoPendingRead extends NexoInvocationRequest {
+    readonly origin: object;
 }
 
 /** What a member's invocation is, as a hook's request and a prepared host call each give it: its declaration as its module declared it, its receiver, which a module member has none of, its arguments by parameter name, and where the call stands. */

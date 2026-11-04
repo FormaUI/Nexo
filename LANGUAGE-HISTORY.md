@@ -37,6 +37,9 @@ evaluate('pantry.jars([pantry.item("jar")]).take(1)'); // [{ size: 3 }], as the 
 
 const evaluator = resolution.createEvaluator(bindings, env, { limits: { items: 10000 } });
 evaluator.evaluate();                                  // '0.sequence(count)' with a count of 5,000,000: NEXO5054 at the call, before the list is made; made before
+
+// `product.stock` is maintained, and the host's beforeInvoke answers { pending: true } for a product whose stock hasn't arrived.
+stocking.evaluate(hooks).metadata.pending;             // [{ declaration, receiver: tea, args: {}, pointer, isDeferred: false, origin }]; no pending before, isPending alone
 ```
 
 **Language**
@@ -50,6 +53,7 @@ evaluator.evaluate();                                  // '0.sequence(count)' wi
 **Runtime**
 
 - [An evaluator's limits](spec/runtime/evaluation.md#runtime-evaluation), `createEvaluator(bindings, env, { limits: { items } })`: a list `sequence` or `concat` would make past `items` is refused at the call before it is made, NEXO5054, and the evaluator goes on evaluating. Options it takes none of are refused, NEXO2048, and options or limits that are no object, or an `items` that is no whole number a list can hold, NEXO2049, as [D72](docs/decisions.md#d72) records.
+- [A pending result names the reads it waits for](spec/runtime/evaluation.md#runtime-results-pending-reads): where a member the evaluation read was pending, the result's own metadata record holds `pending`, each read whose sample was pending, the request its host answered pending for and the origin of the value it gave, where a result told only that it was pending, as [D82](docs/decisions.md#d82) records. A result none of whose reads was pending has none.
 - [What an implementation receives](spec/runtime/members.md#members-what-an-implementation-receives): a value of a structured type in `args`, or given to a function a member was given, holds the type's data shape alone.
 - [A kept function its host disposed](spec/runtime/host-calls.md#runtime-host-calls-kept-functions) holds nothing of its context, though its host keeps it, and [a result and an error](spec/runtime/evaluation.md#runtime-results) keep nothing of the evaluation that made them, read or not, where each held the evaluator, its bindings and its environment, as [D78](docs/decisions.md#d78) records. [Data shared with a host](spec/runtime/evaluation.md#runtime-shared-data) names a prepared call's arguments and a kept function's answers among what passes.
 

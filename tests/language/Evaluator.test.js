@@ -205,6 +205,34 @@ describe('Evaluator', () => {
         expect(outcomes).toEqual([{ kind: 'pending', value: { quote: null } }]);
     });
 
+    it('names in its metadata each read that was pending, the request its host answered pending and the origin its value\'s record carries, one for each distinct read', () => {
+        const evaluator = createEvaluator('{ quote = name:quoted, again = name:quoted, other = other:quoted, quotes = names { q = it:quoted }, price = name:price }', { name: 'tea', other: 'cocoa', names: ['tea', 'milk', 'tea'] });
+        const result = evaluator.evaluate({ beforeInvoke: request => (request.declaration.name !== 'quoted' ? undefined : request.receiver === 'milk' ? [7] : { pending: true }) });
+        const { pending, objectFields } = result.metadata;
+
+        expect(result.isPending).toBe(true);
+        expect(pending.map(read => [read.declaration.name, read.receiver, read.pointer, read.isDeferred])).toEqual([
+            ['quoted', 'tea', '/expression/objectFields/0/value', false],
+            ['quoted', 'tea', '/expression/objectFields/1/value', false],
+            ['quoted', 'cocoa', '/expression/objectFields/2/value', false],
+            ['quoted', 'tea', '/expression/objectFields/3/value/objectFields/0/value', false],
+        ]);
+        expect(pending[0].args).toEqual({});
+        expect([pending[0].origin === objectFields.quote.origin, pending[1].origin === objectFields.again.origin, pending[0].origin === pending[1].origin]).toEqual([true, true, false]);
+        expect(pending[3].origin).toBe(objectFields.quotes.items[0].objectFields.q.origin);
+        expect([Object.isFrozen(pending), Object.isFrozen(pending[0]), Object.isFrozen(pending[0].args)]).toEqual([true, true, true]);
+        expect(result.metadata).toBe(result.metadata);
+    });
+
+    it('holds no pending reads where no read was pending, nor keeps any for the next evaluation', () => {
+        const evaluator = createEvaluator('{ quote = name:quoted }', { name: 'tea' });
+
+        expect(evaluator.evaluate({ beforeInvoke: () => [5] }).metadata).not.toHaveProperty('pending');
+        expect(evaluator.evaluate({ beforeInvoke: () => ({ pending: true }) }).metadata.pending).toHaveLength(1);
+        expect(evaluator.evaluate({ beforeInvoke: () => [5] }).metadata).not.toHaveProperty('pending');
+        expect(createEvaluator('name:price', { name: 'tea' }).evaluate().metadata).not.toHaveProperty('pending');
+    });
+
     it('refuses a maintained member without a host to sample it', () => {
         expect(errorThrownBy(() => createEvaluator('name:quoted', { name: 'tea' }).evaluate())).toMatchObject({ kind: 'evaluation', message: expect.stringContaining('maintained by an observation') });
         expect(errorThrownBy(() => createEvaluator('name:quoted', { name: 'tea' }).evaluate({ afterInvoke: () => {} }))).toMatchObject({ kind: 'evaluation' });

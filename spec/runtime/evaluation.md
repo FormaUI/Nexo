@@ -36,7 +36,7 @@ In this document:
 
 An evaluation answers its **value**, whether a member it read was **pending**, and its **metadata**, frozen throughout: the value, every list and structure in it, the metadata and the result that holds them, all but the host objects its sources hold, which Nexo never freezes. What an evaluation produced never changes, whatever the host's state does afterwards, but for those host objects, which stay the host's own, and each result and its metadata stay valid after later evaluations. A result is data and does not hold a reference value, as [results](../language/values.md#values-results) require.
 
-The metadata describes the value, never part of it: frozen records of `{ origin, tolerance, objectFields?, items?, sources?, provenance? }`.
+The metadata describes the value, never part of it: frozen records of `{ origin, tolerance, objectFields?, items?, sources?, provenance? }`, the result's own record holding `pending?` too.
 
 - **What a result shares.** A result shares no list, object or structure with the data its evaluation read: a binding's data and an implementation's answer are copied into it, and only its metadata's sources and provenance hold what the evaluation read.
 - **What a result keeps.** A result keeps neither the evaluator that made it nor that evaluator's bindings or environment alive, its metadata read or not, and an error Nexo raises keeps nothing of its evaluation either.
@@ -63,6 +63,20 @@ The metadata describes the value, never part of it: frozen records of `{ origin,
   An operation that filters, reorders or repeats the items of a list carries each occurrence's item record, source and provenance into its result, realigned in the result's own order, as [list members](../language/collections.md#collections-list-members) set out, so the result has records of its own and never reuses the original list's whole record: `where`, `take`, `drop`, `takeWhile`, `dropWhile`, `distinct`, `distinctBy`, `reverse`, `orderBy`, `orderByDescending`, `thenBy` and `thenByDescending` among a list's members, a slice by a range and `pick`, which gives an occurrence once for each time its position is given, each answered item carrying the lineage of the occurrence it is, by the position it stood at in the receiver, so items equal to each other never stand for each other: of three inputs projected to `1`, `1` and `2`, `.drop(1)` keeps the provenance of the second and the third. An ordering records nothing of its keys: its result's record is a reordered list's, as [ordering](../language/collections.md#collections-list-ordering) sets out. An operation that joins lists or answers values of its own, as `concat`, `flatten`, `selectMany`, `toDictionary` and `groupBy` do, records no lineage of its items.
 
   A dictionary's record is its origin and its tolerance alone, whichever member answered it, its `where` and `select` among them: no projection builds a dictionary, so none has records, sources or provenance of its entries to keep, and a result exports one as its entries' data. A script that needs a lineage projects a list, as `prices.entries { name = it.key }` does.
+
+<a id="runtime-results-pending-reads"></a>
+
+- **Pending reads.** Where a member the evaluation read was pending, the result's own record holds `pending`, one frozen entry for each read whose sample was pending: the request its host's `beforeInvoke` answered `{ pending: true }` for, `{ declaration, receiver?, args, pointer, isDeferred }`, a module member's without a receiver, and the `origin` of the value the read gave, which the record of that value carries. Reads of one member at one place, of one receiver and with the same arguments, each the same value, are one entry, in the order the evaluation first made each.
+
+  ```js
+  const result = evaluator.evaluate({ beforeInvoke: request => (stock.has(request.receiver) ? [stock.get(request.receiver)] : { pending: true }) });
+
+  result.isPending;                                            // true: the stock of a product hasn't arrived
+  result.metadata.pending.map(read => read.receiver);         // the products whose stock it waits for
+  result.metadata.pending[0].origin === result.metadata.objectFields.stock.origin; // true for `{ stock = product.stock }`
+  ```
+
+  A result none of whose reads was pending has no `pending` property at all, as `isPending` is false, and its evaluation keeps nothing for it. A value computed from a pending read, as a comparison with it, has an origin of its own, so no entry names it: a host takes the whole result as provisional while `isPending` is true, and finds by the entries what it waits for and the values that are the reads themselves.
 
 The runtime gives the facts, and a host its policy, as comparing one result with the next or patching a copy of it.
 

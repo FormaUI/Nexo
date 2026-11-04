@@ -232,8 +232,12 @@ export class Evaluator {
     /** The hooks of the evaluation in progress, or null where it was given none. @type {EvaluationHooks | null} */
     #hooks = null;
 
-    /** Whether a member the evaluation in progress read answered that its sample is pending. */
-    #isPending = false;
+    /**
+     * The reads of the evaluation in progress whose samples its host answered pending, each request beside the node that made it, in one flat list, or null where none was: kept only where a read is pending, so an evaluation
+     * that reads none allocates nothing for them, and described into its metadata's pending reads only where a host reads that metadata.
+     * @type {unknown[] | null}
+     */
+    #pendingReads = null;
 
     /**
      * The host call's node and the value its host supplied, while the call's result projection is evaluated against it.
@@ -458,7 +462,7 @@ export class Evaluator {
      */
     #evaluateForHost(hooks, produce) {
         this.#hooks = hooks;
-        this.#isPending = false;
+        this.#pendingReads = null;
         let outcome = null;
 
         // The outcome is made only where an `afterEvaluation` hook is told it, and the metadata only where it is read.
@@ -466,13 +470,14 @@ export class Evaluator {
 
         try {
             const result = produce();
-            const isPending = this.#isPending;
+            const pendingReads = this.#pendingReads;
+            const isPending = pendingReads !== null;
 
             if (isTold) {
                 outcome = { kind: isPending ? 'pending' : 'completed', value: result.value };
             }
 
-            return new Evaluation(result.value, isPending, Evaluator.#describerOf(this.#compiler, result));
+            return new Evaluation(result.value, isPending, Evaluator.#describerOf(this.#compiler, result, pendingReads));
         } catch (error) {
             if (isTold) {
                 outcome = { kind: 'failed', error };
@@ -480,7 +485,9 @@ export class Evaluator {
 
             throw error;
         } finally {
+            // The reads the result holds are its own, so the evaluator keeps none past the evaluation.
             this.#hooks = null;
+            this.#pendingReads = null;
 
             if (isTold) {
                 try {
@@ -2801,7 +2808,9 @@ export class Evaluator {
         }
 
         if (answer.pending === true && readsMaintained) {
-            this.#isPending = true;
+            // The request is the read's record, kept as the host was given it: frozen, since nothing invokes the member, so the arguments it holds are given to nothing else.
+            Object.freeze(request.args);
+            (this.#pendingReads ??= []).push(Object.freeze(request), node);
 
             return null;
         }
@@ -3063,18 +3072,71 @@ export class Evaluator {
      * What describes a result's metadata once it is read: the compilation's own evaluator, which holds the resolved definition and the registry describing reads, and neither the bindings nor the environment, so a result
      * its host keeps unread keeps nothing of the evaluation that made it.
      */
-    static #describerOf(describer, result) {
-        return () => describer.#describeMetadata(result);
+    static #describerOf(describer, result, pendingReads) {
+        return () => describer.#describeMetadata(result, pendingReads);
     }
 
-    #describeMetadata(result) {
+    #describeMetadata(result, pendingReads) {
         this.#recentFieldRecords = new WeakMap();
 
         try {
-            return this.#resolveRecord(result.node, result.value, result.identities, null);
+            const record = this.#resolveRecord(result.node, result.value, result.identities, null);
+
+            // A result none of whose reads was pending has no pending reads at all, and its record stays the one every such result shares.
+            return pendingReads === null ? record : Object.freeze({ ...record, pending: this.#describePendingReads(pendingReads) });
         } finally {
             this.#recentFieldRecords = null;
         }
+    }
+
+    /**
+     * The pending reads a result's record holds, made from the requests its evaluation kept as its metadata is first read: one for each distinct read, the request its host answered pending, a module member's without a
+     * receiver, and the origin of the value the read gave, the one the record of that value carries. Reads of one member, of one receiver, with the same arguments, at one place are one.
+     */
+    #describePendingReads(pendingReads) {
+        const reads = [];
+
+        for (let index = 0; index < pendingReads.length; index += 2) {
+            const request = pendingReads[index];
+
+            if (!reads.some(read => Evaluator.#isSameRead(read, request))) {
+                const node = pendingReads[index + 1];
+
+                reads.push(Object.freeze({ ...request, origin: this.#getOrigin(node, this.#candidateOfRead(node, request.declaration)) }));
+            }
+        }
+
+        return Object.freeze(reads);
+    }
+
+    /** The candidate the record of a read's value names: the declaration a deferred access selected, the name a computed property access selected, or none where resolution selected the declaration. */
+    #candidateOfRead(node, declaration) {
+        const resolution = this.#resolvedDefinition.resolutionOf(node);
+
+        if (resolution?.kind === 'deferred') {
+            return declaration;
+        }
+
+        if (resolution?.kind === 'computedPropertyAccess') {
+            for (const [name, selected] of resolution.resolutionsByName) {
+                if (selected.declaration === declaration) {
+                    return name;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /** Whether a read is the one a request asks for: the same member at the same place, of the same receiver, with the same arguments, each the same value. */
+    static #isSameRead(read, request) {
+        if (read.declaration !== request.declaration || read.pointer !== request.pointer || !Object.is(read.receiver, request.receiver)) {
+            return false;
+        }
+
+        const names = Object.keys(request.args);
+
+        return names.length === Object.keys(read.args).length && names.every(name => Object.is(read.args[name], request.args[name]));
     }
 
     /**

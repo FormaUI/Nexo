@@ -1,6 +1,6 @@
 // How a TypeScript host uses Nexo, which the declarations must accept; the declarations test compiles this file.
 import { nexo, NexoError } from '../../src/nexo.js';
-import type { NexoEvaluator, NexoEvaluatorOptions, NexoModuleContents, NexoMemberDeclaration, NexoOperatorDeclaration, NexoRegistry } from '../../src/nexo.js';
+import type { NexoEvaluator, NexoEvaluatorOptions, NexoModuleContents, NexoMemberDeclaration, NexoOperatorDeclaration, NexoPendingRead, NexoRegistry } from '../../src/nexo.js';
 
 const { createPropertyDeclaration: property } = nexo.declarations;
 
@@ -60,6 +60,13 @@ const options: NexoEvaluatorOptions = { limits: { items: 0 } };
 registry.resolve('1', {}).createEvaluator({}, {}, { limits: { items: '10' } });
 void limited;
 void options;
+
+// A host reads what a pending result waits for, where anything was pending.
+const waitingFor: readonly NexoPendingRead[] = limited.evaluate().metadata.pending ?? [];
+const waitingReceivers: unknown[] = waitingFor.map(read => read.receiver);
+const waitingOrigins: object[] = waitingFor.map(read => read.origin);
+void waitingReceivers;
+void waitingOrigins;
 
 if (prepared.kind === 'prepared') {
     const kept = prepared.args.when;

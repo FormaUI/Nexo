@@ -1185,3 +1185,22 @@ Forty decisions were taken while implementing the declarations, member selection
   - Keeping a number's base in its definition so canonical text writes it back, which would change the definition format for a spelling.
   - Reading text a host gives in another base, as `"0xFF" to Number`, which converts a host's data in decimal as before: text that happens to begin `0x` would otherwise change its meaning.
   - A BigInt's `n` suffix, since the language has one number type.
+
+<a id="d82"></a>
+
+## D82 — A pending result names the reads it waits for
+
+*November 4, 2026*
+
+- **Kind:** Runtime contract, approved.
+- **Decision:** Where a member an evaluation read was pending, the result's own metadata record holds `pending`: one frozen entry for each distinct read whose sample was pending, the request its host's `beforeInvoke` answered pending for and the origin of the value it gave. A result none of whose reads was pending has no `pending`. The evaluation keeps the requests alone, and only where a read is pending, and the entries are made when the metadata is first read.
+- **Why:**
+  - The owner's call: a host knew only that a result was pending, never what it waited for, so it could neither ask for the samples it lacked nor tell which parts of the value were the missing reads.
+  - The evaluator holds each such request already, as its host's hook was given it, so keeping it costs one list where a read is pending and nothing where none is, which the owner asked for.
+  - The origin is the one the value's record carries, so a host finds the parts of the value a pending read gave through the metadata it already reads.
+- **Measured** in paired runs against the commit before it: the billing benchmark's cases, none of which reads a pending member, stay within the noise an unchanged copy shows: evaluating the account summary −0.4% (−3.7% to +2.3%) and the portfolio report −0.6% (−6.5% to +3.1%), their allocation within 1%.
+- **Declined:**
+  - Marking every value computed from a pending read, which would follow every value's dependence through every operation, a cost every evaluation pays.
+  - An evaluation that waits for the samples, asynchronous, which would mix states read at different moments in one result, decide too late for a host acting in an event's dispatch, and answer only the first sample of a value that keeps changing. A host's own promise waits on top of `isPending`, as DOMQL's watch does.
+  - An empty `pending` on every result, which would make a record for each result rather than share it.
+  - A `cancel()`: nothing runs once `evaluate` returns, and what a pending read waits for is its host's observation, which its host stops.
