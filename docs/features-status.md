@@ -2,7 +2,7 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.40` and definition version 38, the fortieth beta.** What remains is publishing [the release](#release), `1.0.0-beta.1`, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.41` and definition version 38, the forty-first beta.** What remains is publishing [the release](#release), `1.0.0-beta.2`, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 | Work | State |
 | --- | --- |
 | [DOMQL's migration](#domqls-migration) | Done: DOMQL migrated at `1.0.0-beta.3` |
-| [Release](#release) | `1.0.0-beta.1` is released; publishing its packages remains |
+| [Release](#release) | `1.0.0-beta.2` is released; publishing its packages remains |
 | [What 1.0 requires](#what-1-0-requires) | Five requirements, one met in part |
 | [Tooling](#tooling) | Follows 1.0, and waits for its design |
 
@@ -127,7 +127,7 @@ References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design
 
 ## Release
 
-**Packages.** One source and build produce both packages locally; neither is published. Both carry the implementation version declared by `src/language/Versions.mjs`. The first release, `1.0.0-beta.1`, is tagged `v1.0.0-beta.1`, and its packages are packed from that tag.
+**Packages.** One source and build produce both packages locally; neither is published. Both carry the implementation version declared by `src/language/Versions.mjs`. Each release is tagged by its version, the newest, `1.0.0-beta.2`, as `v1.0.0-beta.2`, and its packages are packed from its tag.
 
 | Package | Contents or delivery |
 | --- | --- |
@@ -153,8 +153,8 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 | --- | --- | --- |
 | **Contracts settled.** No decision is open, no gap stands between the specification and the code, and each [deferred](#deferred) item is shown to land without a break. | What may still change after 1.0 must be able to change compatibly. | Holds: no decision is open, no gap stands, and each [deferred](#deferred) item lands as an addition, rounding to digits as an optional argument of `round()` and wrapping canonical text as an option. |
 | **Robust against any text.** A fuzzing test in the gate reads, resolves and evaluates generated scripts, and meets no failure but a `NexoError`: no hang, no stack overflow, no escaped `TypeError`. | The maintenance sweep, `1.0.0-beta.21` to `1.0.0-beta.40`, found such faults by reading the code. | Not started. |
-| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-beta.1` is released; publishing it remains. |
-| **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against the release `1.0.0-beta.1`, from its tag, and replacing Forma's scripts is planned. |
+| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-beta.2` is released; publishing it remains. |
+| **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against the release `1.0.0-beta.2`, from its tag, and replacing Forma's scripts is planned. |
 | **A release candidate that breaks nothing.** `1.0.0-rc.1` is released once the rest hold, and DOMQL and Forma take it with no change but its version. `1.0.0` is its contract, unchanged. | It is the last check that nothing still needs to break. | Waits for the rest. |
 
 **Until 1.0, Nexo takes no new feature:** no new syntax, member, declaration key, API or behaviour a script or a host can use. A change before 1.0 does one of these:

@@ -17,7 +17,7 @@ Each entry says what its version breaks:
 
 ## `1.0.0-beta.41`
 
-*Unreleased · definition format 38*
+*November 4, 2026 · definition format 38*
 
 ```nexo
 price.round()                // the nearest whole number; price.round before, now NEXO3017, "write 'price.round()'"

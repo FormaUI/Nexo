@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-beta.2`
 
-*Unreleased · language `1.0.0-beta.41` · definition format 38*
+*November 4, 2026 · language `1.0.0-beta.41` · definition format 38*
 
 - Runs language `1.0.0-beta.41`, as the [language history](LANGUAGE-HISTORY.md#v1-0-0-beta-41) sets out: the members that make a value of their receiver are functions, `round()` among them, a value of `Any` enters a structure as its data shape alone, a number is written in hexadecimal, octal or binary too, with `_` between its digits, a number and a name after it stand apart, and an evaluator takes the limits its host sets.
 - A suggestion writes a function taking no argument with its empty parentheses, `x.flatten()`, and one taking some as `x.concat(…)`.
