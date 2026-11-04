@@ -6,14 +6,18 @@ Decisions taken without stopping to ask, kept here so they can be reviewed and r
 - A rule a decision settles is stated in the [specification](../spec/README.md) too.
 - Questions not yet decided are in the status overview's [open decisions](features-status.md#open-decisions).
 
-Each entry is one of four kinds:
+Each entry is of one kind, or of both contracts' where its rule is stated in each:
 
-| Kind | Meaning |
-| --- | --- |
-| Approved rule | A rule of the language or the runtime the owner approved, which the specification states |
-| Current restriction | Something the contract deliberately leaves unsupported for now, refused explicitly, which a later design may lift |
-| Implementation limitation | Where the implementation falls short of the contract, recorded in the status overview until it closes |
-| Process | How versions, records and releases are kept |
+| Kind | Meaning | What a host may rely on |
+| --- | --- | --- |
+| Language contract | A rule of what a script means, which the [language contract](../spec/README.md#the-language) states | The rule, from the release that states it |
+| Runtime contract | A rule of how a host binds, resolves, evaluates, declares and registers, which the [runtime contract](../spec/README.md#the-runtime) states | The rule, from the release that states it |
+| Current restriction | Something the contract deliberately leaves unsupported for now, refused explicitly, which a later design may lift | The refusal, until a release lifts it |
+| Implementation decision | How the implementation meets the contract, chosen and measured, as a cache's size or a copy it skips | Nothing beyond what a contract states of it: a later release may choose otherwise, measured |
+| Implementation limitation | Where the implementation falls short of the contract, recorded in the status overview until it closes | The contract, once it closes |
+| Process | How versions, records and releases are kept | — |
+
+After its kind, an entry says whether the owner approved it and what led to it: `Language contract, approved.`
 
 <a id="d1"></a>
 
@@ -117,7 +121,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** `.` reads a type's own members and `:` reads extension members. `device.usage` is refused, giving `device:usage` (NEXO3090). The language advances to `1.0.0-alpha.40`.
 - **The definition format, 37:** its serialized form changed. A `memberAccess`'s `extension` became `{}` for an access naming no extension, where it had always held a `name`, and an `indexerAccess` no longer held one, since an extension's unnamed indexer has no form. A behaviour change alone would have kept the format.
 - **Why:** the owner agreed that extension members are reached through `:` exclusively, so where a member comes from is always visible, and an owner and an extension never compete.
@@ -129,7 +133,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026, revised the same day*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** an extension reference writes one to three names: the member, its extension's name before it, and that extension's module's before that. Each name fills its role, whatever the spacing. The rule applies to the reference, not to every name that follows it.
 - **Revised:** the first version read every dotted name after the colon as part of the reference, refusing more than three (NEXO1071). The owner sent it back: that was a decision of its own, not a consequence of the three forms.
 - **Declined:** reading `count: it.devices.count` as a named argument.
@@ -140,7 +144,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026, revised the same day*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** resolution reads the names after the colon the ways their declarations allow: the first an extension member; the first an extension declaring the second; or the first a module whose extension the second is, declaring the third. Names after the member are ordinary access of its answer. One way that fits is taken, several are refused as ambiguous (NEXO3091), and a group or a named extension writes one.
 - **Why:** the owner's review. `name:size.width` should read as the extension member `size` and its answer's `width`, and a group is useful only where the names really read two ways. A name still fills a role only where it names what the role needs, never a local or a parameter.
 - **Revised:** the first version required a group after every bare member, `(device:readings).first`, because it read the dotted names greedily.
@@ -152,7 +156,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026, revised the same day*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** a member declared within a type is read with `.`, and one declared within an extension with `:`, whichever module declares it and whichever type it extends. `flatten` is declared among `List<T>`'s own members, for a list of lists, a receiver narrower than `List`'s, so `lists.flatten` reads it. Nexo's module declares no extension.
 - **Why:** the owner's review. Access syntax should follow the declaration, not how the declaring module relates to the receiver's type. `flatten` is a list operation like every other list member, so it is declared as one.
 - **Revised:** the first version read with `.` the members a module declared in an extension of its own type, which `flatten`, then declared through an extension, relied on.
@@ -164,7 +168,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026, revised the same day*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** an extension declares indexers, each named, read `device:setting["mode"]`, through its extension and its module as any extension member is, with its signatures. Brackets after the member are its key where the member the access selects for the receiver is a named indexer, and otherwise index the member's answer. An extension declaring an indexer without a name is refused (NEXO4564), giving the named form.
 - **Why:** the owner's decision. Brackets after a value alone write no name, so they can't show where the indexer comes from, which reading extension members with `:` exists to show; they read the receiver's owner's unnamed indexer.
 - **Revised:** the first version recorded an unnamed extension indexer as a current restriction, which a later design might lift. It is a rule: an extension indexes by name.
@@ -176,7 +180,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** NEXO3090 refuses an extension member read with `.`. NEXO3091 refuses names that read more than one way, and NEXO3026 a first name that names neither an extension nor an extension member. NEXO1014 keeps a colon no name follows, now `f(a: 5)` and `a ?: 0` among it. NEXO3062 covers a member no applicable extension declares as well as one a named extension does not. NEXO4564 refuses an extension's unnamed indexer. NEXO1071, which the first reading of the names used, is retired.
 - **Why:** each condition has one code. A colon no name follows is one condition however it is spaced or followed, so NEXO1014 stays rather than being retired.
 - **Declined:** retiring NEXO1014 for a new code, which would split one condition.
@@ -187,7 +191,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** `let keep = words:keep` then `keep(it.length > 1)` reads its argument as `words:keep(it.length > 1)` does. The receiver is still captured once, as the reference is created.
 - **Why:** the owner decided it, as a held reference to a module's function already does. It clarifies the agreed contract, so it keeps `1.0.0-alpha.40`, by [D9](#d9).
 - **Revised:** a local that may hold one of several functions first gave each of them values alone. That was this implementation's limitation, not a rule: the specification already made a held reference's call its qualified form's, wherever it was chosen. [D22](#d22) settles it.
@@ -198,7 +202,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Runtime contract, approved.
 - **Decision:** a host's set is accepted wherever a value is declared `List<T>`: a declared binding, a member's answer and a host call's supplied value. Its items are captured in traversal order and checked against `T`, at every depth. The list keeps no uniqueness.
 - **Why:** the owner decided it. A member's answer and an undeclared binding already took a set, so capture now treats a host's collections one way wherever a type is declared. It clarifies the contract, so it keeps `1.0.0-alpha.40`, by [D9](#d9).
 - **Declined:** a set type in the language, which no script needs to tell from a list.
@@ -209,7 +213,7 @@ Each entry is one of four kinds:
 
 *October 30, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** a function, an arrow function, a script's function or a reference, is never a list's item, a dictionary's value or an indexer's key. Each is reported where it is found: an arrow function in text as a syntax error (NEXO1057), one in a definition as a structure error (NEXO2027), and one resolution finds as a validation error (NEXO3082). A call answering a valid item stays allowed.
 - **Why:** the owner decided it. The catalog already gave text NEXO1057 for an arrow function outside a local or an argument, so `[x => 1]` follows it; an indexer's key is data as an item is, so it shares NEXO3082 rather than taking a code of its own.
 - **Declined:** a new code for a function as a key, which would split one condition.
@@ -286,7 +290,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *October 30, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** spaces and tabs between an access expression's tokens change nothing, in a property access, a computed one and an extension access, qualified or not, and decide no name's role. Whitespace never splits a token, so `? .` is no `?.`. Line breaks follow the line structure: an extension access's colon and dots are member steps, with no continuation rule of their own.
 - **Consequences:** `f(a:b)`, `f(a: b)` and `f(a : b)` each pass what `a:b` answers, never a named argument. An object field's `count: 1` stays NEXO1003, since the parser knows it reads a field's name there.
 - **Why:** the owner's rule. The parser already read whitespace so; the specification now says it.
@@ -297,7 +301,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *October 30, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** `x.[name]` reads the members `.` reads, never an extension member. A computed extension access, if one is introduced, needs a design of its own.
 - **Why:** otherwise a computed name would be a second route to extension members, undoing their separation.
 
@@ -307,7 +311,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *October 30, 2026*
 
-- **Kind:** Approved rule, closing an implementation limitation.
+- **Kind:** Language contract, approved, closing an implementation limitation.
 - **Decision:** a call of a local that may hold several functions reads its arguments by the contract they share, and invokes the one the local holds. They share one where every one is a reference to a module's function, bound alike, agreeing on the argument form and each parameter's kind, type, requirement, null policy and default once their receivers bind what their types write. Where they read the arguments differently, the call is refused naming where they part (NEXO3079).
 - **Why:** the owner's review: a restriction should follow from the callables' contracts, not from there being several. The specification already made a held reference's call its qualified form's, wherever it was chosen; giving each function values alone was this implementation's limitation.
 - **What still can't share one:** a script's function beside one taking a callback, since a script's function takes values alone; references bound and unbound, which place the receiver differently; and declarations with type parameters of their own, which their own arguments bind, unless they are one declaration.
@@ -371,7 +375,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *October 31, 2026*
 
-- **Kind:** Approved rule, as the review of the first performance pass proposed it.
+- **Kind:** Runtime contract, approved, as the review of the first performance pass proposed it.
 - **Decision:** data that passes between Nexo and its host, in either direction, is read-only from then on, nested data included. A host changes neither the data it is given nor the data it gave, through any alias it keeps. The rule is stated in [data shared with a host](../spec/runtime/evaluation.md#runtime-shared-data). The language advances to `1.0.0-alpha.42`, and the definition format stays 38.
 - **References:** a reference is no data. The host object it identifies changes as its type's contract allows, and the rule lets Nexo rely on an earlier check of data alone, never on one of a reference's membership.
 - **The boundary:** Nexo copies a binding and a value a host call projects, so the host's own data stays its own. It doesn't copy an answer, so the rule covers what a host gave as well as what it was given.
@@ -668,7 +672,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 2, 2026*
 
-- **Kind:** Language and runtime contract, for DOMQL's behaviors.
+- **Kind:** Language and runtime contracts, for DOMQL's behaviors.
 - **Decision:** A function the host invokes may declare function parameters. Preparing it gives its host each function argument as a kept function, which the host calls later, any number of times. Each call evaluates the function as an evaluation of its own, in the context preparation found: the locals before the call with their prepared values, the script's bindings and the function's own parameters, without hooks, checked against its callback contract, and refused while its evaluator evaluates or where its resolution is stale. The kept functions last until the host calls the prepared call's `dispose()`; a call after it fails with NEXO5051 at the argument. Expression and predicate parameters stay refused. The language advances to `1.0.0-beta.20`.
 - **Why:**
   - A running behavior, as an input router matching keys, keeps a test of what it hears and calls it at each event, long after preparation ended, so a function argument a host call takes must outlive the call's preparation; data alone made every such test a protocol of the host's own.
@@ -687,7 +691,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** `and` and `or` mean the same in every expression, and are evaluated as before, left to right, stopping at the operand that decides. Their values must share a type only where the value is used:
   - **Used:** a result, a function's among them, a local's initializer, an object field, an argument other than a predicate's, a branch, a list's item, and an operand of arithmetic, a comparison, an equality, `??` or an interpolation.
   - **Tested for truthiness alone:** a condition, the operand of `not`, an operand of another `and` or `or`, and a predicate argument written as an expression of `it`. Their values need share no type.
@@ -710,7 +714,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** A number is written as in JSON. Where a zero is followed by a digit, or an exponent has no digits, the whole run is one invalid token, NEXO1000, "A number is written as in JSON". An `e` that starts a longer name is that name, by the longest match, so `1else` stays `1` and `else`, and `1ex` stays a member written without its dot, NEXO1011.
 - **Why:**
   - `0123` was read as `0` and `123`, and refused as "nothing follows a body's result". `1e` was read as `1` and a member `e`, and refused with advice to write `1.e`. Neither says what is wrong.
@@ -724,7 +728,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:**
   - A value of `Any` may hold false, so its falsey part is `Any`, and `Any?` where it can be null.
   - An object expression following a value of `Any` applies to it once, whatever it holds, as its resolution types it.
@@ -743,7 +747,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language and runtime contracts, approved.
 - **Decision:**
   - A `sum`, or a number a `sequence` reaches, that no finite number holds fails with NEXO5020, as an addition's does. `average` gives the mean of finite numbers whose sum overflows, by summing their shares.
   - `sequence` refuses a count above 4294967295, the most items a list holds, with NEXO5035.
@@ -763,7 +767,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Runtime contract, approved.
 - **Decision:**
   - A member reading maintained values declares a result that can be null, NEXO4071, since it reads as null while pending.
   - `beforeInvoke` answers `{ pending: true }` for such a member alone. Any answer but samples, that, or nothing fails the evaluation at the member, NEXO5009, with the answer as its cause.
@@ -813,7 +817,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language and runtime contracts, approved.
 - **Decision:** A script nests at most 256 levels, each expression within another a level deeper. The parser refuses text nesting deeper where it does, NEXO1072, and validation refuses a definition at its node, NEXO2046, a chain of operators nesting a level for each operator after its first. Validation refuses a node that holds itself, and an array with a missing entry, NEXO2000. The data a host gives is bounded as [D60](#d60) records.
 - **Why:**
   - Reading text, validating, resolving, evaluating and writing a definition each follow its nesting, so a deep script overflowed the stack as a `RangeError`, from about 440 nested parentheses, which no host can tell from a fault, and a cyclic or sparse definition passed validation and failed later.
@@ -853,7 +857,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Runtime contract, approved.
 - **Decision:** Data a host gives nests at most 1,000 levels. Binding refuses deeper data, NEXO2047, capturing a supplied value NEXO5015, typing a value of `Any` a deferred access reads fails it, and a result holding deeper data is refused, NEXO5052. A value a host call declared `Any` supplies is captured as it is.
 - **Why:**
   - Binding data overflowed the stack from about 1,960 levels and evaluation from about 2,900, each as a RangeError no host can tell from a fault.
@@ -880,7 +884,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** A conversion of a value of `Any` resolves to its target, and selects its operator as it is evaluated, by the value's actual type, among the conversions to its target the imports make available, the most specific where several apply. A value already of its target is itself. One no conversion applies to fails with NEXO5053, within `try` too, which answers null for a rejection alone.
 - **Why:**
   - Every other operation a value of `Any` takes part in is checked as it is evaluated: a member it reads, arithmetic, ordering, an interpolation, an equality. Refusing its conversion at resolution was the one exception, so `value to String` was refused whatever the value turned out to be.
@@ -893,7 +897,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language contract, approved.
 - **Decision:** A computed property access after a namespace's name is read by its chain, as one after `@` and the name is. `Home.["rooms"]` is `Home.rooms`, and `Home.[p]` is refused at its name, NEXO2521.
 - **Why:**
   - A string literal that is a Nexo name is the name written wherever a computed property access stands, so `@Home.["rooms"]` already read `Home.rooms`.
@@ -906,7 +910,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Language and runtime contracts, approved.
 - **Decision:** A surrogate standing alone in a string's literal text, raw or not, is a syntax error, NEXO1049. A string a definition holds as a value, a literal's, an interpolated string's text and a dictionary's key, holding one is a structure error, NEXO2000.
 - **Why:**
   - An escape naming a surrogate was already refused, but the character itself was read into the value, so the rule depended on how it was written.
@@ -922,7 +926,7 @@ Forty decisions were taken while implementing the declarations, member selection
 
 *November 3, 2026*
 
-- **Kind:** Approved rule.
+- **Kind:** Runtime contract, approved.
 - **Decision:** Where a call's argument or a list's item follows one ending in a block's `end`, canonical text writes each on a line of its own, a level within its brackets, which close on the line after the last. A last item that spans lines keeps its lines after the opening, `items.map(x => {`.
 - **Why:**
   - Only closing punctuation follows a block's `end` on its line, so the next argument starts a line.
@@ -1059,3 +1063,35 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Decision:** A letter right after a number makes the number and the name it starts one invalid token, NEXO1000, "A number stands apart from a name after it", so `1else`, `2end` and `3px` are refused, and `0x10` and `0b1` are told a number is written in decimal digits. A space between them reads a number and a name, and a dot a member of the number, `1.e3`. It replaces [D51](#d51)'s reading of `1else`.
 - **Why:** The review asked that `1else` be decided on how it reads and on the rule's consistency alone, not on breaking text. `1else` reads as one word, and the rule already refuses a zero a digit follows and an exponent with no digits over their whole run, so a letter after a number is refused as they are, as JSON and JavaScript readers refuse it. Canonical text always wrote a space, and neither DOMQL's queries nor the scripts Forma's plan writes hold such a run.
 - **Declined:** Keeping `1else` as `1` and `else`, which D51 kept partly so as to break no text.
+
+<a id="d74"></a>
+
+## D74 — A gain is judged against the noise and by its size
+
+*November 4, 2026*
+
+- **Kind:** Process.
+- **Decision:** A change made for speed or memory is kept where paired runs put its median beyond the noise a run against an unchanged copy shows, by an effect large enough to matter to a host: a few percent of a case, or a cost a host pays at every evaluation. A round that disagrees is investigated and measured again, never a veto alone, and the rounds run on a quiet machine. It revises [D25](#d25)'s rule that every round agree, which [contributing](../CONTRIBUTING.md#measure-performance) now states.
+- **Why:** A design review found "every round agrees" the wrong test both ways: a gain of a fraction of a percent can win every noisy round and matter to no one, and a real gain can lose one round to a build running beside it. Rounds measured during this work beside another session's runs spread from −30% to +130%, so the machine's load decides more than the change unless it is quiet.
+- **Declined:** A fixed threshold for every case, which a case of microseconds and one of seconds can't share.
+
+<a id="d75"></a>
+
+## D75 — The first release candidate is the compatibility boundary
+
+*November 4, 2026*
+
+- **Kind:** Process.
+- **Decision:** From `1.0.0-rc.1` on, nothing breaks before 2.0. Until it, a decision may be replaced where a host's experience, correctness or a measured cost justifies it, a decision records it, its version's entry says how to migrate, and DOMQL and Forma move with it. Versions stay collected by release, as [D66](#d66) has them, and 1.0 still waits for DOMQL to run Forma's own scripts, as [D67](#d67) requires.
+- **Why:** The beta promised that no breaking redesign was planned, without saying where breaks end, and a review of the decisions found ones worth replacing before release: what a structure keeps from a value of `Any` ([D71](#d71)) and `1else` ([D73](#d73)). A release candidate that DOMQL and Forma take with no change is the point after which nothing may.
+- **Declined:** Freezing every decision at the first beta, which would carry the decisions the review found into 1.0.
+
+<a id="d76"></a>
+
+## D76 — An entry's kind says what a host may rely on
+
+*November 4, 2026*
+
+- **Kind:** Process.
+- **Decision:** Each entry is a language contract, a runtime contract, both, a current restriction, an implementation decision, an implementation limitation, or process, as the table at the top defines, whether the owner approved it said after its kind. An implementation decision binds no later release: a host relies on what a contract states of it, as a bound on memory, and never on the choice, as [D55](#d55)'s 32 shapes.
+- **Why:** The table named four kinds, while the entries named more, "Approved rule" among them, which said who approved a rule and not which contract states it. A review asked that a public guarantee be told from a measured choice.

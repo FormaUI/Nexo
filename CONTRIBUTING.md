@@ -90,6 +90,8 @@ node benchmarks/run.mjs --baseline ../nexo-baseline
 - Each round measures both, alternating which runs first. `--rounds` sets how many run, 7 by default.
 - A case's change is the median of the rounds' changes, with their range beside it.
 - Run once against an unchanged copy to see how far rounds differ by chance.
-- A gain is established where every round agrees and the median lies beyond that.
+- A gain is established where the median lies beyond that noise, by an effect large enough to matter to a host: a few percent of a case, or a cost a host pays at every evaluation. A gain of a fraction of the noise is none, however many rounds it wins.
+- A round that disagrees with the rest is investigated, the machine's load and the order of the cases among the causes, and the rounds measured again. It decides nothing alone.
+- Measure on a quiet machine: a build or a test running beside the rounds moves them more than most changes do.
 
 A change made for speed or memory keeps every behaviour the tests check, and is kept only where paired runs show it helps.

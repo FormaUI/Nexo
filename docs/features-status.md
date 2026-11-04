@@ -145,7 +145,7 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 
 ## What 1.0 requires
 
-1.0 promises no break until 2.0. Nexo reaches it once each requirement holds:
+1.0 promises no break until 2.0, and its first release candidate is where that promise begins, as [D75](decisions.md#d75) records. Nexo reaches it once each requirement holds:
 
 | Requirement | Why | State |
 | --- | --- | --- |
@@ -163,7 +163,7 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 - documents what is there;
 - meets a requirement above.
 
-A feature a host's real use needs, as a [deferred](#deferred) item's trigger names, is the one exception, and a decision records it.
+A feature a host's real use needs, as a [deferred](#deferred) item's trigger names, or one a contract relies on its hosts having, as [D72](decisions.md#d72)'s limits are, is the one exception, and a decision records it. Until the first release candidate, a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and DOMQL and Forma move with it.
 
 <a id="open-decisions"></a>
 
