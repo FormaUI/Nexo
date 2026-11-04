@@ -1,6 +1,6 @@
 # Nexo Specification v1.0.0-beta.41
 
-Nexo is a general-purpose, embeddable language that lets applications define their own domain as an integral part of the language. Its expressions and data are immutable, and evaluation is read-only; changes to the domain are explicit requests carried out by the host. Nexo has no application domain of its own: modules declare the types and members available to a script, and adding them never changes the grammar.
+Nexo is an embeddable language with no domain of its own: the host declares the typed vocabulary its scripts may use, and scripts use that vocabulary to compute and shape data. Nexo checks every script against that vocabulary before it runs, and evaluates it, read-only, into immutable data. A change to the domain is an explicit request the host carries out. Modules declare the types and members available to a script, and adding them never changes the grammar.
 
 This specification is the authoritative contract for the language and for the host contract its implementations offer. It states what Nexo is, not how far an implementation has come: [the status overview](../docs/features-status.md) says what this repository implements, and [the design](../docs/nexo-design.md) how it is built.
 

@@ -1,7 +1,7 @@
 {
     "name": "@formaui-net/nexo",
     "version": "1.0.0-beta.2",
-    "description": "Nexo is a general-purpose, embeddable language that evaluates scripts against what a host binds, through a vocabulary its modules declare for the domain, and produces immutable data.",
+    "description": "Nexo is an embeddable language with no domain of its own: the host declares the typed vocabulary its scripts may use, and scripts use that vocabulary to compute and shape data. Nexo checks every script against that vocabulary before it runs, and evaluates it, read-only, into immutable data.",
     "license": "Apache-2.0",
     "author": "Eyal Alon",
     "repository": {
