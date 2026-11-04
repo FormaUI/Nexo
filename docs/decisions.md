@@ -1066,6 +1066,7 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Decision:** A letter right after a number makes the number and the name it starts one invalid token, NEXO1000, "A number stands apart from a name after it", so `1else`, `2end` and `3px` are refused, and `0x10` and `0b1` are told a number is written in decimal digits. A space between them reads a number and a name, and a dot a member of the number, `1.e3`. It replaces [D51](#d51)'s reading of `1else`.
 - **Why:** The review asked that `1else` be decided on how it reads and on the rule's consistency alone, not on breaking text. `1else` reads as one word, and the rule already refuses a zero a digit follows and an exponent with no digits over their whole run, so a letter after a number is refused as they are, as JSON and JavaScript readers refuse it. Canonical text always wrote a space, and neither DOMQL's queries nor the scripts Forma's plan writes hold such a run.
 - **Declined:** Keeping `1else` as `1` and `else`, which D51 kept partly so as to break no text.
+- **Replaced in part:** [D81](#d81) reads `0x10` as a hexadecimal number, and a letter after a number stays refused.
 
 <a id="d74"></a>
 
@@ -1165,3 +1166,22 @@ Forty decisions were taken while implementing the declarations, member selection
   - Least recently used alone, which keeps nothing where more than 32 recurring types cycle in turn, where admitting at the second miss keeps two thirds.
   - Keeping the first 32 and starting again after 256 misses in a row, which kept half the common shapes after a partial burst.
   - A larger bound, which a stream of new shapes passes all the same.
+
+<a id="d81"></a>
+
+## D81 — A number may be written in hexadecimal, octal or binary
+
+*November 4, 2026*
+
+- **Kind:** Language contract, approved.
+- **Decision:** A number is written in decimal as JSON writes it, or as a whole number after `0x`, `0o` or `0b` in hexadecimal, octal or binary, as ECMAScript writes it, and a `_` may stand between two digits of any number, as ECMAScript's separators do: `0xFF`, `0o17`, `0b1010` and `1_000_000`. Its value is the nearest number to its digits, as ECMAScript reads the text, and canonical text writes it in decimal. A prefix in capitals or with no digits, a digit or a fraction its base lacks, and a `_` anywhere but between two digits are refused over their run (NEXO1000). It replaces [D73](#d73)'s refusal of `0x10`, and a letter right after a number stays refused, `0x1G` among it.
+- **Why:**
+  - The owner's call: a script writes a mask, a flag, a colour or a character code in the base it is defined in, as `0xFF00FF`, and refusing it made its author convert by hand.
+  - Nexo's numbers are ECMAScript's, so ECMAScript's literals give each form the meaning a host's developer already reads in it, and its separators let a long number read in groups.
+  - Canonical text writes a number's value, as it writes `1e3` as `1000`, so a definition holds a number as before, and its format doesn't change.
+- **Declined:**
+  - A prefix in capitals, which ECMAScript takes: `0O17` reads as zeros, and one form serves.
+  - A leading zero for octal, `017`, which JSON refuses and ECMAScript's strict code too.
+  - Keeping a number's base in its definition so canonical text writes it back, which would change the definition format for a spelling.
+  - Reading text a host gives in another base, as `"0xFF" to Number`, which converts a host's data in decimal as before: text that happens to begin `0x` would otherwise change its meaning.
+  - A BigInt's `n` suffix, since the language has one number type.

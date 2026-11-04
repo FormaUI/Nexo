@@ -41,7 +41,16 @@ const UNICODE_ESCAPE = /u\{([0-9A-Fa-f]{1,6})\}/y;
  */
 const PUNCTUATION = new Set(['.', ',', ':', '(', ')', '{', '}', '[', ']', '+', '-', '*', '/', '%', '^']);
 const NAME = /[A-Za-z][A-Za-z0-9]*/y;
-const NUMBER = /(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/y;
+/** A decimal number, as JSON writes one, a `_` standing between two of its digits wherever it holds them. */
+const NUMBER = /(?:0|[1-9](?:_?[0-9])*)(?:\.[0-9](?:_?[0-9])*)?(?:[eE][+-]?[0-9](?:_?[0-9])*)?/y;
+/** The prefixes of a whole number in another base, as ECMAScript writes them: its digits, a `_` standing between two, its name and its digits described. */
+const BASES = new Map([
+    ['x', { digits: /[0-9A-Fa-f](?:_?[0-9A-Fa-f])*/y, name: 'hexadecimal', described: '0 to 9 and a to f' }],
+    ['o', { digits: /[0-7](?:_?[0-7])*/y, name: 'octal', described: '0 to 7' }],
+    ['b', { digits: /[01](?:_?[01])*/y, name: 'binary', described: '0 and 1' }],
+]);
+/** The run of letters, digits and underscores an invalid number is refused over. */
+const NUMBER_RUN = /[0-9A-Za-z_]*/y;
 /** Whitespace, as ECMAScript's `\s` matches it, but U+2028 and U+2029, which stand only in a string's literal text. */
 const SPACE = /(?![\u2028\u2029])\s/;
 
@@ -806,15 +815,23 @@ export class Tokenizer {
     }
 
     /**
-     * Reads the number a digit at the offset starts, written as in JSON: a zero a digit follows, as in `0123`, and an exponent with no digits, as in `1e` or `1e+`, make the run invalid, which a reading of the
-     * number alone would split into a number and the name or the number after it. A letter right after the number makes it invalid too, over the name it starts, as in `1else` and `0x10`, so a number and a name
-     * after it always stand apart.
+     * Reads the number a digit at the offset starts: a decimal number as JSON writes it, or a whole number after `0x`, `0o` or `0b` in hexadecimal, octal or binary, as ECMAScript writes it, a `_` standing between
+     * two digits of either. A zero a digit follows, as in `0123`, an exponent with no digits, as in `1e` or `1e+`, and a `_` anywhere but between two digits make the run invalid, which a reading of the number
+     * alone would split into a number and the name or the number after it. A letter right after the number makes it invalid too, over the name it starts, as in `1else`, so a number and a name after it always
+     * stand apart. Its value is the nearest number to the digits, as ECMAScript reads them.
      */
     #readNumber(start) {
+        const prefix = this.#text[start] === '0' ? this.#text[start + 1] : undefined;
+
+        if (prefix !== undefined && BASES.has(prefix.toLowerCase())) {
+            return this.#readNumberInBase(start, prefix);
+        }
+
         NUMBER.lastIndex = start;
         NUMBER.test(this.#text);
 
         const end = NUMBER.lastIndex;
+        const digits = this.#text.slice(start, end);
         const malformed = /[0-9]+|[eE][+-]/y;
         const named = /[A-Za-z][A-Za-z0-9]*/y;
 
@@ -822,24 +839,73 @@ export class Tokenizer {
         named.lastIndex = end;
 
         if (malformed.test(this.#text)) {
-            return this.#readInvalidToken(start, malformed.lastIndex, 'NEXO1000', 'A number is written as in JSON: no zero leads its digits, and an exponent has digits of its own', start);
+            const message = /^[0-9]/.test(this.#text[end]) ? "No zero leads a number's digits" : "A number's exponent has digits of its own";
+
+            return this.#readInvalidToken(start, malformed.lastIndex, 'NEXO1000', message, start);
+        }
+
+        if (this.#text[end] === '_') {
+            return this.#readInvalidToken(start, this.#endOfNumberRun(end), 'NEXO1000', digits === '0' ? "No zero leads a number's digits" : "A '_' in a number stands between two digits", start);
         }
 
         if (named.test(this.#text)) {
             const name = this.#text.slice(end, named.lastIndex);
-            const digits = this.#text.slice(start, end);
-            const message = /^[eE]$/.test(name)
-                ? 'A number is written as in JSON: an exponent has digits of its own'
-                : digits === '0' && /^[xXoObB]/.test(name)
-                    ? 'A number is written as in JSON, in decimal digits'
-                    : `A number stands apart from a name after it: write '${digits} ${name}'`;
+            const message = /^[eE]$/.test(name) ? "A number's exponent has digits of its own" : `A number stands apart from a name after it: write '${digits} ${name}'`;
 
             return this.#readInvalidToken(start, named.lastIndex, 'NEXO1000', message, start);
         }
 
         this.#offset = end;
 
-        return { type: 'literal', value: Number(this.#text.slice(start, end)), start, end };
+        return { type: 'literal', value: Number(digits.replaceAll('_', '')), start, end };
+    }
+
+    /**
+     * Reads the whole number in hexadecimal, octal or binary a prefix at the offset starts, `0x`, `0o` or `0b`, written in lowercase: its digits follow it, a `_` standing between two. A prefix in capitals, a prefix
+     * with no digit after it, a digit its base lacks, a letter, a fraction and a `_` anywhere but between two digits make the run invalid.
+     */
+    #readNumberInBase(start, prefix) {
+        const { digits, name, described } = BASES.get(prefix.toLowerCase());
+        const invalid = (end, message) => this.#readInvalidToken(start, end, 'NEXO1000', message, start);
+
+        if (prefix !== prefix.toLowerCase()) {
+            const end = this.#endOfNumberRun(start + 2);
+
+            return invalid(end, `A number's prefix is written in lowercase: write '0${prefix.toLowerCase()}${this.#text.slice(start + 2, end)}'`);
+        }
+
+        digits.lastIndex = start + 2;
+
+        if (!digits.test(this.#text)) {
+            return invalid(this.#endOfNumberRun(start + 2), `'0${prefix}' begins a ${name} number, and its digits, ${described}, follow it`);
+        }
+
+        const end = digits.lastIndex;
+        const next = this.#text[end] ?? '';
+
+        if (next === '_') {
+            return invalid(this.#endOfNumberRun(end), "A '_' in a number stands between two digits");
+        }
+
+        if (/[0-9A-Za-z]/.test(next)) {
+            return invalid(this.#endOfNumberRun(end), `A ${name} number's digits are ${described}, and a name after a number stands apart from it`);
+        }
+
+        if (next === '.' && /[0-9]/.test(this.#text[end + 1] ?? '')) {
+            return invalid(this.#endOfNumberRun(end + 1), `A ${name} number is whole, and has no fraction`);
+        }
+
+        this.#offset = end;
+
+        return { type: 'literal', value: Number(`0${prefix}${this.#text.slice(start + 2, end).replaceAll('_', '')}`), start, end };
+    }
+
+    /** The end of the run of letters, digits and underscores from the offset, which an invalid number is refused over. */
+    #endOfNumberRun(offset) {
+        NUMBER_RUN.lastIndex = offset;
+        NUMBER_RUN.test(this.#text);
+
+        return NUMBER_RUN.lastIndex;
     }
 
     /** Reads an invalid token over the text from the start to the end, advancing the offset to its end, where reading goes on, with the code, the message and the offset its diagnostic gives. */

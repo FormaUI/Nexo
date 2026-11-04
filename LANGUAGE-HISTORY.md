@@ -26,7 +26,8 @@ items.reverse().distinct()   // items.reverse.distinct before
 device.active                // a state is a property; device.active() before, in the examples' vocabulary
 if ready then 1else 2 end    // NEXO1000, "write '1 else'"; 1, then else, before
 if ready then 1 else 2 end   // 1 or 2, as before
-0x10                         // NEXO1000, a number is written in decimal digits; a member written without its dot, NEXO1011, before
+0xFF + 0o17 + 0b1010         // 280; NEXO1011, "write '0.xFF'", before
+1_000_000                    // 1000000; NEXO1000, "Unexpected '_'", before
 ```
 
 ```js
@@ -42,7 +43,8 @@ evaluator.evaluate();                                  // '0.sequence(count)' wi
 
 - [A property names what its receiver is, has or is in, and a function does work](spec/language/vocabulary.md#vocabulary-boolean-functions), as [D77](docs/decisions.md#d77) records. Nexo's own members that make a value of their receiver are functions: a number's `round()`, `floor()`, `ceiling()`, `truncate()` and `abs()`, a text's `trim()`, `lowercase()` and `uppercase()`, and a list's `reverse()`, `distinct()` and `flatten()`, each a property before. A state a module declares is a Boolean property, `device.active`, where a test was declared as a function so a script could pass it by reference; a test that does work stays a function, `device.ping()`.
 - [A value of `Any` enters a structure as its data shape alone](spec/language/types.md#types-any-into-a-structure), wherever a type is declared for it: a member's argument, a property of a structure a script constructs, and a function's argument or result a callback contract declares. A member was given it as it was, the properties its structure doesn't declare among them, while a member's answer was copied to the shape, so one parameter gave a host two shapes, as [D71](docs/decisions.md#d71) records.
-- [A number and a name after it stand apart](spec/language/lexical-structure.md#numbers-and-the-minus-sign): a letter right after a number makes the number and the name it starts one invalid token, NEXO1000, so `1else`, `2end` and `0x10` are refused. The longest match read `1else` as `1` and `else`, and a name after a number as a member written without its dot, NEXO1011, as [D73](docs/decisions.md#d73) records.
+- [A number and a name after it stand apart](spec/language/lexical-structure.md#numbers-and-the-minus-sign): a letter right after a number makes the number and the name it starts one invalid token, NEXO1000, so `1else`, `2end` and `3px` are refused. The longest match read `1else` as `1` and `else`, and a name after a number as a member written without its dot, NEXO1011, as [D73](docs/decisions.md#d73) records.
+- [A number is written in hexadecimal, octal or binary too](spec/language/lexical-structure.md#tokens-and-whitespace-numbers-and-the-minus-sign), a whole number after `0x`, `0o` or `0b`, as `0xFF`, `0o17` and `0b1010`, and a `_` may stand between two digits of any number, as `1_000_000`, as ECMAScript writes them. Canonical text writes the value in decimal, so `0xFF` reads back as `255`, as [D81](docs/decisions.md#d81) records. `0x10` read as `0` and a member `x10` written without its dot, NEXO1011, and a `_` was no token.
 - [A string a script's text writes](spec/language/lexical-structure.md#escapes) is well-formed, and one a host gives may hold a surrogate standing alone, which the specification said of every string a script holds; nothing changes, as [D64](docs/decisions.md#d64) now says.
 
 **Runtime**

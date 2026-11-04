@@ -353,17 +353,39 @@ describe('the codes of syntax errors', () => {
             expect(Tokenizer.scan('x 😀').map(token => [token.type, token.start, token.end])).toEqual([['identifier', 0, 1], ['invalid', 2, 4], ['end', 4, 4]]);
         });
 
-        it('gives NEXO1000 to a number not written as in JSON, a zero a digit follows or an exponent with no digits, and to one a name follows with no space, over its whole run', () => {
-            expectSyntaxCode('NEXO1000', ['0123', '00', '1e', '1e+', '1E-', '1e + 2', '1else', 'if x then 1else 2 end', '2end', '0x10', '1e5x', '3px']);
-            expect(errorThrownBy(() => nexo.parse('0123'))).toMatchObject({ message: expect.stringContaining('A number is written as in JSON'), location: { line: 1, column: 1 } });
+        it('gives NEXO1000 to a number a zero leads, an exponent with no digits or a misplaced separator, and to one a name follows with no space, over its whole run', () => {
+            expectSyntaxCode('NEXO1000', ['0123', '00', '1e', '1e+', '1E-', '1e + 2', '1else', 'if x then 1else 2 end', '2end', '1e5x', '3px', '1_', '1__0', '1_.5', '1.5_', '0_1', '1e5_']);
+            expect(errorThrownBy(() => nexo.parse('0123'))).toMatchObject({ message: expect.stringContaining("No zero leads a number's digits"), location: { line: 1, column: 1 } });
             expect(errorThrownBy(() => nexo.parse('if x then 1else 2 end'))).toMatchObject({ code: 'NEXO1000', message: expect.stringContaining("A number stands apart from a name after it: write '1 else'"), location: { line: 1, column: 11 } });
-            expect(errorThrownBy(() => nexo.parse('1e'))).toMatchObject({ message: expect.stringContaining('an exponent has digits of its own') });
-            expect(errorThrownBy(() => nexo.parse('0x10'))).toMatchObject({ message: expect.stringContaining('A number is written as in JSON, in decimal digits') });
+            expect(errorThrownBy(() => nexo.parse('1e'))).toMatchObject({ message: expect.stringContaining("A number's exponent has digits of its own") });
+            expect(errorThrownBy(() => nexo.parse('1__000'))).toMatchObject({ message: expect.stringContaining("A '_' in a number stands between two digits") });
+            expect(Tokenizer.scan('1__000 x').map(token => [token.type, token.start, token.end])).toEqual([['invalid', 0, 6], ['identifier', 7, 8], ['end', 8, 8]]);
             expect([nexo.parse('1e5').expression, nexo.parse('1.e3').expression, nexo.parse('if x then 1 else 2 end').expression.consequent]).toEqual([
                 { kind: 'literal', value: 100000 },
                 { kind: 'memberAccess', receiver: { kind: 'literal', value: 1 }, name: 'e3' },
                 { kind: 'literal', value: 1 },
             ]);
+        });
+
+        it('reads a whole number in hexadecimal, octal or binary, and digits a separator groups, each the number ECMAScript reads', () => {
+            const valueOf = text => nexo.parse(text).expression.value;
+
+            expect(['0xFF', '0xff', '0x1F_FF', '0o17', '0b1010', '0b1111_0000', '0x0', '1_000_000', '1_000.000_5', '2e1_0', '0e5'].map(valueOf)).toEqual([255, 255, 8191, 15, 10, 240, 0, 1000000, 1000.0005, 2e10, 0]);
+            expect(valueOf('0x1FFFFFFFFFFFFFFF')).toBe(Number('0x1FFFFFFFFFFFFFFF'));
+            expect(nexo.parse('0xFF.min(x)').expression).toEqual({ kind: 'call', callee: { kind: 'memberAccess', receiver: { kind: 'literal', value: 255 }, name: 'min' }, arguments: [{ kind: 'scriptParameter', name: 'x' }] });
+            expect(nexo.format(nexo.parse('0xFF + 0b1 + 1_000'))).toBe('255 + 1 + 1000');
+            expect(Tokenizer.scan('0x1F_FF').map(token => [token.type, token.start, token.end])).toEqual([['literal', 0, 7], ['end', 7, 7]]);
+        });
+
+        it('gives NEXO1000 to a number in another base its prefix, its digits or a separator leave invalid, and to one a name follows, over its whole run', () => {
+            expectSyntaxCode('NEXO1000', ['0x', '0o', '0b', '0x_1', '0xG', '0X1F', '0O17', '0B1', '0b102', '0o8', '0x1G', '0x10else', '0x1_', '0x1__0', '0x1.8', '0b1.0']);
+            expect(errorThrownBy(() => nexo.parse('0X1F'))).toMatchObject({ message: expect.stringContaining("A number's prefix is written in lowercase: write '0x1F'"), location: { line: 1, column: 1 } });
+            expect(errorThrownBy(() => nexo.parse('0x'))).toMatchObject({ message: expect.stringContaining("'0x' begins a hexadecimal number, and its digits, 0 to 9 and a to f, follow it") });
+            expect(errorThrownBy(() => nexo.parse('0b102'))).toMatchObject({ message: expect.stringContaining("A binary number's digits are 0 and 1, and a name after a number stands apart from it") });
+            expect(errorThrownBy(() => nexo.parse('0x1.8'))).toMatchObject({ message: expect.stringContaining('A hexadecimal number is whole, and has no fraction') });
+            expect(errorThrownBy(() => nexo.parse('x + 0o1_'))).toMatchObject({ message: expect.stringContaining("A '_' in a number stands between two digits"), location: { line: 1, column: 5 } });
+            expect(Tokenizer.scan('0x1G x').map(token => [token.type, token.start, token.end])).toEqual([['invalid', 0, 4], ['identifier', 5, 6], ['end', 6, 6]]);
+            expect(errorThrownBy(() => nexo.parse(`0x${'F'.repeat(300)}`))).toMatchObject({ code: 'NEXO2019' });
         });
 
         it('reads text that holds many characters that are no token in time linear in its length, a strict reading stopping at the first', () => {

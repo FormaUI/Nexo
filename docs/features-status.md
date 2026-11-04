@@ -164,7 +164,7 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 - documents what is there;
 - meets a requirement above.
 
-A feature a host's real use needs, as a [deferred](#deferred) item's trigger names, or one a contract relies on its hosts having, as [D72](decisions.md#d72)'s limits are, is the one exception, and a decision records it. Until the first release candidate, a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and DOMQL and Forma move with it.
+A feature a host's real use needs, as a [deferred](#deferred) item's trigger names, one a contract relies on its hosts having, as [D72](decisions.md#d72)'s limits are, or one the owner adds to the language, as [D81](decisions.md#d81)'s numbers are, is the exception, and a decision records each. Until the first release candidate, a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and DOMQL and Forma move with it.
 
 <a id="open-decisions"></a>
 

@@ -72,7 +72,17 @@ Spaces and tabs may appear between the tokens of an access expression without ch
 
 A number token has no sign. `-` is always an operator: arithmetic negation or subtraction.
 
-A number is written as in JSON. A zero a digit follows, as in `0123`, and an exponent with no digits, as in `1e` or `1e+`, are invalid over their whole run (NEXO1000). A number and a name after it stand apart: a letter right after a number makes the number and the name it starts invalid (NEXO1000), so `1else`, `2end` and `0x10` are refused, and `1 else` reads as `1` and `else`. A dot between them is a member access, so `1.e3` reads `e3` of `1`.
+A number is written in decimal as JSON writes it, or as a whole number in hexadecimal, octal or binary after `0x`, `0o` or `0b`, as ECMAScript writes it: `255`, `2.5e-3`, `0xFF`, `0o17` and `0b1010`. A `_` may stand between two digits of any of them, `1_000_000` and `0xFF_FF`, and changes nothing the number means. Its value is the nearest number to its digits, as ECMAScript reads the same text, and [canonical text](../runtime/definition.md) writes it in decimal, so `0xFF` reads back as `255`.
+
+Each of these is invalid over its whole run (NEXO1000):
+
+- **A zero a digit follows,** as in `0123`, which JSON refuses and ECMAScript's older code read as octal.
+- **An exponent with no digits,** as in `1e` or `1e+`.
+- **A prefix with no digits, or in capitals,** as in `0x` and `0X1F`.
+- **A digit or a fraction its base lacks,** as in `0b102` and `0x1.8`.
+- **A `_` anywhere but between two digits,** as in `1_`, `1__0`, `0_1` and `0x_1`.
+
+A number and a name after it stand apart: a letter right after a number makes the number and the name it starts invalid (NEXO1000), so `1else`, `2end` and `0x1G` are refused, and `1 else` reads as `1` and `else`. A dot between them is a member access, so `1.e3` reads `e3` of `1`, and `0xFF.min(x)` reads `min` of 255.
 
 | Text | Meaning |
 | --- | --- |
