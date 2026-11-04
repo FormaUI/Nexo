@@ -7,6 +7,7 @@ import { DefinitionValidator } from './language/DefinitionValidator.mjs';
 import { DefinitionWriter } from './language/DefinitionWriter.mjs';
 import { Evaluator } from './language/Evaluator.mjs';
 import { Imports } from './language/Imports.mjs';
+import { Limits } from './language/Limits.mjs';
 import { LanguageResolver } from './language/LanguageResolver.mjs';
 import { NexoError, NexoErrors } from './language/NexoError.mjs';
 import { ParameterBindings } from './language/ParameterBindings.mjs';
@@ -164,7 +165,10 @@ const resolutionOf = (registry, definition, parameterBindings) => {
         }
     };
 
-    const createEvaluator = (bindings, env = {}) => {
+    const createEvaluator = (bindings, env = {}, options = undefined) => {
+        // The limits a host sets are read before anything is bound, so options it can't take refuse the evaluator before a binding asks a module's `typeOf`.
+        const limits = Limits.hostLimitsOf(options);
+
         // Plain values are bound here, which asks every module's `typeOf` of them, before the resolution key and the registry's revision are checked.
         const evaluatorBindings = getParameterBindings(registry, bindings) ?? new ParameterBindings(registry, bindings ?? {});
 
@@ -188,7 +192,7 @@ const resolutionOf = (registry, definition, parameterBindings) => {
             throw NexoErrors.module('NEXO4001', `${subject} has no implementation, so a script that uses it is resolved and never evaluated`, location);
         }
 
-        const evaluator = new Evaluator(registry, resolved, evaluatorBindings, env, locations);
+        const evaluator = new Evaluator(registry, resolved, evaluatorBindings, env, locations, limits);
         let isEvaluating = false;
 
         // Each entry point checks the registry has not moved, and evaluates one evaluation at a time.

@@ -125,6 +125,24 @@ metadata.objectFields.price.tolerance; // 0.01
 - The result is frozen throughout and holds only data.
 - Evaluate again whenever the host's state may have changed. Each evaluation answers a new result and leaves earlier ones as they were.
 
+### Bound the work
+
+```js
+const sized = { count: 5000000 };
+const bounded = nexo.createRegistry([]).resolve('0.sequence(count)', sized).createEvaluator(sized, {}, { limits: { items: 10000 } });
+
+try {
+    bounded.evaluate();
+} catch (error) {
+    error.code;             // 'NEXO5054'
+    error.location.pointer; // '/expression'
+}
+```
+
+- An evaluator's `limits` bound what each of its evaluations makes. A list `sequence` or `concat` would make past `items` is refused at the call, before it is made, and the evaluator goes on evaluating.
+- A limit bounds each such list alone. Every other list Nexo's own members make holds no more items than their receiver, and a host bounds the text it is given, and what its own implementations answer, itself.
+- An evaluator has none unless its host sets one, so one host can evaluate an interaction and a report under different limits.
+
 ## Follow what an evaluation reads
 
 ```js

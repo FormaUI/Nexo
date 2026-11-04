@@ -105,6 +105,7 @@ An evaluation error fails the entire result and is delivered to the host in its 
 | `NEXO2045` | A value its binding's declared data type, or a part of it, doesn't admit, as [declared types](bindings.md#runtime-bindings) set out, a dictionary holding a key twice among them | A structure error naming the binding, the part and the type |
 | `NEXO2047` | Bound data nesting deeper than 1,000 levels, the most data nests, as [binding data](bindings.md#runtime-bindings) sets out | A structure error naming the binding, and the part where a declared type captures it |
 | `NEXO2048` | Options or hooks holding a key the operation takes none of, a hook that is no function, or hooks that are no object | A structure error with an empty location, naming the key |
+| `NEXO2049` | An evaluator's options or limits that are no object, or a limit of `items` that is no whole number from 0 to 4294967295 | A structure error with an empty location, naming the limit |
 | `NEXO2039` | A type declared for anything but a top-level binding | A structure error naming the binding |
 | `NEXO2024` | Resolving or evaluating with a binding set another registry made | A structure error saying to bind with that registry |
 | `NEXO2025` | Creating an evaluator with bindings of another resolution key | A structure error saying to resolve again |
@@ -272,6 +273,7 @@ A module whose declarations break the declaration contract, a type or a member n
 | `NEXO5008` | A function given to a member called after that member's invocation has ended | An evaluation error |
 | `NEXO5051` | A function a host call gave its host called after the host disposed the prepared call, as [kept functions](host-calls.md#runtime-host-calls-kept-functions) set out | An evaluation error at the argument that gave it |
 | `NEXO5052` | A result nesting deeper than 1,000 levels, the most data nests, which only data a member answered as a value of `Any` can | An evaluation error at the result |
+| `NEXO5054` | A list one of Nexo's own members would make past the most items its evaluator's host [limits](evaluation.md#runtime-evaluation) a list to, `sequence` given a count or `concat` two lists of more | An evaluation error at the call, before the list is made, naming its size and the limit |
 | `NEXO5009` | A hook that throws: `beforeInvoke`, a host refusing a member among them, `afterInvoke`, or `afterEvaluation` after a completed evaluation; or a `beforeInvoke` answering neither samples, nor `{ pending: true }` for a member that reads maintained values, nor nothing | An evaluation error at that member, its `cause` exactly what the hook threw, as [a hook that throws](evaluation.md#runtime-evaluation) sets out; after a failed evaluation, the cleanup's failure is recorded on the original error |
 | `NEXO5010` | Evaluating an evaluator from within its own evaluation | An evaluation error |
 | `NEXO5011` | Evaluating without `beforeInvoke` a script that reads a maintained member | An evaluation error |

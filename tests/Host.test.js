@@ -483,3 +483,52 @@ describe('a member\'s answer', () => {
         expect(asked).toBe(4);
     });
 });
+
+describe('an evaluator\'s limits', () => {
+    const registry = nexo.createRegistry([nexo.createModule('stock', {
+        members: [createPropertyDeclaration('count', 'Number', { updates: { changes: 'constant', reads: 'fresh' }, impl: ({ env }) => env.count })],
+    })]);
+
+    /** An evaluator of the text, with an environment its host changes between evaluations, under the limits given. */
+    const evaluatorOf = (text, env, limits) => registry.resolve(text, registry.createBindings({}), { imports: ['stock'] }).createEvaluator(registry.createBindings({}), env, limits === undefined ? undefined : { limits });
+
+    it('refuses a list Nexo\'s own members would make past the host\'s limit, at the call and before it is made, and goes on evaluating', () => {
+        const env = { count: 5000000 };
+        const evaluator = evaluatorOf('{ numbers = 0.sequence(stock.count).count }', env, { items: 10000 });
+
+        expect(errorThrownBy(() => evaluator.evaluate())).toMatchObject({
+            kind: 'evaluation',
+            code: 'NEXO5054',
+            location: { pointer: '/expression/objectFields/0/value/receiver' },
+            message: expect.stringContaining("'sequence' makes a list of 5000000 items, and its host limits a list Nexo makes to 10000"),
+        });
+
+        env.count = 3;
+
+        expect(evaluator.evaluate().value).toEqual({ numbers: 3 });
+    });
+
+    it('bounds the list concat makes by the items both give it, and each list alone, so lists built below the limit each pass', () => {
+        expect(errorThrownBy(() => evaluatorOf('0.sequence(6).concat(0.sequence(6))', {}, { items: 10 }).evaluate())).toMatchObject({ code: 'NEXO5054', location: { pointer: '/expression' } });
+        expect(evaluatorOf('[0.sequence(10), 0.sequence(10)].count', {}, { items: 10 }).evaluate().value).toBe(2);
+        expect(evaluatorOf('0.sequence(10).where(it > 2).count', {}, { items: 10 }).evaluate().value).toBe(7);
+    });
+
+    it('are none where the host sets none, a list holding as many items as a list can', () => {
+        expect(evaluatorOf('0.sequence(20000).count', {}).evaluate().value).toBe(20000);
+        expect(evaluatorOf('0.sequence(20000).count', {}, {}).evaluate().value).toBe(20000);
+    });
+
+    it('refuses options and limits it takes none of, and a limit that is no whole number a list can hold', () => {
+        const resolution = registry.resolve('1', registry.createBindings({}));
+        const refusalOf = options => errorThrownBy(() => resolution.createEvaluator(registry.createBindings({}), {}, options));
+
+        expect(refusalOf(5)).toMatchObject({ kind: 'structure', code: 'NEXO2049', message: 'createEvaluator takes its options as an object, as { limits: { items: 10000 } }' });
+        expect(refusalOf({ limits: 3 })).toMatchObject({ code: 'NEXO2049', message: "An evaluator's limits are an object, as { items: 10000 }" });
+        expect(refusalOf({ limits: { items: -1 } })).toMatchObject({ code: 'NEXO2049', message: "An evaluator's limit of 'items' is a whole number from 0 to 4294967295, and is -1" });
+        expect(refusalOf({ limits: { items: 2 ** 32 } })).toMatchObject({ code: 'NEXO2049' });
+        expect(refusalOf({ limits: { items: '10' } })).toMatchObject({ code: 'NEXO2049', message: expect.stringContaining('and is string') });
+        expect(refusalOf({ limit: {} })).toMatchObject({ code: 'NEXO2048', message: "createEvaluator takes the options 'limits', and 'limit' is none of them" });
+        expect(refusalOf({ limits: { item: 3 } })).toMatchObject({ code: 'NEXO2048', message: "An evaluator's limits are 'items', and 'item' is none of them" });
+    });
+});

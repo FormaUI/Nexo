@@ -187,6 +187,9 @@ export class Evaluator {
     /** Captures a value its host supplies as the type its call declares. */
     #valueCapture;
 
+    /** The limits its host set, which `sequence` and `concat` are given as they are invoked. @type {{ items: number | null }} */
+    #limits;
+
     #resolvedDefinition;
     #parameterBindings;
     #environment;
@@ -250,9 +253,11 @@ export class Evaluator {
      * @param {import('./ParameterBindings.mjs').ParameterBindings} parameterBindings What the request's parameters are bound to.
      * @param {Environment} environment What the host gives the evaluation, passed to every implementation.
      * @param {import('./TextLocations.mjs').TextLocations | null} locations Where in a text each part of the definition came from.
+     * @param {{ items: number | null }} [limits] The limits its host sets on the lists Nexo's own members make, which each of them reads as it is invoked.
      */
-    constructor(registry, resolvedDefinition, parameterBindings, environment, locations) {
+    constructor(registry, resolvedDefinition, parameterBindings, environment, locations, limits = Limits.none) {
         this.#registry = registry;
+        this.#limits = limits;
         this.#valueCapture = new ValueCapture(registry);
         this.#resolvedDefinition = resolvedDefinition;
         this.#parameterBindings = parameterBindings;
@@ -1169,6 +1174,8 @@ export class Evaluator {
                 answersReceiverItems: takesReceiver && Vocabulary.answersReceiverItems(declaration),
                 projectsItems: takesReceiver && Vocabulary.projectsItems(declaration),
                 readsMaintained: declaration.updates?.reads === 'maintained',
+                // The members of Nexo's own that make a list of a size their receiver doesn't give are given the limits the host set, which no other member is.
+                takesLimits: Vocabulary.takesLimits(declaration),
                 resultType,
                 reliesOnAnswer,
                 // An answer relied on holds the language's collections already, which is all a capture makes.
@@ -2592,7 +2599,7 @@ export class Evaluator {
      * selected as it is evaluated.
      */
     #invokeImplementation(invocation, receiver, args, node, isDeferred = false, lifetimes = null) {
-        const { declaration, implementation, takesReceiver, answersReceiverItems, projectsItems, readsMaintained, resultType, reliesOnAnswer, captureCollections, isOfResultType, copyStructure } = invocation;
+        const { declaration, implementation, takesReceiver, answersReceiverItems, projectsItems, readsMaintained, takesLimits, resultType, reliesOnAnswer, captureCollections, isOfResultType, copyStructure } = invocation;
 
         if (implementation === undefined) {
             this.#fail('NEXO4001', `The module '${this.#registry.getDeclaringModuleName(declaration)}' gives '${NexoModule.writtenNameOf(declaration)}' no implementation`, this.#pointerOf(node));
@@ -2617,6 +2624,10 @@ export class Evaluator {
 
                 if (readsMaintained) {
                     input.samples = samples;
+                }
+
+                if (takesLimits) {
+                    input.limits = this.#limits;
                 }
 
                 value = implementation(input);

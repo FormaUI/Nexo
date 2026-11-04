@@ -1029,3 +1029,21 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Keeping a value of `Any` as it is once it belongs to the structure, which the review preferred. A result typed as a structure would hold properties its type doesn't declare, which a host's records and DOMQL's change sets read and compare, and binding and answers, which project today, would have to stop.
   - Refusing a value of `Any` that holds properties its structure doesn't declare, which would refuse the data a host's own objects commonly carry.
+
+<a id="d72"></a>
+
+## D72 — A host bounds the lists Nexo's own members make
+
+*November 4, 2026*
+
+- **Kind:** Runtime contract.
+- **Decision:** `createEvaluator(bindings, env, { limits: { items } })` bounds what each of the evaluator's evaluations makes. A list one of Nexo's own members makes where its size is not its receiver's, `sequence`'s count and the two lists `concat` joins, is refused at the call before it is made where it would hold more than `items`, with NEXO5054, and the evaluator goes on evaluating. An evaluator has no limit unless its host sets one. Options it takes none of are refused, NEXO2048, and options or limits that are no object, or an `items` that is no whole number from 0 to 4294967295, NEXO2049.
+- **Why:**
+  - [D53](#d53) declined a smaller bound for every host, since "a host that runs untrusted scripts bounds what it evaluates", but no host could: a shallow script asks `sequence` for any count, which a binding can give, so reading the text never tells the work. A design review asked for a host's path to a lower limit, beginning with `sequence`, whose size is known before the list is made.
+  - `concat`'s size is known before it is made too, and every other list member of Nexo's makes no more items than its receiver holds, so the two are every list a script can make larger than what it was given.
+  - The limit is the evaluator's, not the registry's, so one host can evaluate an interaction and an offline report under different budgets.
+- **What it bounds:** each such list alone. A chain of `concat`s doubling a list is refused at the first that passes the limit. Many lists a script makes below it, as `[0.sequence(10), 0.sequence(10)]` under a limit of 10, pass, and so does text a script builds, and what a module's implementation answers, which its own host bounds. DOMQL and Forma evaluate their developers' scripts, so neither needs a bound on the whole evaluation yet; a host evaluating scripts it doesn't trust needs one, or a time limit, which waits for that host.
+- **Declined:**
+  - A limit in the language, which D53 declined for every host alike.
+  - An instruction count or a budget across the evaluation now, before a host's use shows what it must count.
+  - A limit set on the registry, which every evaluation of the host shares.

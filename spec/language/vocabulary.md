@@ -30,7 +30,7 @@ A member following a number is a member of the number itself, and reads and chan
 | `abs` | The number's absolute value |
 | `min(other)`, `max(other)` | The lesser and the greater of the number and `other` |
 | `clamp(low, high)` | The number within `low` and `high`, inclusive: `low` where it is less, `high` where it is greater; a `low` greater than `high` is refused where it is evaluated (NEXO5039) |
-| `sequence(count, step)` | The `List<Number>` of the count's numbers from the number, each the step after the one before, `step` 1 where it is left out; a count that is no nonnegative safe integer is refused (NEXO5035) |
+| `sequence(count, step)` | The `List<Number>` of the count's numbers from the number, each the step after the one before, `step` 1 where it is left out; a count that is no nonnegative safe integer is refused (NEXO5035), and one above what its host [limits](../runtime/evaluation.md#runtime-evaluation) a list to, before the list is made (NEXO5054) |
 
 - **Properties and functions.** A member that takes nothing is a property, as a list's `reverse` is, and one that takes a number a function.
 - **Rounding.** `round` is symmetric under negation, `(-x).round == -(x.round)`, which offsets and differences that can be negative need, so it rounds a negative half away from zero where ECMAScript's `Math.round` rounds it toward positive infinity. Rounding to a step is written by arithmetic around it, `(x * 2).round / 2`.

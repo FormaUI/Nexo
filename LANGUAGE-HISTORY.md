@@ -22,6 +22,9 @@ Each entry says what its version breaks:
 // `pantry.Jar` is a structure of `size` alone, and `pantry.item("jar")` answers { size: 3, name: 'jar' } as a value of Any.
 evaluate('pantry.keys(pantry.item("jar"))');           // keys() is given { size: 3 }; { size: 3, name: 'jar' } before
 evaluate('pantry.jars([pantry.item("jar")]).take(1)'); // [{ size: 3 }], as the jar jars() is given; jars() was given { size: 3, name: 'jar' } before
+
+const evaluator = resolution.createEvaluator(bindings, env, { limits: { items: 10000 } });
+evaluator.evaluate();                                  // '0.sequence(count)' with a count of 5,000,000: NEXO5054 at the call, before the list is made; made before
 ```
 
 **Language**
@@ -30,6 +33,7 @@ evaluate('pantry.jars([pantry.item("jar")]).take(1)'); // [{ size: 3 }], as the 
 
 **Runtime**
 
+- [An evaluator's limits](spec/runtime/evaluation.md#runtime-evaluation), `createEvaluator(bindings, env, { limits: { items } })`: a list `sequence` or `concat` would make past `items` is refused at the call before it is made, NEXO5054, and the evaluator goes on evaluating. Options it takes none of are refused, NEXO2048, and options or limits that are no object, or an `items` that is no whole number a list can hold, NEXO2049, as [D72](docs/decisions.md#d72) records.
 - [What an implementation receives](spec/runtime/members.md#members-what-an-implementation-receives): a value of a structured type in `args`, or given to a function a member was given, holds the type's data shape alone.
 
 **Breaking:**

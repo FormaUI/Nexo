@@ -120,7 +120,7 @@ A member following a list is a member of the list itself: `room.devices.count` c
 | `pick(positions)` | A `List<T>`, the item at each of the positions, a `List<Number>`, in the positions' order, a position given twice giving its item twice; a position no item stands at, a fractional or negative one among them, is refused (NEXO5034) |
 | `select(expression)` | A `List<U>`, the expression's value for every item in order, a null item among them, the expression's `it` of the item's type, so `items.select(it)` keeps the list and `items.select(it ?? 0)` replaces its nulls |
 | `selectMany(expression)` | A `List<U>`, the lists the expression gives the items joined in order; an item's list that is null, a null item's among them, is refused (NEXO5031), never treated as empty |
-| `concat(other)` | The items, then those of `other`, a `List<T>` of the receiver's `T`, which a later argument never widens |
+| `concat(other)` | The items, then those of `other`, a `List<T>` of the receiver's `T`, which a later argument never widens; refused before it is made where it holds more items than its host [limits](../runtime/evaluation.md#runtime-evaluation) a list to (NEXO5054) |
 | `flatten` | On a `List<List<T>>`, the items of each inner list in order, a list whose inner lists can be null having none |
 | `take(count)`, `drop(count)` | The items at an index less than the count, and those at the count or past it, whatever number the count is: one past the end takes or leaves every item, and one of zero or less none |
 | `takeWhile`, `dropWhile` | The items before the first its predicate is falsy for, and the items from that one on, the predicate evaluated against none after it |

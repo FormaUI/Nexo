@@ -596,9 +596,25 @@ export interface NexoResolution {
     /**
      * An evaluator holding bindings of this resolution's key and the environment the host gives it. Binding plain values asks the modules' `typeOf` and `isInstance`, as `createBindings` does, and nothing else calls host code
      * until it evaluates. It refuses bindings another registry made (NEXO2024), bindings of another resolution key (NEXO2025), a resolution no longer current (NEXO2040), and a script using a declaration
-     * that has no implementation, a conversion operator among them, even in a branch it may not take (NEXO4001).
+     * that has no implementation, a conversion operator among them, even in a branch it may not take (NEXO4001). Its `options.limits` bound the work each of its evaluations does; options it takes none of are refused (NEXO2048),
+     * and options or limits that are no object, or an `items` that is no whole number a list can hold (NEXO2049).
      */
-    createEvaluator(bindings?: NexoBindings | NexoBindingValues, env?: unknown): NexoEvaluator;
+    createEvaluator(bindings?: NexoBindings | NexoBindingValues, env?: unknown, options?: NexoEvaluatorOptions): NexoEvaluator;
+}
+
+/** What an evaluator takes beside its bindings and its environment. */
+export interface NexoEvaluatorOptions {
+    /** The bounds its host sets on the work each of its evaluations does, none where it sets none. */
+    readonly limits?: NexoEvaluationLimits;
+}
+
+/**
+ * The bounds a host sets on the work an evaluation does. A list one of Nexo's own members makes, where its size is not its receiver's, as `sequence` and `concat` make, is refused at the call before it is made where it would
+ * hold more than `items` (NEXO5054), and the evaluator goes on evaluating. They bound each such list alone, not what a script builds of many.
+ */
+export interface NexoEvaluationLimits {
+    /** The most items such a list holds, a whole number from 0 to 4294967295. */
+    readonly items?: number;
 }
 
 /** The host call a script ends in: its name, where it stands, the declaration it resolved to, null while its receiver's type is unknown, and its candidates. */

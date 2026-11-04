@@ -1,6 +1,6 @@
 // How a TypeScript host uses Nexo, which the declarations must accept; the declarations test compiles this file.
 import { nexo, NexoError } from '../../src/nexo.js';
-import type { NexoModuleContents, NexoMemberDeclaration, NexoOperatorDeclaration, NexoRegistry } from '../../src/nexo.js';
+import type { NexoEvaluator, NexoEvaluatorOptions, NexoModuleContents, NexoMemberDeclaration, NexoOperatorDeclaration, NexoRegistry } from '../../src/nexo.js';
 
 const { createPropertyDeclaration: property } = nexo.declarations;
 
@@ -54,6 +54,12 @@ const callPointer: string | undefined = hostCall?.pointer;
 
 // A host keeps the functions a prepared call's function arguments give it, calls them later, and disposes the call once it is done with them.
 const prepared = registry.resolve('nothing', { nothing: null }).createEvaluator({ nothing: null }).prepareHostCall();
+const limited: NexoEvaluator = registry.resolve('0.sequence(3)', {}).createEvaluator({}, {}, { limits: { items: 10000 } });
+const options: NexoEvaluatorOptions = { limits: { items: 0 } };
+// @ts-expect-error A limit is a number of items.
+registry.resolve('1', {}).createEvaluator({}, {}, { limits: { items: '10' } });
+void limited;
+void options;
 
 if (prepared.kind === 'prepared') {
     const kept = prepared.args.when;

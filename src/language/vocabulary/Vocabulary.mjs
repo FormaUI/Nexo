@@ -4,6 +4,7 @@
  */
 
 import { Dictionary } from '../Dictionary.mjs';
+import { Limits } from '../Limits.mjs';
 import { Names } from '../Names.mjs';
 import { Pair } from '../Pair.mjs';
 import { Declarations } from './Declarations.mjs';
@@ -22,7 +23,7 @@ const SURROUNDING_ASCII_WHITESPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
 const DERIVED_UPDATES = Object.freeze({ changes: 'derived', reads: 'derived' });
 
 /** The most items a list holds, 2^32 - 1, as ECMAScript's arrays do. */
-const MAX_LIST_LENGTH = 2 ** 32 - 1;
+const MAX_LIST_LENGTH = Limits.listLength;
 
 export class Vocabulary {
     /** The name of Nexo's own module, spelled as the specification spells it. */
@@ -69,6 +70,16 @@ export class Vocabulary {
 
     /** @type {ReadonlySet<object> | undefined} */
     static #projectingMembers;
+
+    /** @type {ReadonlySet<object> | undefined} */
+    static #limitedMembers;
+
+    /** Whether the member is one of Nexo's own that makes a list whose size is not its receiver's, `sequence` and `concat`, which is given the limits its evaluator's host set, as no other member is. */
+    static takesLimits(declaration) {
+        Vocabulary.#limitedMembers ??= new Set(['Number', 'List'].flatMap(name => Vocabulary.getTypeDeclaration(name).members).filter(member => member.name === 'sequence' || member.name === 'concat'));
+
+        return Vocabulary.#limitedMembers.has(declaration);
+    }
 
     /** @type {ReadonlySet<object> | undefined} */
     static #itemGivingMembers;
@@ -305,11 +316,13 @@ export class Vocabulary {
             Declarations.createFunctionDeclaration('sequence', 'List<Number>', {
                 updates: DERIVED_UPDATES,
                 parameters: [Declarations.createValueParameterDeclaration('count', 'Number'), Declarations.createValueParameterDeclaration('step', 'Number', { default: 1 })],
-                impl: ({ receiver, args }) => {
+                impl: ({ receiver, args, limits }) => {
                     // A list holds at most 2^32 - 1 items, so a longer count is refused as one no list can hold.
                     if (!Number.isSafeInteger(args.count) || args.count < 0 || args.count > MAX_LIST_LENGTH) {
                         throw new MemberFailure('NEXO5035', `'sequence' takes a count that is a whole number from 0 to ${MAX_LIST_LENGTH}, and is given ${args.count}`);
                     }
+
+                    Vocabulary.#requireWithinLimit('sequence', args.count, limits);
 
                     const numbers = Array.from({ length: args.count }, (_, index) => unsigned(receiver + index * args.step));
 
@@ -321,6 +334,13 @@ export class Vocabulary {
                 },
             }),
         ];
+    }
+
+    /** Refuses a list of the size given where its host limits the lists Nexo's own members make to fewer items, before the list is made (NEXO5054). */
+    static #requireWithinLimit(member, size, { items }) {
+        if (items !== null && size > items) {
+            throw new MemberFailure('NEXO5054', `'${member}' makes a list of ${size} items, and its host limits a list Nexo makes to ${items}`);
+        }
     }
 
     /** A position a search found, null for the -1 of one it didn't. */
@@ -401,7 +421,16 @@ export class Vocabulary {
                     return [items];
                 }).flat(),
             }),
-            Declarations.createFunctionDeclaration('concat', 'List<T>', { updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('other', 'List<T>')], impl: ({ receiver, args }) => [...receiver, ...args.other] }),
+            // The receiver's items, then the other's, refused where its host limits a list to fewer.
+            Declarations.createFunctionDeclaration('concat', 'List<T>', {
+                updates: DERIVED_UPDATES,
+                parameters: [Declarations.createValueParameterDeclaration('other', 'List<T>')],
+                impl: ({ receiver, args, limits }) => {
+                    Vocabulary.#requireWithinLimit('concat', receiver.length + args.other.length, limits);
+
+                    return [...receiver, ...args.other];
+                },
+            }),
             // The items at an index less than the count, or at one the count or past it, whatever the count: a count past the end takes or leaves every item, and one of zero or less none.
             Declarations.createFunctionDeclaration('take', 'List<T>', { updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('count', 'Number')], impl: ({ receiver, args }) => ItemPositions.createAnswer(receiver, Vocabulary.#positionsWhere(receiver, (_, position) => position < args.count)) }),
             Declarations.createFunctionDeclaration('drop', 'List<T>', { updates: DERIVED_UPDATES, parameters: [Declarations.createValueParameterDeclaration('count', 'Number')], impl: ({ receiver, args }) => ItemPositions.createAnswer(receiver, Vocabulary.#positionsWhere(receiver, (_, position) => position >= args.count)) }),
