@@ -1,6 +1,6 @@
 # Working on Nexo
 
-Nexo is an embeddable language with no domain of its own: the host declares the typed vocabulary its scripts may use, and scripts use that vocabulary to compute and shape data. Nexo checks every script against that vocabulary before it runs, and evaluates it, read-only, into immutable data. Its grammar, definitions, types, resolution, functions and vocabulary contracts are the language's, and a host's modules declare the vocabulary its scripts read. Source ES modules live in `src/`; the build produces one minified bundle, distributed by the `formaui-net.Nexo` NuGet package, and the npm package `@formaui-net/nexo` ships the sources.
+Nexo is an embeddable language with no domain of its own: the host declares the typed vocabulary, and scripts use it to compute and shape data. Nexo checks every script against that vocabulary before it runs, and evaluates it, read-only, into immutable data. Its grammar, definitions, types, resolution, functions and vocabulary contracts are the language's, and a host's modules declare the vocabulary its scripts read. Source ES modules live in `src/`; the build produces one minified bundle, distributed by the `formaui-net.Nexo` NuGet package, and the npm package `@formaui-net/nexo` ships the sources.
 
 ## Before making a change
 

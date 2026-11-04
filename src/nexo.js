@@ -1,5 +1,5 @@
 /**
- * Nexo — an embeddable language with no domain of its own, whose host declares the typed vocabulary its scripts may use: reads, validates and writes source and definitions, creates the modules that declare a vocabulary and the registries a host resolves scripts against,
+ * Nexo — an embeddable language with no domain of its own, whose host declares the typed vocabulary its scripts use: reads, validates and writes source and definitions, creates the modules that declare a vocabulary and the registries a host resolves scripts against,
  * binds values, and evaluates a resolved script for its host, describing its result; and says which build it is and which specification it follows
  */
 
