@@ -67,7 +67,7 @@ describe('the embedding guide', () => {
 
         new Function('nexo', 'NexoError', 'check', code)(nexo, NexoError, check);
 
-        expect(checks).toHaveLength(22);
+        expect(checks).toHaveLength(31);
         expect(checked).toEqual(checks);
     });
 

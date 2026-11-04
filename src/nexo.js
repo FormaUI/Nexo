@@ -36,6 +36,9 @@ const requireOptions = (options, keys, operation) => {
     }
 };
 
+/** A function a prepared call gives its host, made apart from its evaluator so that it holds only its holder: it calls the evaluator's callback through the evaluator's entry, and calls it alone once the call is disposed, where it fails. */
+const createKeptFunction = holder => (...values) => (holder.enter === null ? holder.callback(...values) : holder.enter(() => holder.callback(...values)));
+
 /** The hooks an evaluation is given, each a function of the names an evaluation calls, refused otherwise as an option is (NEXO2048). */
 const HOOK_NAMES = Object.freeze(['beforeInvoke', 'afterInvoke', 'afterEvaluation']);
 
@@ -221,9 +224,15 @@ const resolutionOf = (registry, definition, parameterBindings) => {
             }
 
             const kept = call.declaration.parameters.filter(parameter => parameter.kind === 'function' && typeof call.args[parameter.name] === 'function');
-            const args = kept.length === 0 ? call.args : { ...call.args, ...Object.fromEntries(kept.map(({ name }) => [name, (...values) => enter(() => call.args[name](...values))])) };
+            // Each kept function reaches the evaluator through a holder that disposing the call empties, so one the host keeps past it holds nothing of the evaluation, and fails as it is called.
+            const holders = kept.map(({ name }) => ({ name, callback: call.args[name], enter }));
+            const args = kept.length === 0 ? call.args : { ...call.args, ...Object.fromEntries(holders.map(holder => [holder.name, createKeptFunction(holder)])) };
+            const dispose = () => {
+                call.dispose();
+                holders.forEach(holder => (holder.enter = null));
+            };
 
-            return Object.freeze({ ...call, args, ...(call.project === undefined ? {} : { project: (value, hooks = null) => (requireHooks(hooks, 'project'), enter(() => call.project(value, hooks))) }) });
+            return Object.freeze({ ...call, args, dispose, ...(call.project === undefined ? {} : { project: (value, hooks = null) => (requireHooks(hooks, 'project'), enter(() => call.project(value, hooks))) }) });
         };
 
         return Object.freeze({

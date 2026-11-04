@@ -182,6 +182,71 @@ call.project({ amount: 8, currency: 'EUR' }).value; // { charged: 8 }
 
 [Host calls](../spec/runtime/host-calls.md) sets out preparing, capturing and kept functions.
 
+## Share data with Nexo
+
+```js
+const { createFunctionParameterDeclaration } = nexo.declarations;
+const pantry = nexo.createModule('Pantry', {
+    members: [
+        createFunctionDeclaration('stock', 'List<String>', { updates: { changes: 'constant', reads: 'fresh' }, impl: ({ env }) => env.stock }),
+        createFunctionDeclaration('watch', undefined, { invokedBy: 'host', parameters: [createFunctionParameterDeclaration('when', 'Boolean', ['String'])] }),
+    ],
+});
+const kitchen = nexo.createRegistry([pantry]);
+const wanted = [{ item: 'tea' }];
+const shopping = kitchen.createBindings({ wanted });
+
+wanted.push({ item: 'cocoa' });
+
+shopping.readValue('wanted');                  // [{ item: 'tea' }]
+Object.isFrozen(shopping.readValue('wanted')); // true
+
+const larder = { stock: ['tea', 'coffee'] };
+const answers = [];
+const listing = kitchen.resolve('{ stock = Pantry.stock(), names = wanted { name = it.item } }', shopping, { imports: ['Pantry'] }).createEvaluator(shopping, larder);
+const listed = listing.evaluate({ afterInvoke: (request, answer) => { answers.push(answer); } });
+
+answers[0] === larder.stock;         // true
+listed.value;                        // { stock: ['tea', 'coffee'], names: [{ name: 'tea' }] }
+listed.value.stock === larder.stock; // false
+listed.metadata.objectFields.names.sources[0].value === shopping.readValue('wanted')[0]; // true
+
+larder.stock = [...larder.stock, 'cocoa'];
+
+listing.evaluate().value.stock; // ['tea', 'coffee', 'cocoa']
+
+const watching = kitchen.resolve('Pantry.watch(name => wanted.any(it.item == name))', shopping, { imports: ['Pantry'] }).createEvaluator(shopping, larder).prepareHostCall();
+const { when } = watching.args;
+
+[when('tea'), when('cocoa')]; // [true, false]
+
+watching.dispose();
+
+try {
+    when('tea');
+} catch (error) {
+    error.code; // 'NEXO5051'
+}
+```
+
+Data is read-only once it passes between Nexo and its host, in either direction, nested data included. Whether Nexo copies it depends on what passes:
+
+| What passes | What Nexo does | The host may | The host may not |
+| --- | --- | --- | --- |
+| A binding | Copies and freezes its data, and keeps each reference as it is | Change its own data afterwards, as `wanted.push` does, which changes nothing bound | Rely on a change to its own data reaching a script: it binds anew instead |
+| An answer | Holds the data the implementation answered, checked, never copied | Answer new data once its own changes, as replacing `larder.stock` does | Change the data it answered, or reuse it for a later answer, through any alias it keeps, as `larder.stock.push('cocoa')` would |
+| A kept function | Keeps it callable, in the context preparation found, until the host disposes the call | Call it later, any number of times, synchronously, while it keeps the call | Call it while its evaluator evaluates (NEXO5010), or after `dispose()` (NEXO5051) |
+| A result | Answers it new and frozen throughout | Keep it, and compare it with the next | Rely on it following its own data: it evaluates again for a new result |
+
+- A binding's copy is what the script reads, whatever the host does to its own data afterwards.
+- Nexo holds an answer as it was given: `afterInvoke` reports the very list the implementation answered.
+- A kept function reads the locals the script declares before the call, as preparation found them, and the script's bindings; a member it reads is given the environment.
+- A prepared call holds the locals and the references it was prepared with for as long as it is reachable. `dispose()` ends every function it keeps and lets go of what each read, so a function the host keeps past it holds nothing of the evaluation: its locals, the bindings or the environment. Disposing again does nothing; a call that keeps none needs no disposal.
+- A result keeps neither the evaluator that made it nor its bindings or environment alive, its metadata read or not, and an error Nexo raises keeps nothing of its evaluation either.
+- A result is new and frozen throughout, so `listed.value.stock` is not the list the implementation answered. The sources its metadata records hold data frozen, as the evaluator holds it, a part of a binding's copy among them, and each reference as the host holds it.
+
+[Data shared with a host](../spec/runtime/evaluation.md#runtime-shared-data) sets out the rule, [bindings](../spec/runtime/bindings.md#runtime-bindings) what binding copies, and [kept functions](../spec/runtime/host-calls.md#runtime-host-calls-kept-functions) their context and their lifetime.
+
 ## Handle errors
 
 ```js

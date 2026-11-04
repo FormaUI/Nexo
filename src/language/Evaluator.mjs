@@ -353,7 +353,7 @@ export class Evaluator {
 
         const dispose = () => {
             for (const lifetime of kept) {
-                lifetime.isOpen = false;
+                Evaluator.#closeLifetime(lifetime);
             }
         };
 
@@ -471,7 +471,7 @@ export class Evaluator {
                 outcome = { kind: isPending ? 'pending' : 'completed', value: result.value };
             }
 
-            return new Evaluation(result.value, isPending, () => this.#describeMetadata(result));
+            return new Evaluation(result.value, isPending, Evaluator.#describerOf(this.#compiler, result));
         } catch (error) {
             if (isTold) {
                 outcome = { kind: 'failed', error };
@@ -1922,24 +1922,42 @@ export class Evaluator {
      * result type, and answers it, or its truthiness for a predicate. A call after the invocation fails, while the function the body calls stays callable wherever else it is given or called.
      */
     #createCallback(plan, lifetime, body) {
+        // The body and the evaluator are held by the lifetime alone, which closing lets go of, so a function its holder keeps past its lifetime holds nothing of the evaluation: neither the bindings, nor the environment,
+        // nor the locals it read. Where it stands in the text is the definition's, which it keeps to say so.
+        lifetime.body = body;
+        lifetime.evaluator = this;
+
+        return Evaluator.#createLifetimeCallback(plan, lifetime, this.#resolvedDefinition, this.#locations);
+    }
+
+    /** The callback of a lifetime, made apart from any evaluator, so it reaches one only through the lifetime while it is open. */
+    static #createLifetimeCallback(plan, lifetime, resolvedDefinition, locations) {
         const { name, memberName, parameterTypes, resultType, isOfParameterType, isOfResultType, copyToParameterType, copyToResultType, isPredicate, pointer } = plan;
-        const callback = (...argumentValues) => {
+        const fail = (code, message) => {
+            const definitionPointer = resolvedDefinition.resolveDefinitionPointer(pointer);
+
+            throw NexoErrors.evaluation(code, message, locations?.locate(definitionPointer) ?? { pointer: definitionPointer });
+        };
+
+        return (...argumentValues) => {
+            const { evaluator, body } = lifetime;
+
             try {
                 if (!lifetime.isOpen) {
                     if (lifetime.isKept === true) {
-                        this.#fail('NEXO5051', `The function given as '${name}' of '${memberName}' is called after its host disposed the call, and a host calls the functions a call gives it only while it keeps the call`, pointer);
+                        fail('NEXO5051', `The function given as '${name}' of '${memberName}' is called after its host disposed the call, and a host calls the functions a call gives it only while it keeps the call`);
                     }
 
-                    this.#fail('NEXO5008', `The function given as '${name}' of '${memberName}' is called after '${memberName}' returned, and a member calls the functions it is given only while its own invocation lasts`, pointer);
+                    fail('NEXO5008', `The function given as '${name}' of '${memberName}' is called after '${memberName}' returned, and a member calls the functions it is given only while its own invocation lasts`);
                 }
 
                 if (argumentValues.length !== parameterTypes.length) {
-                    this.#fail('NEXO5503', `The function given as '${name}' of '${memberName}' is called with ${argumentValues.length === 1 ? 'one argument' : `${argumentValues.length} arguments`}, and its contract declares ${parameterTypes.length}`, pointer);
+                    fail('NEXO5503', `The function given as '${name}' of '${memberName}' is called with ${argumentValues.length === 1 ? 'one argument' : `${argumentValues.length} arguments`}, and its contract declares ${parameterTypes.length}`);
                 }
 
                 for (let index = 0; index < argumentValues.length; index++) {
                     if (isOfParameterType[index] !== null && !isOfParameterType[index](argumentValues[index])) {
-                        this.#fail('NEXO5503', `The function given as '${name}' of '${memberName}' is called with ${Evaluator.#describe(argumentValues[index])}, and its contract declares ${parameterTypes[index]}`, pointer);
+                        fail('NEXO5503', `The function given as '${name}' of '${memberName}' is called with ${Evaluator.#describe(argumentValues[index])}, and its contract declares ${parameterTypes[index]}`);
                     }
                 }
 
@@ -1947,29 +1965,34 @@ export class Evaluator {
                 const value = body(given);
 
                 if (isOfResultType !== null && !isOfResultType(value)) {
-                    this.#fail('NEXO5504', `The function given as '${name}' of '${memberName}' gave ${Evaluator.#describe(value)}, and its contract declares ${resultType}`, pointer);
+                    fail('NEXO5504', `The function given as '${name}' of '${memberName}' gave ${Evaluator.#describe(value)}, and its contract declares ${resultType}`);
                 }
 
                 // A predicate's contract takes any value, and the member receives its truthiness.
                 return isPredicate ? Evaluator.#isTruthy(value) : copyToResultType === null ? value : copyToResultType(value);
             } catch (error) {
-                // A thrown value that is no object is the member's to report, as anything it throws is.
-                if (error !== null && typeof error === 'object') {
-                    this.#callbackErrors.add(error);
+                // A thrown value that is no object is the member's to report, as anything it throws is; a lifetime closed has no evaluation to report it to.
+                if (evaluator !== null && evaluator !== undefined && error !== null && typeof error === 'object') {
+                    evaluator.#callbackErrors.add(error);
                 }
 
                 throw error;
             }
         };
+    }
 
-        return callback;
+    /** Closes a lifetime: the functions it gave are called no more, and it lets go of the body and the evaluator each held. */
+    static #closeLifetime(lifetime) {
+        lifetime.isOpen = false;
+        lifetime.body = null;
+        lifetime.evaluator = null;
     }
 
     /**
      * The lifetimes of the functions the arguments made last give their member, or null where they give none, which the caller reads as the arguments are made, before evaluating anything else, and hands to the
      * invocation, which closes them. A host call's are kept, `isKept`, and its prepared call's `dispose` closes them; one given to an invocation an argument's failure prevented keeps its lifetime as it is. An index of
      * every open function, which each invocation searched by its arguments, measured a few hundredths of an evaluation.
-     * @type {{ isOpen: boolean, isKept?: boolean }[] | null}
+     * @type {{ isOpen: boolean, isKept?: boolean, body?: Function | null, evaluator?: Evaluator | null }[] | null}
      */
     #givenLifetimes = null;
 
@@ -2649,7 +2672,7 @@ export class Evaluator {
             // A function the member was given is called only while its invocation lasts, however it ends: answered, pending, or failed in the host's hook or in the implementation.
             if (lifetimes !== null) {
                 for (const lifetime of lifetimes) {
-                    lifetime.isOpen = false;
+                    Evaluator.#closeLifetime(lifetime);
                 }
             }
         }
@@ -3007,6 +3030,14 @@ export class Evaluator {
     }
 
     /** Describes a result's metadata from the identities its copy left, the records objects share kept for this description alone. */
+    /**
+     * What describes a result's metadata once it is read: the compilation's own evaluator, which holds the resolved definition and the registry describing reads, and neither the bindings nor the environment, so a result
+     * its host keeps unread keeps nothing of the evaluation that made it.
+     */
+    static #describerOf(describer, result) {
+        return () => describer.#describeMetadata(result);
+    }
+
     #describeMetadata(result) {
         this.#recentFieldRecords = new WeakMap();
 

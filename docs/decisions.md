@@ -680,6 +680,7 @@ Forty decisions were taken while implementing the declarations, member selection
   - Only the host knows when what it started ends, so it ends the functions it keeps, as it ends what it started; a call after that is a host's mistake, which fails loudly with a code of its own, apart from a member calling a function after its own invocation.
   - Without hooks a kept function reads members as they are, which is what a test of an event needs; a host that must keep its result current holds the observations itself, so Nexo adds no hooks to a call it doesn't schedule.
   - An expression or a predicate argument is a body of each item of a list its member follows, which a host call never reads, so a function parameter, of a contract the declaration states, is the one form a host can call.
+- **Since:** a disposed function also lets go of what it read, as [D78](#d78) records.
 - **Declined:**
   - A lifetime Nexo ends by itself, as with the evaluator or a timer, which can't know when a host's behavior ends.
   - Hooks for a kept function's calls, which would make every call an evaluation a host schedules, where a test is called inside an event's dispatch.
@@ -1111,3 +1112,19 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Keeping the old properties beside new functions of other names, which would give one operation two members.
   - Refusing a module's Boolean function that takes no argument, which no rule can tell from a test that does work; the specification states the rule, and a module follows it.
+
+<a id="d78"></a>
+
+## D78 — A disposed function, a result and an error keep nothing of their evaluation
+
+*November 4, 2026*
+
+- **Kind:** Runtime contract.
+- **Decision:** A kept function its host disposed holds nothing of its context, though the host keeps it: its locals, the bindings and the environment are let go of with the prepared call, and it only refuses to be called (NEXO5051). A result keeps neither the evaluator that made it nor that evaluator's bindings or environment alive, its metadata read or not, and an error Nexo raises keeps nothing of its evaluation either.
+- **Why:**
+  - A design review asked that what a callback retains be testable from the host, a callback kept past `dispose()` among it. A test of each case, through the public API with a forced collection, found three that kept the evaluator, and with it the host's bound data and environment, alive:
+    - **A disposed function.** `dispose()` only marked it closed, and three closures still reached the evaluator: the API's wrapper, the call it wrapped, and the evaluator's own callback. Each now reaches the evaluator through its lifetime, which closing empties, and the wrapper through a holder `dispose()` empties.
+    - **A result never described.** Its metadata, described when first read, held the evaluator that would describe it. It now describes through the compilation's own evaluator, which [D55](#d55) gives empty bindings and environment, and the metadata tests show the descriptions alike.
+    - **An error never read.** The engine kept the frames it was raised in, the evaluator among their receivers, until its stack was first read, and its cause's the same. Nexo now writes both stacks as it makes the error, which changes nothing a stack reads.
+  - Eleven other cases, a call never disposed, a preparation that fails, a resolution kept and the rest, already let everything go, and the same file of tests holds them.
+- **Declined:** Stating only what a disposed function refuses, which leaves a host unable to reason about when what it captured can go.

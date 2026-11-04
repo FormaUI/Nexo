@@ -38,6 +38,9 @@ An evaluation answers its **value**, whether a member it read was **pending**, a
 
 The metadata describes the value, never part of it: frozen records of `{ origin, tolerance, objectFields?, items?, sources?, provenance? }`.
 
+- **What a result shares.** A result shares no list, object or structure with the data its evaluation read: a binding's data and an implementation's answer are copied into it, and only its metadata's sources and provenance hold what the evaluation read.
+- **What a result keeps.** A result keeps neither the evaluator that made it nor that evaluator's bindings or environment alive, its metadata read or not, and an error Nexo raises keeps nothing of its evaluation either.
+
 - **Origins.** An origin is an opaque token for the expression that produced a value, the same token exactly where one expression of one definition, through the declaration its resolution selects and with one candidate selected, produced both values. It lives as long as the definition and the declaration, and is comparable across every evaluation of every resolution of the definition, so a resolution made again after a registration made the first stale gives a value the origin the first gave it where it selects the same declaration. Two definitions never share an origin. The runtime follows locals, bodies, `do` blocks, function calls, the object root's fields, the branch or operand a conditional, a coalescing, an `and` or an `or` selected, and the property a computed property access selected.
 - **Tolerance.** A value's tolerance is the one its producing member declares, a member a value of `Any` selects as it is evaluated among them, whose value's origin is that selection's own. An expression that selects part of an existing value takes that part's metadata, inherited where it is, so `{ let climate = room.climate, warmth = climate?.temperature }` keeps the tolerance `temperature` declares; an expression that computes a new value, as arithmetic does, has an origin of its own and no tolerance unless a member declares one. A part with no record of its own inherits its parent's, and a record's `tolerance: null` overrides an inherited one.
 - **Object fields and items.** `objectFields` holds the record of each object field of an object an object expression built, by its name in the order written, and `items` the record of each item of a list a projection built.
@@ -46,7 +49,7 @@ The metadata describes the value, never part of it: frozen records of `{ origin,
   | Entry | Its input | Its `value` |
   | --- | --- | --- |
   | `{ kind: 'reference', value }` | A reference value | The host's object as held, its identity kept, never frozen, copied or otherwise changed by being recorded, so it may change afterwards |
-  | `{ kind: 'data', value }` | A scalar, a structured value or any other data | Nexo's own frozen copy, as the evaluator holds it, which never changes |
+  | `{ kind: 'data', value }` | A scalar, a structured value or any other data | The data as the evaluator holds it, frozen, which never changes: part of a binding's copy, a frozen copy of an answer's data, or an answer's data its host froze itself |
   | `{ kind: 'null' }` | Null | None |
 
   An entry's kind follows its input's established type, a value carried through `Any` included, never a check of the value itself. The array and its entries are frozen, and nothing beneath a reference's `value`. A list no projection built has no `sources` property at all, the one way metadata says no sources were recorded, so a null source and absent sources stay apart, and a projection of no items records `sources: []`. Nexo reports each source's kind and identity, and a host decides how it matches by them. A source is not a key: equal values and one reference can each stand more than once, and recording them promises neither uniqueness nor a correspondence between evaluations.
@@ -79,8 +82,8 @@ During an evaluation, data passes between Nexo and its host in both directions:
 
 | Direction | What passes |
 | --- | --- |
-| From Nexo to the host | An implementation's receiver and arguments, and what a callback it was given answers; a hook's request and the value it reports; the value `typeOf` or `isInstance` is asked about |
-| From the host to Nexo | What an implementation answers, and the arguments it gives a callback |
+| From Nexo to the host | An implementation's receiver and arguments, and what a callback it was given answers; a prepared call's receiver and arguments, and what a kept function answers; a hook's request and the value it reports; the value `typeOf` or `isInstance` is asked about |
+| From the host to Nexo | What an implementation answers, the arguments it gives a callback, and the arguments it gives a kept function |
 
 Data is read-only once it passes, nested data included:
 
@@ -88,10 +91,10 @@ Data is read-only once it passes, nested data included:
 - **Data the host is given** is never changed by the host, during the call or after it, through any alias it keeps.
 - **Data the host gives** is never changed by the host once given, through any alias it keeps. An implementation that answers a list it keeps in a cache keeps that list as it answered it.
 
-Where Nexo copies data, the host's own stays the host's:
+Nexo copies some of the data a host gives, and shares the rest:
 
-- **A binding** is a frozen copy of the data its host gives, as [bindings](bindings.md#runtime-bindings) set out, and **a value a host call projects** is captured as a copy, as [capturing a supplied value](host-calls.md#runtime-host-calls-capturing) sets out. The host may change its own data afterwards, which changes nothing Nexo holds.
-- **An answer** is checked, never copied. The data an implementation answers is the data Nexo holds, so the host keeps it as it was answered.
+- **Copied.** A binding is a frozen copy of the data its host gives, as [bindings](bindings.md#runtime-bindings) set out, and a value a host call projects is captured as a copy, as [capturing a supplied value](host-calls.md#runtime-host-calls-capturing) sets out. The host's own data stays its own: the host may change it afterwards, which changes nothing Nexo holds.
+- **Shared.** An answer is checked, never copied: the data an implementation answers is the data Nexo holds. The host keeps it as it was answered, so it neither changes it nor reuses it for a later answer, as filling an answered list again would.
 
 A reference is no data:
 

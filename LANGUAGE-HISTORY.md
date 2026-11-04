@@ -48,6 +48,7 @@ evaluator.evaluate();                                  // '0.sequence(count)' wi
 
 - [An evaluator's limits](spec/runtime/evaluation.md#runtime-evaluation), `createEvaluator(bindings, env, { limits: { items } })`: a list `sequence` or `concat` would make past `items` is refused at the call before it is made, NEXO5054, and the evaluator goes on evaluating. Options it takes none of are refused, NEXO2048, and options or limits that are no object, or an `items` that is no whole number a list can hold, NEXO2049, as [D72](docs/decisions.md#d72) records.
 - [What an implementation receives](spec/runtime/members.md#members-what-an-implementation-receives): a value of a structured type in `args`, or given to a function a member was given, holds the type's data shape alone.
+- [A kept function its host disposed](spec/runtime/host-calls.md#runtime-host-calls-kept-functions) holds nothing of its context, though its host keeps it, and [a result and an error](spec/runtime/evaluation.md#runtime-results) keep nothing of the evaluation that made them, read or not, where each held the evaluator, its bindings and its environment, as [D78](docs/decisions.md#d78) records. [Data shared with a host](spec/runtime/evaluation.md#runtime-shared-data) names a prepared call's arguments and a kept function's answers among what passes.
 
 **Breaking:**
 

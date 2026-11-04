@@ -43,6 +43,13 @@ export class NexoError extends Error {
         this.code = code;
         this.kind = kind;
         this.location = location;
+        // The stack is written as the error is made, and so is its cause's where the cause is an error, so the engine lets go of the frames each was raised in, the evaluator among their receivers, rather than holding
+        // them until a stack is first read; writing a stack changes nothing it reads.
+        void this.stack;
+
+        if (options?.cause instanceof Error) {
+            void options.cause.stack;
+        }
     }
 
     /** A definition, or a binding, that does not follow the structure, failing at the location. */
