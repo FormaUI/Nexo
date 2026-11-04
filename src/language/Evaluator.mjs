@@ -1414,8 +1414,9 @@ export class Evaluator {
         const parameters = (declaration.parameters ?? []).map(parameter => {
             const declaredType = this.#registry.getDeclaredType(declaration, parameter.type).resolveTypeParameters(typeArguments);
             const isOfType = hasOwnTypeParameters ? null : Evaluator.#compileTypeCheck(declaredType, this.#registry, `the argument '${parameter.name}' of '${written}'`);
+            const copyToType = hasOwnTypeParameters ? null : Evaluator.#compileStructureCopy(declaredType, this.#registry);
 
-            return { parameter, declaredType, isOfType };
+            return { parameter, declaredType, isOfType, copyToType };
         });
         const resultType = this.#registry.getDeclaredType(declaration, declaration.result).resolveTypeParameters(typeArguments);
 
@@ -1513,7 +1514,7 @@ export class Evaluator {
             args[parameter.name] = value;
         }
 
-        for (const { parameter, declaredType, isOfType } of parameters) {
+        for (const { parameter, declaredType, isOfType, copyToType } of parameters) {
             if (!supplied.has(parameter.name)) {
                 continue;
             }
@@ -1523,6 +1524,13 @@ export class Evaluator {
 
             if (!isAdmitted(args[parameter.name])) {
                 this.#fail('NEXO5021', `The argument '${parameter.name}' of ${on} is declared ${parameterType}, and is given ${Evaluator.#describe(args[parameter.name])}`, pointer);
+            }
+
+            // An argument enters a structure its parameter holds as its data shape alone, as a value of Any does wherever a type is declared.
+            const copy = isOfType === null ? Evaluator.#compileStructureCopy(parameterType, this.#registry) : copyToType;
+
+            if (copy !== null) {
+                args[parameter.name] = copy(args[parameter.name]);
             }
         }
 
@@ -1690,9 +1698,10 @@ export class Evaluator {
                 return { name: parameter.name, kind: 'constant', value: argument.isDefault ? parameter.default : argument.value, isReadLater, isField };
             }
 
-            // A value of Any is checked against its parameter's type as it is evaluated.
+            // A value of Any is checked against its parameter's type as it is evaluated, and enters a structure it holds as its data shape alone.
             const isOfCheckedType = argument.checkedType === undefined ? null : Evaluator.#compileTypeCheck(argument.checkedType, this.#registry, `the argument '${parameter.name}' of '${NexoModule.writtenNameOf(resolution.declaration)}'`);
-            const plan = { name: parameter.name, kind: parameter.kind, evaluate: this.#getCompiledFunction(argument.node), propagatesNull: parameter.nulls === 'propagate', isOption, isReadLater, isField, checkedType: argument.checkedType ?? null, isOfCheckedType, pointer: argument.pointer };
+            const copyToCheckedType = argument.checkedType === undefined ? null : Evaluator.#compileStructureCopy(argument.checkedType, this.#registry);
+            const plan = { name: parameter.name, kind: parameter.kind, evaluate: this.#getCompiledFunction(argument.node), propagatesNull: parameter.nulls === 'propagate', isOption, isReadLater, isField, checkedType: argument.checkedType ?? null, isOfCheckedType, copyToCheckedType, pointer: argument.pointer };
 
             if (argument.callback === undefined) {
                 return plan;
@@ -1705,6 +1714,12 @@ export class Evaluator {
             const givesCheckedItems = this.#givesCheckedItems(resolution, parameterTypes);
             const isOfParameterType = parameterTypes.map(parameterType => (givesCheckedItems ? null : Evaluator.#compileTypeCheck(parameterType, this.#registry, asked)));
             const isOfResultType = resultType === null ? null : Evaluator.#compileTypeCheck(resultType, this.#registry, asked);
+            // A module's implementation calls the function with values of its own, which enter a structure as its data shape alone, where Nexo's own members give the script's values; and a function whose
+            // result may be of Any gives a value that enters the contract's structure so too.
+            const isOwnMember = this.#registry.getDeclaringModuleName(resolution.declaration) === Vocabulary.moduleName;
+            const copyToParameterType = parameterTypes.map(parameterType => (isOwnMember || givesCheckedItems ? null : Evaluator.#compileStructureCopy(parameterType, this.#registry)));
+            const mayGiveAny = isBody !== true && functions.some(target => target.resultType !== undefined && Evaluator.#mayHoldAny(target.resultType));
+            const copyToResultType = resultType === null || !mayGiveAny ? null : Evaluator.#compileStructureCopy(resultType, this.#registry);
 
             return {
                 ...plan,
@@ -1720,6 +1735,8 @@ export class Evaluator {
                 resultType,
                 isOfParameterType,
                 isOfResultType,
+                copyToParameterType,
+                copyToResultType,
                 pointer: argument.pointer,
                 node: argument.node,
             };
@@ -1771,6 +1788,10 @@ export class Evaluator {
 
                         if (plan.isOfCheckedType !== null && !plan.isOfCheckedType(value)) {
                             evaluator.#fail('NEXO5021', `The argument '${plan.name}' of '${NexoModule.writtenNameOf(resolution.declaration)}' is declared ${plan.checkedType}, and is given ${Evaluator.#describe(value)}`, plan.pointer);
+                        }
+
+                        if (plan.copyToCheckedType !== null) {
+                            value = plan.copyToCheckedType(value);
                         }
 
                         // A function reference is evaluated where it is written, once, and goes to the member as a callback it calls, while the expression's own names and fields hold the value itself.
@@ -1894,7 +1915,7 @@ export class Evaluator {
      * result type, and answers it, or its truthiness for a predicate. A call after the invocation fails, while the function the body calls stays callable wherever else it is given or called.
      */
     #createCallback(plan, lifetime, body) {
-        const { name, memberName, parameterTypes, resultType, isOfParameterType, isOfResultType, isPredicate, pointer } = plan;
+        const { name, memberName, parameterTypes, resultType, isOfParameterType, isOfResultType, copyToParameterType, copyToResultType, isPredicate, pointer } = plan;
         const callback = (...argumentValues) => {
             try {
                 if (!lifetime.isOpen) {
@@ -1915,14 +1936,15 @@ export class Evaluator {
                     }
                 }
 
-                const value = body(argumentValues);
+                const given = copyToParameterType.some(copy => copy !== null) ? argumentValues.map((argument, index) => (copyToParameterType[index] === null ? argument : copyToParameterType[index](argument))) : argumentValues;
+                const value = body(given);
 
                 if (isOfResultType !== null && !isOfResultType(value)) {
                     this.#fail('NEXO5504', `The function given as '${name}' of '${memberName}' gave ${Evaluator.#describe(value)}, and its contract declares ${resultType}`, pointer);
                 }
 
                 // A predicate's contract takes any value, and the member receives its truthiness.
-                return isPredicate ? Evaluator.#isTruthy(value) : value;
+                return isPredicate ? Evaluator.#isTruthy(value) : copyToResultType === null ? value : copyToResultType(value);
             } catch (error) {
                 // A thrown value that is no object is the member's to report, as anything it throws is.
                 if (error !== null && typeof error === 'object') {
@@ -2026,15 +2048,20 @@ export class Evaluator {
     #compileConstruction(node, { type, checks }, fields, localNames) {
         const shape = [...this.#registry.getDataShape(type).keys()];
         const asked = `constructing ${type}`;
-        const checked = [...checks].map(([name, propertyType]) => ({ name, propertyType, conforms: Evaluator.#compileTypeCheck(propertyType, this.#registry, asked) }));
+        const checked = [...checks].map(([name, propertyType]) => ({ name, propertyType, conforms: Evaluator.#compileTypeCheck(propertyType, this.#registry, asked), copy: Evaluator.#compileStructureCopy(propertyType, this.#registry) }));
         const pointer = this.#pointerOf(node);
 
         return (evaluator, context) => {
             const object = evaluator.#applyFields(node, fields, localNames, context);
 
-            for (const { name, propertyType, conforms } of checked) {
+            for (const { name, propertyType, conforms, copy } of checked) {
                 if (!conforms(object[name])) {
                     evaluator.#fail('NEXO5038', `The property '${name}' of the ${type} written here is ${propertyType}, and is given ${Evaluator.#describe(object[name])}`, pointer);
+                }
+
+                // A value of Any enters a structure its property holds as its data shape alone.
+                if (copy !== null) {
+                    object[name] = copy(object[name]);
                 }
             }
 
@@ -2168,6 +2195,23 @@ export class Evaluator {
         }
 
         return object;
+    }
+
+    /** Whether a value of the type may be of Any where it stands, or hold one in a collection or an object: a structure's own fields are its declaration's, and a function's what it is given. */
+    static #mayHoldAny(type) {
+        if (type.kind === 'any') {
+            return true;
+        }
+
+        if (type.isList) {
+            return Evaluator.#mayHoldAny(type.itemType);
+        }
+
+        if (type.isDictionary || type.isPair) {
+            return type.typeArguments.some(typeArgument => Evaluator.#mayHoldAny(typeArgument));
+        }
+
+        return type.fieldTypes !== null && [...type.fieldTypes.values()].some(fieldType => Evaluator.#mayHoldAny(fieldType));
     }
 
     /**

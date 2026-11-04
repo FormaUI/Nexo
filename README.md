@@ -125,7 +125,7 @@ const summary = resolution.createEvaluator(bindings, { today: Date.parse('2026-1
 
 ## Availability
 
-> **Beta.** No breaking redesign is planned, and a version that breaks what the one before it allowed says how to migrate. Neither package is published yet: build them locally, as [Build](#build) shows, to try Nexo. The implementation, `1.0.0-beta.1`, implements language version `1.0.0-beta.40`. [The status overview](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) says what is implemented, what remains, and [what 1.0 requires](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md#what-1-0-requires).
+> **Beta.** No breaking redesign is planned, and a version that breaks what the one before it allowed says how to migrate. Neither package is published yet: build them locally, as [Build](#build) shows, to try Nexo. The implementation, `1.0.0-beta.2`, implements language version `1.0.0-beta.41`. [The status overview](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) says what is implemented, what remains, and [what 1.0 requires](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md#what-1-0-requires).
 
 ## Documents
 

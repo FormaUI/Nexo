@@ -1010,3 +1010,22 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Running the history's examples in the gate against the current language, which would make a record of the past change with later versions.
   - Examples for the entries before the beta, which record redesigns no host migrates across, made before the beta promised guidance on migrating.
+
+<a id="d71"></a>
+
+## D71 — A value of `Any` enters a structure as its data shape alone
+
+*November 4, 2026*
+
+- **Kind:** Language and runtime contracts.
+- **Decision:** Where a type is declared for a value of `Any`, a member's argument, a property of a structure a script constructs, or a function's argument or result a callback contract declares, and that type is a structured type or holds one, the value enters it as the structure's data shape alone, as a value a host supplies is captured. Every value of a structured type then holds exactly its data shape. The language advances to `1.0.0-beta.41`.
+- **The example that settled it:** a host's `item` answers `{ size: 3, name: 'jar' }` as a value of `Any`, and `Jar` declares `size` alone.
+  - Given to `keys(jar: Jar)`, the implementation was given `{ size, name }`; it is now given `{ size }`.
+  - Given to `jars(jars: List<Jar>)` and answered back, the list held `{ size }`, as every answer is copied to its shape, and `take(1)` of it the same; now `jars` is given `{ size }` too, so what the host is given, what a member answers and what a list member keeps agree.
+  - A script never read `name` through `Jar`, which declares none, and a result typed `Jar` held none, so neither changes.
+- **Why:**
+  - A value of `Any` given where a structure is declared was checked by membership and passed on as it was, while each member's answer was copied to the declared shape. One parameter gave a host two shapes, by where the script's value came from, and a later list member stripped what an earlier check had kept, which [D25](#d25) found as it declined copying less. A design review asked that the rule be settled before release.
+  - Projecting where the value enters matches every other way a value becomes a structure: binding with a declared type and a host call's supplied value are captured as the shape, a construction holds it, and a member's answer and a conversion's are copied to it.
+- **Declined:**
+  - Keeping a value of `Any` as it is once it belongs to the structure, which the review preferred. A result typed as a structure would hold properties its type doesn't declare, which a host's records and DOMQL's change sets read and compare, and binding and answers, which project today, would have to stop.
+  - Refusing a value of `Any` that holds properties its structure doesn't declare, which would refuse the data a host's own objects commonly carry.

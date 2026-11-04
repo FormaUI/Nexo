@@ -250,6 +250,53 @@ describe('values of Any', () => {
             expect(errorThrownBy(() => evaluateOver('numbers.sum(shelf.item("word"))'))).toMatchObject({ code: 'NEXO5504', location: { pointer: '/expression/arguments/0' } });
         });
 
+        it('takes a value of Any where a structure is declared as the structure\'s data shape alone, wherever it enters, so a host receives and a list keeps what the script reads', () => {
+            const received = [];
+            const pantryHeld = { record: { size: 3, name: 'jar' }, records: [{ size: 1, name: 'a' }, { size: 2, name: 'b' }] };
+            const keysOf = value => Object.keys(value).join(',');
+            const pantry = nexo.createModule('pantry', {
+                types: [
+                    { name: 'Jar', kind: 'structured', members: dataPropertyDeclarations({ size: 'Number' }) },
+                    { name: 'Box', kind: 'structured', members: dataPropertyDeclarations({ jar: 'pantry.Jar' }) },
+                ],
+                members: [
+                    createFunctionDeclaration('item', 'Any', { updates: constantUpdates, parameters: [createValueParameterDeclaration('key', 'String')], impl: ({ args }) => pantryHeld[args.key] }),
+                    createFunctionDeclaration('keys', 'String', { updates: derivedUpdates, parameters: [createValueParameterDeclaration('jar', 'pantry.Jar')], impl: ({ args }) => keysOf(args.jar) }),
+                    createFunctionDeclaration('open', 'String', { updates: derivedUpdates, parameters: [createValueParameterDeclaration('box', 'pantry.Box')], impl: ({ args }) => keysOf(args.box.jar) }),
+                    createFunctionDeclaration('jars', 'List<pantry.Jar>', {
+                        updates: derivedUpdates,
+                        parameters: [createValueParameterDeclaration('jars', 'List<pantry.Jar>')],
+                        impl: ({ args }) => {
+                            received.push(...args.jars.map(keysOf));
+
+                            return args.jars;
+                        },
+                    }),
+                    createFunctionDeclaration('fill', 'String', {
+                        updates: derivedUpdates,
+                        parameters: [createFunctionParameterDeclaration('make', 'pantry.Jar', [])],
+                        impl: ({ args }) => keysOf(args.make()),
+                    }),
+                    createFunctionDeclaration('label', 'String', {
+                        updates: derivedUpdates,
+                        parameters: [createFunctionParameterDeclaration('describe', 'String', ['pantry.Jar'])],
+                        impl: ({ args }) => args.describe({ size: 5, name: 'x' }),
+                    }),
+                ],
+            });
+            const evaluatePantry = text => nexo.createRegistry([pantry]).resolve(text, {}, { imports: ['pantry'] }).createEvaluator({}).evaluate().value;
+
+            expect(evaluatePantry('pantry.keys(pantry.item("record"))')).toBe('size');
+            expect(evaluatePantry('pantry.open({ jar = pantry.item("record") })')).toBe('size');
+            expect(evaluatePantry('pantry.fill(() => pantry.item("record"))')).toBe('size');
+            expect(evaluatePantry('pantry.label(jar => pantry.keys(jar))')).toBe('size');
+
+            // The item a member answers and the one a list member keeps of it hold the same fields, and so does what the host is given.
+            expect(evaluatePantry('pantry.jars(pantry.item("records"))')).toEqual([{ size: 1 }, { size: 2 }]);
+            expect(evaluatePantry('pantry.jars(pantry.item("records")).take(1)')).toEqual([{ size: 1 }]);
+            expect(received).toEqual(['size', 'size', 'size', 'size']);
+        });
+
         it('compares a value of Any with a value of a type it fits one way or the other, and with null, and fails other equalities', () => {
             expect(evaluate('shelf.item("word") == "oat"')).toBe(true);
             expect(evaluate('shelf.item("light") != shelf.item("device")')).toBe(true);

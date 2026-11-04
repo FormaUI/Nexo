@@ -231,6 +231,10 @@ So `{ name: String }` is assignable to `{ name: String? }`, and neither `{ name:
 
 A value of `Any` is assignable to another type once its value is known: given where a concrete type is declared, it is accepted when it is resolved and checked against that type when it is evaluated, and one of `Any?` the same, the check refusing null where the declared type isn't nullable. Only what is unknown waits: a violation resolution can prove is refused then, as [values of `Any`](#types-any) set out.
 
+<a id="types-any-into-a-structure"></a>
+
+**Into a structure, its data shape alone.** Where the declared type is a structured type, or holds one in a list, a dictionary, a pair or an object, the value enters it as the structure's data shape alone: a structure holds its declared properties and nothing more, each of its own type, as a value a host supplies is captured. It enters so wherever a type is declared for it: a member's argument, a property of a structure a script constructs, and a function's argument or result a callback contract declares. So every value of a structured type holds exactly its data shape, and a structure a script reads, one a member is given and one a result holds have the same properties, whichever way its value came. A value of `Any` keeps whatever it holds, until it enters such a type.
+
 <a id="types-constructing-a-structure"></a>
 
 ### Constructing a structure

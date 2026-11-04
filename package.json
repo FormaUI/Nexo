@@ -1,6 +1,6 @@
 {
     "name": "@formaui-net/nexo",
-    "version": "1.0.0-beta.1",
+    "version": "1.0.0-beta.2",
     "description": "Nexo is a general-purpose, embeddable language that evaluates scripts against what a host binds, through a vocabulary its modules declare for the domain, and produces immutable data.",
     "license": "Apache-2.0",
     "author": "Eyal Alon",

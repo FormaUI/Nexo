@@ -5,6 +5,14 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - **An entry is dated when its release is cut,** and reads *Unreleased* until then. [Cutting a release](CONTRIBUTING.md#cut-a-release) tags its commit, and its packages are published from that tag.
 - **A change a host can notice** is listed in the newest entry while it is unreleased. Once it is released, the change opens the next version's entry, and the sources declare that version in the same commit.
 
+<a id="v1-0-0-beta-2"></a>
+
+## `1.0.0-beta.2`
+
+*Unreleased · language `1.0.0-beta.41` · definition format 38*
+
+- Runs language `1.0.0-beta.41`, as the [language history](LANGUAGE-HISTORY.md#v1-0-0-beta-41) sets out: a value of `Any` enters a structure as its data shape alone.
+
 <a id="v1-0-0-beta-1"></a>
 
 ## `1.0.0-beta.1`

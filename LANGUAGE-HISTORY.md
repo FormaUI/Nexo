@@ -12,6 +12,30 @@ Each entry says what its version breaks:
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
 - **From `1.0.0-beta.1` on,** no breaking redesign is planned. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 
+<a id="v1-0-0-beta-41"></a>
+
+## `1.0.0-beta.41`
+
+*Unreleased · definition format 38*
+
+```js
+// `pantry.Jar` is a structure of `size` alone, and `pantry.item("jar")` answers { size: 3, name: 'jar' } as a value of Any.
+evaluate('pantry.keys(pantry.item("jar"))');           // keys() is given { size: 3 }; { size: 3, name: 'jar' } before
+evaluate('pantry.jars([pantry.item("jar")]).take(1)'); // [{ size: 3 }], as the jar jars() is given; jars() was given { size: 3, name: 'jar' } before
+```
+
+**Language**
+
+- [A value of `Any` enters a structure as its data shape alone](spec/language/types.md#types-any-into-a-structure), wherever a type is declared for it: a member's argument, a property of a structure a script constructs, and a function's argument or result a callback contract declares. A member was given it as it was, the properties its structure doesn't declare among them, while a member's answer was copied to the shape, so one parameter gave a host two shapes, as [D71](docs/decisions.md#d71) records.
+
+**Runtime**
+
+- [What an implementation receives](spec/runtime/members.md#members-what-an-implementation-receives): a value of a structured type in `args`, or given to a function a member was given, holds the type's data shape alone.
+
+**Breaking:**
+
+- A member given a structure from a value of `Any` receives its declared properties alone. A host that reads a property its structure doesn't declare declares it in the structure, or declares its parameter `Any` and reads the value as it is.
+
 <a id="v1-0-0-beta-40"></a>
 
 ## `1.0.0-beta.40`
