@@ -716,6 +716,7 @@ Forty decisions were taken while implementing the declarations, member selection
   - `0123` was read as `0` and `123`, and refused as "nothing follows a body's result". `1e` was read as `1` and a member `e`, and refused with advice to write `1.e`. Neither says what is wrong.
   - Refusing every number a letter follows, as JavaScript does, would refuse `1else`, which the longest match reads today.
 - **Declined:** Refusing a number any letter follows, which would break texts accepted today for a diagnostic alone.
+- **Replaced in part:** [D73](#d73) refuses a letter right after a number, `1else` among it, decided on how it reads alone.
 
 <a id="d52"></a>
 
@@ -1047,3 +1048,14 @@ Forty decisions were taken while implementing the declarations, member selection
   - A limit in the language, which D53 declined for every host alike.
   - An instruction count or a budget across the evaluation now, before a host's use shows what it must count.
   - A limit set on the registry, which every evaluation of the host shares.
+
+<a id="d73"></a>
+
+## D73 — A number and a name after it stand apart
+
+*November 4, 2026*
+
+- **Kind:** Language contract.
+- **Decision:** A letter right after a number makes the number and the name it starts one invalid token, NEXO1000, "A number stands apart from a name after it", so `1else`, `2end` and `3px` are refused, and `0x10` and `0b1` are told a number is written in decimal digits. A space between them reads a number and a name, and a dot a member of the number, `1.e3`. It replaces [D51](#d51)'s reading of `1else`.
+- **Why:** The review asked that `1else` be decided on how it reads and on the rule's consistency alone, not on breaking text. `1else` reads as one word, and the rule already refuses a zero a digit follows and an exponent with no digits over their whole run, so a letter after a number is refused as they are, as JSON and JavaScript readers refuse it. Canonical text always wrote a space, and neither DOMQL's queries nor the scripts Forma's plan writes hold such a run.
+- **Declined:** Keeping `1else` as `1` and `else`, which D51 kept partly so as to break no text.

@@ -18,6 +18,12 @@ Each entry says what its version breaks:
 
 *Unreleased · definition format 38*
 
+```nexo
+if ready then 1else 2 end    // NEXO1000, "write '1 else'"; 1, then else, before
+if ready then 1 else 2 end   // 1 or 2, as before
+0x10                         // NEXO1000, a number is written in decimal digits; a member written without its dot, NEXO1011, before
+```
+
 ```js
 // `pantry.Jar` is a structure of `size` alone, and `pantry.item("jar")` answers { size: 3, name: 'jar' } as a value of Any.
 evaluate('pantry.keys(pantry.item("jar"))');           // keys() is given { size: 3 }; { size: 3, name: 'jar' } before
@@ -30,6 +36,7 @@ evaluator.evaluate();                                  // '0.sequence(count)' wi
 **Language**
 
 - [A value of `Any` enters a structure as its data shape alone](spec/language/types.md#types-any-into-a-structure), wherever a type is declared for it: a member's argument, a property of a structure a script constructs, and a function's argument or result a callback contract declares. A member was given it as it was, the properties its structure doesn't declare among them, while a member's answer was copied to the shape, so one parameter gave a host two shapes, as [D71](docs/decisions.md#d71) records.
+- [A number and a name after it stand apart](spec/language/lexical-structure.md#numbers-and-the-minus-sign): a letter right after a number makes the number and the name it starts one invalid token, NEXO1000, so `1else`, `2end` and `0x10` are refused. The longest match read `1else` as `1` and `else`, and a name after a number as a member written without its dot, NEXO1011, as [D73](docs/decisions.md#d73) records.
 
 **Runtime**
 
@@ -39,6 +46,7 @@ evaluator.evaluate();                                  // '0.sequence(count)' wi
 **Breaking:**
 
 - A member given a structure from a value of `Any` receives its declared properties alone. A host that reads a property its structure doesn't declare declares it in the structure, or declares its parameter `Any` and reads the value as it is.
+- A number a letter follows with no space is refused. Write a space between them, `1 else`, as canonical text always has, and a dot before a member of a number, `1.e3`.
 
 <a id="v1-0-0-beta-40"></a>
 

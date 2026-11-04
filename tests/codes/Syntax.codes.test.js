@@ -353,10 +353,13 @@ describe('the codes of syntax errors', () => {
             expect(Tokenizer.scan('x 😀').map(token => [token.type, token.start, token.end])).toEqual([['identifier', 0, 1], ['invalid', 2, 4], ['end', 4, 4]]);
         });
 
-        it('gives NEXO1000 to a number not written as in JSON, a zero a digit follows or an exponent with no digits, over its whole run, while an e that starts a longer name is that name', () => {
-            expectSyntaxCode('NEXO1000', ['0123', '00', '1e', '1e+', '1E-', '1e + 2']);
+        it('gives NEXO1000 to a number not written as in JSON, a zero a digit follows or an exponent with no digits, and to one a name follows with no space, over its whole run', () => {
+            expectSyntaxCode('NEXO1000', ['0123', '00', '1e', '1e+', '1E-', '1e + 2', '1else', 'if x then 1else 2 end', '2end', '0x10', '1e5x', '3px']);
             expect(errorThrownBy(() => nexo.parse('0123'))).toMatchObject({ message: expect.stringContaining('A number is written as in JSON'), location: { line: 1, column: 1 } });
-            expect([nexo.parse('1e5').expression, nexo.parse('1.e3').expression, nexo.parse('if x then 1else 2 end').expression.consequent]).toEqual([
+            expect(errorThrownBy(() => nexo.parse('if x then 1else 2 end'))).toMatchObject({ code: 'NEXO1000', message: expect.stringContaining("A number stands apart from a name after it: write '1 else'"), location: { line: 1, column: 11 } });
+            expect(errorThrownBy(() => nexo.parse('1e'))).toMatchObject({ message: expect.stringContaining('an exponent has digits of its own') });
+            expect(errorThrownBy(() => nexo.parse('0x10'))).toMatchObject({ message: expect.stringContaining('A number is written as in JSON, in decimal digits') });
+            expect([nexo.parse('1e5').expression, nexo.parse('1.e3').expression, nexo.parse('if x then 1 else 2 end').expression.consequent]).toEqual([
                 { kind: 'literal', value: 100000 },
                 { kind: 'memberAccess', receiver: { kind: 'literal', value: 1 }, name: 'e3' },
                 { kind: 'literal', value: 1 },

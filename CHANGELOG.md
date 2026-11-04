@@ -11,7 +11,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 *Unreleased · language `1.0.0-beta.41` · definition format 38*
 
-- Runs language `1.0.0-beta.41`, as the [language history](LANGUAGE-HISTORY.md#v1-0-0-beta-41) sets out: a value of `Any` enters a structure as its data shape alone, and an evaluator takes the limits its host sets.
+- Runs language `1.0.0-beta.41`, as the [language history](LANGUAGE-HISTORY.md#v1-0-0-beta-41) sets out: a value of `Any` enters a structure as its data shape alone, a number and a name after it stand apart, and an evaluator takes the limits its host sets.
 - `NexoEvaluatorOptions` and `NexoEvaluationLimits` type `createEvaluator`'s options.
 
 <a id="v1-0-0-beta-1"></a>

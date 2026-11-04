@@ -807,19 +807,34 @@ export class Tokenizer {
 
     /**
      * Reads the number a digit at the offset starts, written as in JSON: a zero a digit follows, as in `0123`, and an exponent with no digits, as in `1e` or `1e+`, make the run invalid, which a reading of the
-     * number alone would split into a number and the name or the number after it. An `e` that starts a longer name is that name, as the longest match reads `1else`.
+     * number alone would split into a number and the name or the number after it. A letter right after the number makes it invalid too, over the name it starts, as in `1else` and `0x10`, so a number and a name
+     * after it always stand apart.
      */
     #readNumber(start) {
         NUMBER.lastIndex = start;
         NUMBER.test(this.#text);
 
         const end = NUMBER.lastIndex;
-        const malformed = /[0-9]+|[eE](?:[+-]|(?![A-Za-z0-9]))/y;
+        const malformed = /[0-9]+|[eE][+-]/y;
+        const named = /[A-Za-z][A-Za-z0-9]*/y;
 
         malformed.lastIndex = end;
+        named.lastIndex = end;
 
         if (malformed.test(this.#text)) {
             return this.#readInvalidToken(start, malformed.lastIndex, 'NEXO1000', 'A number is written as in JSON: no zero leads its digits, and an exponent has digits of its own', start);
+        }
+
+        if (named.test(this.#text)) {
+            const name = this.#text.slice(end, named.lastIndex);
+            const digits = this.#text.slice(start, end);
+            const message = /^[eE]$/.test(name)
+                ? 'A number is written as in JSON: an exponent has digits of its own'
+                : digits === '0' && /^[xXoObB]/.test(name)
+                    ? 'A number is written as in JSON, in decimal digits'
+                    : `A number stands apart from a name after it: write '${digits} ${name}'`;
+
+            return this.#readInvalidToken(start, named.lastIndex, 'NEXO1000', message, start);
         }
 
         this.#offset = end;
