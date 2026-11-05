@@ -1259,6 +1259,7 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Keeping `publish.ps1` beside the full gate: one command packs and verifies what a release publishes.
   - Publishing `1.0.0-preview.1` to npm by hand, before a trusted publisher can exist: npm gives a package's first version the `latest` dist-tag whatever `--tag` names, as projects publishing to it report, so a pre-release would stay the default install until 1.0, and without its provenance. A deprecated placeholder, `0.0.0`, holds `latest` instead.
+  - Moving `latest` to a preview, so npm's page for the package shows it rather than the placeholder's deprecation: a pre-release would become the default install, which [FormaUI Versioning's publication](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/packages.md#publication) forbids. npm's page shows the version `latest` names, so until 1.0 it shows the placeholder deprecated, as `npm install @formaui-net/nexo` warns, naming `@preview`.
   - Publishing the packages of `1.0.0-beta.1` and `1.0.0-beta.2`, released before Nexo followed the rules, which `1.0.0-preview.1` supersedes.
 
 <a id="d86"></a>
