@@ -9,7 +9,7 @@
 | Language | `1.0.0-preview.1` | `1.0.0-preview.1` |
 | Definition format | 38 | 38 |
 
-The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records, and the [embedding guide](embedding-guide.md)'s run in order as a host writes them, each value they state checked, as [decisions](decisions.md#d68) records. Every link a document gives reaches its document and anchor, as [decisions](decisions.md#d69) records.
+The bundle and type declarations are built, and `1.0.0-preview.1`'s packages are published: `@formaui-net/nexo` on npm, under its `preview` dist-tag, and `formaui-net.Nexo` on nuget.org. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records, and the [embedding guide](embedding-guide.md)'s run in order as a host writes them, each value they state checked, as [decisions](decisions.md#d68) records. Every link a document gives reaches its document and anchor, as [decisions](decisions.md#d69) records.
 
 The [specification](../spec/README.md) defines the contract; the [design](nexo-design.md) explains the architecture. This file tracks implementation and the remaining work. "Implemented" means built and tested in the gate for the current implementation version; it does not imply that later specification changes are implemented.
 
@@ -20,8 +20,8 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 | Work | State |
 | --- | --- |
 | [DOMQL's migration](#domqls-migration) | Done: DOMQL migrated at `1.0.0-beta.3` |
-| [Release](#release) | `1.0.0-preview.1` is released; publishing it waits for npm's placeholder and the feeds' trusted-publishing policies |
-| [What 1.0 requires](#what-1-0-requires) | Five requirements, one met in part |
+| [Release](#release) | Done: `1.0.0-preview.1` is released and published |
+| [What 1.0 requires](#what-1-0-requires) | Five requirements: two hold, and one holds in part |
 | [Tooling](#tooling) | Follows 1.0, and waits for its design |
 
 - **A change is a commit,** each passing the gate, and moving each aspect once: a declaration, a test or a document takes its final form the first time the aspect changes.
@@ -96,7 +96,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | The beta, its promise and the changelog | [Language history](../LANGUAGE-HISTORY.md#v1-0-0-beta-1), [changelog](../CHANGELOG.md) | Implemented | [`beta.1`](../LANGUAGE-HISTORY.md#v1-0-0-beta-1) |
 | The preview, the beta's promise under FormaUI Versioning's name for it | [Stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) | Implemented, as [D84](decisions.md#d84) records | [`preview.1`](../LANGUAGE-HISTORY.md#v1-0-0-preview-1) |
 | Language and definition versions advanced once per release | [Versions](../spec/runtime/versions.md#runtime-versions), [cutting a release](../CONTRIBUTING.md#cut-a-release) | Implemented, as [decisions](decisions.md#d66) records | [`beta.40`](../LANGUAGE-HISTORY.md#v1-0-0-beta-40) |
-| Published packages | [Release](#release) | Planned | — |
+| Published packages | [Release](#release) | Implemented, as [D85](decisions.md#d85) and [D86](decisions.md#d86) record | [`preview.1`](../LANGUAGE-HISTORY.md#v1-0-0-preview-1) |
 
 The bundle and type declarations are built, as [the build](../README.md#build) sets out.
 
@@ -130,15 +130,9 @@ References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design
 
 **Packages.** Both carry the implementation version `src/language/Versions.mjs` declares, and [contributing](../CONTRIBUTING.md#versions-and-releases) lists them, with what each holds and how the full gate verifies it. The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare.
 
-**Releases.** Nexo releases as [cutting a release](../CONTRIBUTING.md#cut-a-release) sets out, by FormaUI Versioning's path, as [D85](decisions.md#d85) records. `1.0.0-beta.1` and `1.0.0-beta.2` were released before then, tagged `v1.0.0-beta.1` and `v1.0.0-beta.2`, and their packages stay unpublished. `1.0.0-preview.1` is released, tagged `v1.0.0-preview.1`, and is the first release `release.yml` publishes.
+**Releases.** Nexo releases as [cutting a release](../CONTRIBUTING.md#cut-a-release) sets out, by FormaUI Versioning's path, as [D85](decisions.md#d85) records. `1.0.0-beta.1` and `1.0.0-beta.2` were released before then, tagged `v1.0.0-beta.1` and `v1.0.0-beta.2`, and their packages stay unpublished. `1.0.0-preview.1` is released, tagged `v1.0.0-preview.1`, and is the first release `release.yml` published: `@formaui-net/nexo` to npm under the `preview` dist-tag, with its provenance, and `formaui-net.Nexo` to nuget.org.
 
-**Remaining:**
-
-1. Publish a placeholder, `@formaui-net/nexo@0.0.0`, deprecated in favour of `@formaui-net/nexo@preview`, since npm takes a trusted publisher only for a package it holds, as [D85](decisions.md#d85) records.
-2. Create the trusted-publishing policies for `release.yml` in the `release` environment: npm's for `@formaui-net/nexo`, and nuget.org's for the account `NUGET_USER` names.
-3. Run `release.yml` again for `v1.0.0-preview.1`, which publishes both packages.
-
-Both policies, and the placeholder, need the owner's accounts.
+**Publishing.** npm's trusted publisher names `FormaUI/Nexo`, `release.yml` and the `release` environment, and allows `npm publish`, so a release publishes to npm directly, as it does to nuget.org, as [D86](decisions.md#d86) records. A deprecated placeholder, `@formaui-net/nexo@0.0.0`, holds npm's `latest` dist-tag until 1.0, as [D85](decisions.md#d85) records.
 
 **Preview.** Nexo entered the beta at `1.0.0-beta.1`, as [decisions](decisions.md#d27) records, and leaves it for the preview at `1.0.0-preview.1`, the stage [FormaUI Versioning](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) names for a contract that may still change, with the same promise, as [D84](decisions.md#d84) records:
 
@@ -155,8 +149,8 @@ Both policies, and the placeholder, need the owner's accounts.
 | --- | --- | --- |
 | **Contracts settled.** No decision is open, no gap stands between the specification and the code, and each [deferred](#deferred) item is shown to land without a break. | What may still change after 1.0 must be able to change compatibly. | Holds: no decision is open, no gap stands, and each [deferred](#deferred) item lands as an addition, rounding to digits as an optional argument of `round()` and wrapping canonical text as an option. |
 | **Robust against any text.** A fuzzing test in the gate reads, resolves and evaluates generated scripts, and meets no failure but a `NexoError`: no hang, no stack overflow, no escaped `TypeError`. | The maintenance sweep, `1.0.0-beta.21` to `1.0.0-beta.40`, found such faults by reading the code. | Not started. |
-| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-preview.1` is released; publishing it waits for the feeds' trusted-publishing policies. |
-| **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against the release `1.0.0-beta.2`, from its tag, and replacing Forma's scripts is planned. |
+| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | Holds: `1.0.0-preview.1` is on npm and nuget.org, each package verified as consumers install it before its release. |
+| **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against the release `1.0.0-preview.1`, from its tag, and replacing Forma's scripts is planned. |
 | **A release candidate that breaks nothing.** `1.0.0-rc.1` is released once the rest hold, and DOMQL and Forma take it with no change but its version. `1.0.0` is its contract, unchanged. | It is the last check that nothing still needs to break. | Waits for the rest. |
 
 **Until 1.0, Nexo takes no new feature:** no new syntax, member, declaration key, API or behaviour a script or a host can use. A change before 1.0 does one of these:

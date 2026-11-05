@@ -1260,3 +1260,16 @@ Forty decisions were taken while implementing the declarations, member selection
   - Keeping `publish.ps1` beside the full gate: one command packs and verifies what a release publishes.
   - Publishing `1.0.0-preview.1` to npm by hand, before a trusted publisher can exist: npm gives a package's first version the `latest` dist-tag whatever `--tag` names, as projects publishing to it report, so a pre-release would stay the default install until 1.0, and without its provenance. A deprecated placeholder, `0.0.0`, holds `latest` instead.
   - Publishing the packages of `1.0.0-beta.1` and `1.0.0-beta.2`, released before Nexo followed the rules, which `1.0.0-preview.1` supersedes.
+
+<a id="d86"></a>
+
+## D86 — A release publishes to npm directly
+
+*November 5, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:** npm's trusted publisher for `@formaui-net/nexo` allows `npm publish`, so `release.yml` publishes a release's npm package directly, as it publishes the NuGet package, rather than staging it for an approval on npmjs.com. It allows no `npm dist-tag`: a publish sets its stage's dist-tag itself.
+- **Why:**
+  - [FormaUI Versioning's publication](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/releases.md#publication) has the release workflow publish on the tag's push. The approval staging asks for comes before the run: only an admin pushes a `v*` tag, the release check verifies its signature against Versioning's release signers before anything is published, and only a `v*` tag's run deploys to the `release` environment the publisher names.
+  - A staged version would wait on npm while nuget.org held the release, and a run made again can't see a staged version, so it would stage it again.
+- **Declined:** Staged publishing, which npm recommends, and which would add a second approval npm alone holds.
