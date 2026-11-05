@@ -6,6 +6,10 @@ nuget/bin/
 nuget/obj/
 artifacts/
 
+# What an IDE builds of the package consumers the full gate copies out of the repository.
+scripts/packages/*/bin/
+scripts/packages/*/obj/
+
 # The bundle that build.ps1 makes from src/.
 nuget/wwwroot/
 

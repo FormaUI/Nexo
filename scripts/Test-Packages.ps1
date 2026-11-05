@@ -107,10 +107,10 @@ $work = Join-Path ([System.IO.Path]::GetTempPath()) "nexo-packages-$([guid]::New
 $previousPackages = $env:NUGET_PACKAGES
 
 try {
-    # The npm package, installed into a Node project beside the TypeScript the tests compile with, from the public registry.
+    # The npm package, installed into a Node project beside the TypeScript the tests compile with, from the public registry. Each consumer takes its own files alone, whatever an IDE built beside them.
     Write-Host 'Installing the npm package into a consumer'
-    $npmConsumer = Join-Path $work 'npm'
-    Copy-Item -LiteralPath (Join-Path $packages 'npm-consumer') -Destination $npmConsumer -Recurse
+    $npmConsumer = New-Item -ItemType Directory -Path (Join-Path $work 'npm')
+    Get-ChildItem -LiteralPath (Join-Path $packages 'npm-consumer') -File | Copy-Item -Destination $npmConsumer
     $typescript = (Get-Content -LiteralPath (Join-Path $root 'tests' 'package-lock.json') -Raw | ConvertFrom-Json -AsHashtable).packages['node_modules/typescript'].version
 
     Push-Location $npmConsumer
@@ -126,8 +126,8 @@ try {
 
     # The NuGet package, restored into a web application from the local feed and nuget.org into packages of its own, so no cached copy of the same version stands in for it.
     Write-Host 'Installing the NuGet package into a consumer'
-    $nugetConsumer = Join-Path $work 'nuget'
-    Copy-Item -LiteralPath (Join-Path $packages 'nuget-consumer') -Destination $nugetConsumer -Recurse
+    $nugetConsumer = New-Item -ItemType Directory -Path (Join-Path $work 'nuget')
+    Get-ChildItem -LiteralPath (Join-Path $packages 'nuget-consumer') -File | Copy-Item -Destination $nugetConsumer
     Copy-Item -LiteralPath (Join-Path $root 'nuget' 'global.json') -Destination $nugetConsumer
     $feed = [System.Security.SecurityElement]::Escape($Directory)
     Set-Content -LiteralPath (Join-Path $nugetConsumer 'NuGet.config') -Value @"
