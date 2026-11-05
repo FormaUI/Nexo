@@ -89,6 +89,8 @@ Nexo follows [FormaUI Versioning `v1.0.0-preview.1`](https://github.com/FormaUI/
 | `promotion.yml` | A pull request into `main` | The [promotion check](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/releases.md#promotion) |
 | `release.yml` | A `v*` tag's push, in the `release` environment, which only `v*` tags deploy to | The [release check](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/releases.md#the-release-check), then the full gate's packages attached to the tag's GitHub release with their digests, and published through trusted publishing |
 
+`dev` and `main` require `ci.yml`'s `Gate`, and `main` the `Promotion` check too.
+
 **The packages,** neither depending on a package:
 
 | Package | What it holds | Its targets | Its feed |
