@@ -4,6 +4,7 @@
     "description": "Nexo is an embeddable language with no domain of its own: the host declares the typed vocabulary, and scripts use it to compute and shape data. Nexo checks every script against that vocabulary before it runs, and evaluates it, read-only, into immutable data.",
     "license": "Apache-2.0",
     "author": "Eyal Alon",
+    "homepage": "https://github.com/FormaUI/Nexo#readme",
     "repository": {
         "type": "git",
         "url": "https://github.com/FormaUI/Nexo.git"

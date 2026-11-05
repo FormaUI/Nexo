@@ -13,6 +13,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 - The first preview, which leaves the beta with the same promise, as [FormaUI Versioning's stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) name it: the packages and the language take `1.0.0-preview.1`, newer than every beta.
 - Runs language `1.0.0-preview.1`, as the [language history](LANGUAGE-HISTORY.md#v1-0-0-preview-1) sets out: `nexo.format` writes an empty line before a body's `return` where locals come before it.
+- The NuGet package links its release notes to its changelog entry at its tag, records its repository and commit through Source Link, and ships its symbols beside it as a `.snupkg`. It no longer holds the build's `global.json`, which it delivered to a consumer as content. The npm package names its homepage.
 
 <a id="v1-0-0-beta-2"></a>
 
