@@ -13,7 +13,7 @@ We will reply after reviewing your report. Reports remain private until a fix is
 
 ## Supported versions
 
-Nexo is in beta. Only the latest version receives fixes.
+Nexo is in preview. Only the latest version receives fixes.
 
 ## Scope
 

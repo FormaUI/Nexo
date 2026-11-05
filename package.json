@@ -1,6 +1,6 @@
 {
     "name": "@formaui-net/nexo",
-    "version": "1.0.0-beta.3",
+    "version": "1.0.0-preview.1",
     "description": "Nexo is an embeddable language with no domain of its own: the host declares the typed vocabulary, and scripts use it to compute and shape data. Nexo checks every script against that vocabulary before it runs, and evaluates it, read-only, into immutable data.",
     "license": "Apache-2.0",
     "author": "Eyal Alon",

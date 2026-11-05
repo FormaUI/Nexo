@@ -1215,7 +1215,7 @@ Forty decisions were taken while implementing the declarations, member selection
 *November 5, 2026*
 
 - **Kind:** Runtime contract, approved.
-- **Decision:** Canonical text writes an empty line between a body's last local and its `return`, at every level: a script's body, a `do` block's, a function's and a conditional branch's. A body with no locals writes its `return` alone, and the empty line holds no indentation. Compact text, `quote`'s, writes none, as it writes none after the imports. The language advances to `1.0.0-beta.42`.
+- **Decision:** Canonical text writes an empty line between a body's last local and its `return`, at every level: a script's body, a `do` block's, a function's and a conditional branch's. A body with no locals writes its `return` alone, and the empty line holds no indentation. Compact text, `quote`'s, writes none, as it writes none after the imports. The language advances to `1.0.0-preview.1`.
 - **Why:**
   - The owner's call: a body's result is what it gives, and its locals are how it gets there, so a reader looking for the result finds it at a glance, as the README's billing script shows.
   - Canonical text already sets the imports apart from the body with an empty line, so the result is set apart from the locals the same way.
@@ -1223,3 +1223,18 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Keeping the empty lines a source writes between its locals: canonical text keeps no layout a source was written in, so one definition has one text. `nexo.tooling.format` keeps a source's layout.
   - The empty line in compact text, which quotes a script in a diagnostic on as few lines as its syntax allows.
+
+<a id="d84"></a>
+
+## D84 — Nexo leaves the beta for the preview
+
+*November 5, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:** Nexo follows [FormaUI Versioning `v1.0.0-preview.1`](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/README.md), whose [stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) are preview, release candidate and stable. Its next release leaves the beta: the packages and the language take `1.0.0-preview.1`, which SemVer orders after every beta. The unreleased changelog entry `1.0.0-beta.3` and the language history's `1.0.0-beta.42` become `1.0.0-preview.1`, and later previews number on from it, `1.0.0-preview.N`. The released betas and their tags stay as they are.
+- **Why:**
+  - The owner's call: every FormaUI project versions by one set of rules, and those rules name no beta.
+  - The preview's promise is the beta's, as [D75](#d75) set it: a decision may be replaced until `1.0.0-rc.1`, a break says how to migrate, and from `1.0.0-rc.1` on nothing breaks before 2.0. Only the name changes.
+- **Declined:**
+  - Keeping the betas until the release candidate, which would leave Nexo outside the rules its hosts follow.
+  - Renumbering the released betas, whose tags can't move and which DOMQL's records name.

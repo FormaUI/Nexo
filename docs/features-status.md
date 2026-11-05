@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.42` and definition version 38, the forty-second beta.** What remains is publishing [the release](#release), `1.0.0-beta.2`, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-preview.1` and definition version 38, the first preview.** What remains is [releasing](#release) `1.0.0-preview.1`, the first release published, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.42` | `1.0.0-beta.42` |
+| Language | `1.0.0-preview.1` | `1.0.0-preview.1` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records, and the [embedding guide](embedding-guide.md)'s run in order as a host writes them, each value they state checked, as [decisions](decisions.md#d68) records. Every link a document gives reaches its document and anchor, as [decisions](decisions.md#d69) records.
@@ -20,7 +20,7 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 | Work | State |
 | --- | --- |
 | [DOMQL's migration](#domqls-migration) | Done: DOMQL migrated at `1.0.0-beta.3` |
-| [Release](#release) | `1.0.0-beta.2` is released; publishing its packages remains |
+| [Release](#release) | `1.0.0-preview.1` is next, the first release published; `1.0.0-beta.1` and `1.0.0-beta.2` were released unpublished |
 | [What 1.0 requires](#what-1-0-requires) | Five requirements, one met in part |
 | [Tooling](#tooling) | Follows 1.0, and waits for its design |
 
@@ -94,6 +94,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Formatting that keeps a text's source form | [Tooling](#tooling) | Follows 1.0, and waits for its design | — |
 | Editor diagnostics and completion | [Tooling](#tooling) | Follows 1.0, and waits for its design | — |
 | The beta, its promise and the changelog | [Language history](../LANGUAGE-HISTORY.md#v1-0-0-beta-1), [changelog](../CHANGELOG.md) | Implemented | [`beta.1`](../LANGUAGE-HISTORY.md#v1-0-0-beta-1) |
+| The preview, the beta's promise under FormaUI Versioning's name for it | [Stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) | Implemented, as [D84](decisions.md#d84) records | [`preview.1`](../LANGUAGE-HISTORY.md#v1-0-0-preview-1) |
 | Language and definition versions advanced once per release | [Versions](../spec/runtime/versions.md#runtime-versions), [cutting a release](../CONTRIBUTING.md#cut-a-release) | Implemented, as [decisions](decisions.md#d66) records | [`beta.40`](../LANGUAGE-HISTORY.md#v1-0-0-beta-40) |
 | Published packages | [Release](#release) | Planned | — |
 
@@ -138,7 +139,7 @@ Publish both from the tag, and test them as consumers install them: NuGet in a p
 
 The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare. Cutting a release dates its entry in the [changelog](../CHANGELOG.md) and tags its commit, as [contributing](../CONTRIBUTING.md#cut-a-release) sets out, and its packages are published from that tag.
 
-**Beta.** Nexo entered the beta at `1.0.0-beta.1`, as [decisions](decisions.md#d27) records:
+**Preview.** Nexo entered the beta at `1.0.0-beta.1`, as [decisions](decisions.md#d27) records, and leaves it for the preview at `1.0.0-preview.1`, the stage [FormaUI Versioning](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) names for a contract that may still change, with the same promise, as [D84](decisions.md#d84) records:
 
 - The documents and the module API were audited, and the behavior of a cast inside an optional enclosed access was settled.
 - No breaking redesign is planned. The [deferred work](#deferred) documents the remaining limitations, and [no decision is open](#open-decisions).
@@ -153,7 +154,7 @@ The gate holds the packages, the README and `nexo.info.versions` to the versions
 | --- | --- | --- |
 | **Contracts settled.** No decision is open, no gap stands between the specification and the code, and each [deferred](#deferred) item is shown to land without a break. | What may still change after 1.0 must be able to change compatibly. | Holds: no decision is open, no gap stands, and each [deferred](#deferred) item lands as an addition, rounding to digits as an optional argument of `round()` and wrapping canonical text as an option. |
 | **Robust against any text.** A fuzzing test in the gate reads, resolves and evaluates generated scripts, and meets no failure but a `NexoError`: no hang, no stack overflow, no escaped `TypeError`. | The maintenance sweep, `1.0.0-beta.21` to `1.0.0-beta.40`, found such faults by reading the code. | Not started. |
-| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-beta.2` is released; publishing it remains. |
+| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-preview.1` is the first release to be published. |
 | **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against the release `1.0.0-beta.2`, from its tag, and replacing Forma's scripts is planned. |
 | **A release candidate that breaks nothing.** `1.0.0-rc.1` is released once the rest hold, and DOMQL and Forma take it with no change but its version. `1.0.0` is its contract, unchanged. | It is the last check that nothing still needs to break. | Waits for the rest. |
 

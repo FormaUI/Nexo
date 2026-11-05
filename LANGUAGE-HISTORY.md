@@ -13,9 +13,9 @@ Each entry says what its version breaks:
 - **From `1.0.0-beta.1` until the first release candidate,** a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and DOMQL and Forma move with it. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 - **From `1.0.0-rc.1` on,** nothing breaks before 2.0, as [D75](docs/decisions.md#d75) records.
 
-<a id="v1-0-0-beta-42"></a>
+<a id="v1-0-0-preview-1"></a>
 
-## `1.0.0-beta.42`
+## `1.0.0-preview.1`
 
 *Unreleased · definition format 38*
 
@@ -24,6 +24,8 @@ nexo.format('let owed = 3\nreturn owed * 2');        // 'let owed = 3\n\nreturn 
 nexo.format('do\n    let x = 1\n    return x\nend'); // 'do\n    let x = 1\n\n    return x\nend'; the text it was given before
 nexo.quote('let owed = 3\nreturn owed * 2');         // 'let owed = 3\nreturn owed * 2', as before
 ```
+
+The first preview: the language leaves the beta with the same promise, as [FormaUI Versioning's stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) name it, and [D84](docs/decisions.md#d84) records.
 
 **Runtime**
 

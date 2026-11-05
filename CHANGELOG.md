@@ -5,13 +5,14 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - **An entry is dated when its release is cut,** and reads *Unreleased* until then. [Cutting a release](CONTRIBUTING.md#cut-a-release) tags its commit, and its packages are published from that tag.
 - **A change a host can notice** is listed in the newest entry while it is unreleased. Once it is released, the change opens the next version's entry, and the sources declare that version in the same commit.
 
-<a id="v1-0-0-beta-3"></a>
+<a id="v1-0-0-preview-1"></a>
 
-## `1.0.0-beta.3`
+## `1.0.0-preview.1`
 
-*Unreleased · language `1.0.0-beta.42` · definition format 38*
+*Unreleased · language `1.0.0-preview.1` · definition format 38*
 
-- Runs language `1.0.0-beta.42`, as the [language history](LANGUAGE-HISTORY.md#v1-0-0-beta-42) sets out: `nexo.format` writes an empty line before a body's `return` where locals come before it.
+- The first preview, which leaves the beta with the same promise, as [FormaUI Versioning's stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) name it: the packages and the language take `1.0.0-preview.1`, newer than every beta.
+- Runs language `1.0.0-preview.1`, as the [language history](LANGUAGE-HISTORY.md#v1-0-0-preview-1) sets out: `nexo.format` writes an empty line before a body's `return` where locals come before it.
 
 <a id="v1-0-0-beta-2"></a>
 
