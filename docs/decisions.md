@@ -1238,3 +1238,25 @@ Forty decisions were taken while implementing the declarations, member selection
 - **Declined:**
   - Keeping the betas until the release candidate, which would leave Nexo outside the rules its hosts follow.
   - Renumbering the released betas, whose tags can't move and which DOMQL's records name.
+
+<a id="d85"></a>
+
+## D85 — Nexo releases by FormaUI Versioning's path
+
+*November 5, 2026*
+
+- **Kind:** Process, approved.
+- **Decision:** Nexo follows [FormaUI Versioning `v1.0.0-preview.1`](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/README.md) for its branches, commits, releases and packages, as it does for its stages ([D84](#d84)). [Contributing](../CONTRIBUTING.md#versions-and-releases) states what the rules leave to Nexo.
+  - **Branches.** `dev` holds the integrated work, `candidate` the release's candidate, and `main` the latest release, advancing only by promotion. `tooling-draft` is `feature/tooling-draft`.
+  - **Gates.** The fast gate, `./build.ps1`, runs on every push but `main`'s and on every pull request. The full gate, `./build.ps1 -Full`, runs on a push to `candidate`: it packs both packages, checks each against the files `scripts/packages` lists, installs each outside the repository from a local feed, and keeps them for the release.
+  - **Releases.** A pull request into `main` runs Versioning's promotion check, and a release tag's push its release check. `release.yml` then publishes the packages the full gate built, attached to the tag's GitHub release with their digests, through trusted publishing: to npm under the dist-tag of the version's stage, and to nuget.org. It runs in the `release` environment, which only `v*` tags deploy to, and the feeds' policies name it.
+  - **Packages.** The NuGet package records its source through Source Link, ships its symbols, links its release notes to its changelog entry and validates itself; the npm package names its homepage.
+  - **Links.** A document links into Versioning at its release's tag, and a workflow calls its actions by that release's commit, with the tag beside it; the link test holds every one to one release.
+- **Why:**
+  - The owner's call: every FormaUI project releases by one set of rules, which its checks enforce.
+  - Verifying the packages as consumers receive them found the NuGet package delivering the build's `global.json` to every consumer as content.
+  - npm's and nuget.org's trusted publishers name a workflow file, not the ref it runs from, so without the environment a workflow edited on any branch could request a feed's credential.
+- **Declined:**
+  - Keeping `publish.ps1` beside the full gate: one command packs and verifies what a release publishes.
+  - Publishing `1.0.0-preview.1` to npm by hand, before a trusted publisher can exist: npm gives a package's first version the `latest` dist-tag whatever `--tag` names, as projects publishing to it report, so a pre-release would stay the default install until 1.0, and without its provenance. A deprecated placeholder, `0.0.0`, holds `latest` instead.
+  - Publishing the packages of `1.0.0-beta.1` and `1.0.0-beta.2`, released before Nexo followed the rules, which `1.0.0-preview.1` supersedes.

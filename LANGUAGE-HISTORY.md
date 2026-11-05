@@ -10,8 +10,8 @@ Each version of the Nexo language, newest first, with what it changed. A languag
 Each entry says what its version breaks:
 
 - **Before the beta,** a version could break what the one before it allowed, with no guidance on migrating.
-- **From `1.0.0-beta.1` until the first release candidate,** a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and DOMQL and Forma move with it. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
-- **From `1.0.0-rc.1` on,** nothing breaks before 2.0, as [D75](docs/decisions.md#d75) records.
+- **From `1.0.0-beta.1` until the first release candidate,** through the betas and the previews, a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and DOMQL and Forma move with it. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
+- **From `1.0.0-rc.1` on,** nothing breaks before 2.0, as [FormaUI Versioning's stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) promise and [D75](docs/decisions.md#d75) records.
 
 <a id="v1-0-0-preview-1"></a>
 

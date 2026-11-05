@@ -128,16 +128,17 @@ References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design
 
 ## Release
 
-**Packages.** One source and build produce both packages locally; neither is published. Both carry the implementation version declared by `src/language/Versions.mjs`. Each release is tagged by its version, the newest, `1.0.0-beta.2`, as `v1.0.0-beta.2`, and its packages are packed from its tag.
+**Packages.** Both carry the implementation version `src/language/Versions.mjs` declares, and [contributing](../CONTRIBUTING.md#versions-and-releases) lists them, with what each holds and how the full gate verifies it. The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare.
 
-| Package | Contents or delivery |
-| --- | --- |
-| npm: `@formaui-net/nexo` | The ES module sources and their type declarations, `src/nexo.d.ts` |
-| NuGet: `formaui-net.Nexo` | `nexo.js` and `nexo.d.ts` served at `_content/nexo/` |
+**Releases.** Nexo releases as [cutting a release](../CONTRIBUTING.md#cut-a-release) sets out, by FormaUI Versioning's path, as [D85](decisions.md#d85) records. `1.0.0-beta.1` and `1.0.0-beta.2` were released before then, tagged `v1.0.0-beta.1` and `v1.0.0-beta.2`, and their packages stay unpublished. `1.0.0-preview.1` is the first release `release.yml` publishes.
 
-The full gate, `./build.ps1 -Full`, packs both and verifies them as consumers install them: each holds exactly the files its list names, the npm package is imported and type-checked in a Node project, and the NuGet package is served by a published application, whose `nexo.js` evaluates a script.
+**Remaining:**
 
-The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare. Cutting a release dates its entry in the [changelog](../CHANGELOG.md) and tags its commit, as [contributing](../CONTRIBUTING.md#cut-a-release) sets out, and its packages are published from that tag.
+1. Publish a placeholder, `@formaui-net/nexo@0.0.0`, deprecated in favour of `@formaui-net/nexo@preview`, since npm takes a trusted publisher only for a package it holds, as [D85](decisions.md#d85) records.
+2. Create the trusted-publishing policies for `release.yml` in the `release` environment: npm's for `@formaui-net/nexo`, and nuget.org's for the account `NUGET_USER` names.
+3. Release `1.0.0-preview.1`.
+
+Both policies, and the placeholder, need the owner's accounts.
 
 **Preview.** Nexo entered the beta at `1.0.0-beta.1`, as [decisions](decisions.md#d27) records, and leaves it for the preview at `1.0.0-preview.1`, the stage [FormaUI Versioning](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) names for a contract that may still change, with the same promise, as [D84](decisions.md#d84) records:
 

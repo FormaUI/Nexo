@@ -2,7 +2,7 @@
 
 Thanks for helping improve Nexo. Bug reports, documentation fixes and code contributions are welcome.
 
-For a small fix, you can open a pull request directly. For a larger change, open an issue first so we can agree on the approach before you spend time implementing it. Until 1.0, Nexo takes fixes rather than features, as [what 1.0 requires](docs/features-status.md#what-1-0-requires) sets out. Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
+For a small fix, you can open a pull request into `dev` directly. For a larger change, open an issue first so we can agree on the approach before you spend time implementing it. Until 1.0, Nexo takes fixes rather than features, as [what 1.0 requires](docs/features-status.md#what-1-0-requires) sets out. Report vulnerabilities privately using [SECURITY.md](SECURITY.md).
 
 ## Set up
 
@@ -57,18 +57,60 @@ Keep each change focused, and follow the surrounding code's conventions. Use `.e
 
 Nexo depends on no domain and no browser: nothing in `src/` imports from outside it, which a test enforces, and its tests run in Node.
 
+A change lands on `dev`, from a branch of its own, `feature/<name>` or `fix/<name>`, as [landing work](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/branches.md#landing-work) sets out; `main` holds the latest release, and advances only by promotion. Write each commit as [FormaUI Versioning's commits](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/commits.md) set out: one purpose, passing the gate, its message a Conventional Commit with no attribution trailer.
+
+<a id="versions-and-releases"></a>
+
+## Versions and releases
+
+Nexo follows [FormaUI Versioning `v1.0.0-preview.1`](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/README.md), the rules every FormaUI project versions, branches, commits, releases and packages by. Nexo states here what those rules leave to a project.
+
+**The public contract,** which the [stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages)' promises cover:
+
+- the language's syntax and semantics, as the [language contract](spec/README.md#the-language) states them;
+- the runtime's API, as the [runtime contract](spec/README.md#the-runtime) states it and `src/nexo.d.ts` declares it;
+- the definition format, the JSON a host and its tools exchange, as [the definition](spec/runtime/definition.md#definition) sets it out.
+
+**The versions,** each declared once, in `src/language/Versions.mjs`:
+
+| Version | Declared as | What carries it | Its history |
+| --- | --- | --- | --- |
+| The package version | `implementation` | Both packages, the bundle, the release's tag and `nexo.info.versions.implementation` | The [changelog](CHANGELOG.md) |
+| The language version | `language` | The language's and the runtime's contracts, as [versions](spec/runtime/versions.md#runtime-versions) set out | The [language history](LANGUAGE-HISTORY.md) |
+| The definition version | `definition` | The definition format | The [language history](LANGUAGE-HISTORY.md), each entry naming it |
+
+**The gates.** The fast gate, `./build.ps1`, runs the tests, the bundle, the package project's build with no warnings and the format check. The full gate, `./build.ps1 -Full`, runs it, then packs both packages and verifies them, as [set up](#set-up) describes.
+
+**The workflows:**
+
+| Workflow | Runs on | What it does |
+| --- | --- | --- |
+| `ci.yml` | Every push but `main`'s, and every pull request | The fast gate, and on a push to `candidate` the full gate, which keeps the packages it verified as its `packages` artifact |
+| `promotion.yml` | A pull request into `main` | The [promotion check](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/releases.md#promotion) |
+| `release.yml` | A `v*` tag's push, in the `release` environment, which only `v*` tags deploy to | The [release check](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/releases.md#the-release-check), then the full gate's packages attached to the tag's GitHub release with their digests, and published through trusted publishing |
+
+**The packages,** neither depending on a package:
+
+| Package | What it holds | Its targets | Its feed |
+| --- | --- | --- | --- |
+| npm, `@formaui-net/nexo` | The ES module sources and their declarations, `src/nexo.d.ts`, with the README, license and notice, as `scripts/packages/npm.files` lists them | ES2022 JavaScript: Node, and browsers as modules | npm, under the dist-tag of its stage, `preview` or `rc`, and `latest` for a stable release |
+| NuGet, `formaui-net.Nexo` | The bundle, `nexo.js`, and its declarations, served at `_content/nexo/`, with the README, license and notice, as `scripts/packages/nuget.files` lists them, and its symbols beside it, as `scripts/packages/nuget-symbols.files` lists them | `net11.0` applications | nuget.org |
+
+The full gate verifies each, as `scripts/Test-Packages.ps1` sets out. The [changelog](CHANGELOG.md) records each release, and the [language history](LANGUAGE-HISTORY.md) each language version, by their own rules.
+
 <a id="cut-a-release"></a>
 
 ## Cut a release
 
-A release is a signed tag on the commit that dates it. The [changelog](CHANGELOG.md) says what each release changed in the implementation, and the [language history](LANGUAGE-HISTORY.md) what each language version changed in the contracts.
+A release is a candidate that passed its full gate, promoted to `main` and tagged there, as [FormaUI Versioning's releases](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/releases.md) set out. Publishing its packages is the step after it.
 
-1. Date the changelog's newest entry by the day of the release, and the language history's newest entry where it reads *Unreleased*.
-2. Pass the gate, `./build.ps1`, and commit.
-3. Tag the commit with a signed tag named for the release, as `git tag -s v1.0.0-beta.1`, and push the tag.
-4. Pack both packages from the tag with `./build.ps1 -Full`, which verifies them as consumers install them, and publish them.
+1. **Set the release on `dev`.** Pause merges unrelated to it, as [stabilizing a candidate](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/branches.md#stabilizing-a-candidate) sets out. Check that `src/language/Versions.mjs` declares the release's version, date the changelog's newest entry by the day of the release, and date the language history's newest entry where it reads *Unreleased*.
+2. **Select the candidate.** Fast-forward `candidate` to `dev`'s tip, `git push origin dev:candidate`. `ci.yml` runs the full gate on it. A fix lands on `dev`, and `candidate` moves to the corrected tip.
+3. **Promote it.** Open a pull request from `candidate` into `main`, which `promotion.yml` checks. Once the check passes, a release signer fast-forwards `main` to it, `git push origin candidate:main`.
+4. **Tag it.** A release signer tags `main`'s commit with an annotated, signed tag, `git tag -s v1.0.0-preview.1 -m "Nexo 1.0.0-preview.1"`, and pushes it, `git push origin v1.0.0-preview.1`. A pushed tag is never moved or deleted.
+5. **Publish it.** The tag's push runs `release.yml`, which publishes both packages. A run that fails runs again for the same tag, and publishes what each feed lacks.
 
-After a release, the next change a host can notice opens the changelog's next entry, and the next change to either contract the language history's.
+After a release, the next change a host can notice opens the changelog's next entry, and the next change to either contract the language history's, as [advancing a version](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#advancing-a-version) sets out.
 
 ## Measure performance
 

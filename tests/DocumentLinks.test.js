@@ -10,6 +10,12 @@ const SKIPPED = new Set(['.git', '.local', '.vs', '.idea', 'artifacts', 'bin', '
 /** A link into Nexo's own repository by its address, as the README gives one for a reader on npm or NuGet: the ref, the file's path in it, and the anchor in that file, if one is given. */
 const OWN_ADDRESS = /^https:\/\/github\.com\/FormaUI\/Nexo\/blob\/([^/]+)\/([^#]+)(?:#(.+))?$/;
 
+/** A link into FormaUI Versioning's documents, by the tag of the release it names. */
+const VERSIONING_ADDRESS = /https:\/\/github\.com\/FormaUI\/Versioning\/blob\/([^/]+)\//g;
+
+/** An action of FormaUI Versioning's a workflow calls, by the commit it pins and the release its comment names. */
+const VERSIONING_ACTION = /uses: FormaUI\/Versioning\/\S+@(\S+) # (\S+)/g;
+
 /** The commits of Nexo's that a record of the past links to, each with what it holds; every other link reaches the documents as this commit holds them. */
 const RECORDED = new Map([
     ['76ddb3f39d58b0fb1327013c2a8c9690a5c4fb1e', 'the tooling draft, before it was withdrawn from main'],
@@ -146,6 +152,18 @@ describe('the links of Nexo\'s documents', () => {
 
         expect(documents.length).toBeGreaterThan(30);
         expect(documents.flatMap(problemsOf)).toEqual([]);
+    });
+
+    it('name one release of FormaUI Versioning, the one Nexo follows: a document by its tag, and a workflow by its full commit, with the tag beside it', () => {
+        const read = path => readFileSync(resolve(repositoryRoot, path), 'utf8');
+        const tags = documentsOf('.').flatMap(file => [...read(file).matchAll(VERSIONING_ADDRESS)].map(([, tag]) => tag));
+        const actions = readdirSync(resolve(repositoryRoot, '.github/workflows')).flatMap(name => [...read(join('.github/workflows', name)).matchAll(VERSIONING_ACTION)].map(([, commit, tag]) => ({ commit, tag })));
+        const [tag] = tags;
+
+        expect(new Set(tags)).toEqual(new Set([tag]));
+        expect(actions.length).toBeGreaterThan(0);
+        expect(new Set(actions.map(({ commit }) => commit)).size).toBe(1);
+        actions.forEach(action => expect(action).toEqual({ commit: expect.stringMatching(/^[0-9a-f]{40}$/), tag }));
     });
 
     it('read a heading\'s anchor as GitHub writes it, a repeated heading\'s numbered', () => {
