@@ -28,7 +28,7 @@ Until 1.0, add no feature: [what 1.0 requires](docs/features-status.md#what-1-0-
 | `src/common/` | Object and array operations independent of the language |
 | `tests/` | Tests mirroring the source folders, run in Node |
 | `benchmarks/` | The benchmark: a billing app in plain JavaScript and in Nexo, timed and measured side by side |
-| `scripts/` | Bundling scripts |
+| `scripts/` | Bundling scripts, and the packages' file lists and verification |
 | `nuget/` | The package project, which distributes the bundle |
 | `spec/` | The specification: `language/` and `runtime/`, one document per subject, indexed by `spec/README.md` |
 | `docs/` | The design, the guide and the status overview |
@@ -78,4 +78,4 @@ Nothing in `src/` imports from outside it or reads a browser global; a test enfo
 
 ## Tests and verification
 
-Add or update a test for every source module changed, asserting exact definitions, error kinds and locations. Measure a change made for speed or memory with the benchmark, in paired runs against the commit before it, and keep it only where it helps. Link a document as this commit holds it; the gate checks every link a document gives, and a link to a past commit is one its test names as a record of the past. Run `./build.ps1`, the gate: the tests, the bundle, the package project's build with no warnings, and the format check.
+Add or update a test for every source module changed, asserting exact definitions, error kinds and locations. Measure a change made for speed or memory with the benchmark, in paired runs against the commit before it, and keep it only where it helps. Link a document as this commit holds it; the gate checks every link a document gives, and a link to a past commit is one its test names as a record of the past. Run `./build.ps1`, the gate: the tests, the bundle, the package project's build with no warnings, and the format check. Run `./build.ps1 -Full`, the full gate, where a change reaches the packages: it packs both and verifies them as consumers install them.

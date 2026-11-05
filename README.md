@@ -146,7 +146,7 @@ const summary = resolution.createEvaluator(bindings, { today: Date.parse('2026-1
 ./build.ps1
 ```
 
-The gate runs the tests, bundles Nexo, builds the NuGet package project with no warnings and checks its formatting. `./publish.ps1` runs it, then packs the npm package `@formaui-net/nexo` and the NuGet package `formaui-net.Nexo` into `artifacts/`.
+The gate runs the tests, bundles Nexo, builds the NuGet package project with no warnings and checks its formatting. The full gate, `./build.ps1 -Full`, runs it, then packs the npm package `@formaui-net/nexo` and the NuGet package `formaui-net.Nexo` into `artifacts/`, and verifies each as a consumer installs it.
 
 ## License
 

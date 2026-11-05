@@ -22,10 +22,16 @@ npm install
 npm test
 ```
 
-Run the full build from the repository root:
+Run the gate from the repository root:
 
 ```powershell
 ./build.ps1
+```
+
+The full gate runs it, then packs both packages into `artifacts/` and verifies them as consumers install them. Each package holds exactly the files its list in `scripts/packages/` names, and each installs outside the repository from a local feed: the npm package into a Node project that imports it and type-checks against it, and the NuGet package into a web application whose published `nexo.js` evaluates a script.
+
+```powershell
+./build.ps1 -Full
 ```
 
 ## Find your way around
@@ -38,7 +44,7 @@ Run the full build from the repository root:
 | `src/common/` | Object and array operations independent of the language |
 | `tests/` | Tests arranged to match the source folders, run in Node with no browser |
 | `benchmarks/` | The benchmark, a billing app in plain JavaScript and in Nexo |
-| `scripts/` | Bundling scripts |
+| `scripts/` | Bundling scripts, and the packages' file lists and verification |
 | `nuget/` | The NuGet package project |
 | `spec/` | The specification: the language's contract in `language/` and the runtime's in `runtime/`, one document per subject, with its index |
 | `docs/` | The design, the guide and the status overview |
@@ -60,7 +66,7 @@ A release is a signed tag on the commit that dates it. The [changelog](CHANGELOG
 1. Date the changelog's newest entry by the day of the release, and the language history's newest entry where it reads *Unreleased*.
 2. Pass the gate, `./build.ps1`, and commit.
 3. Tag the commit with a signed tag named for the release, as `git tag -s v1.0.0-beta.1`, and push the tag.
-4. Pack both packages from the tag with `./publish.ps1`, and publish them.
+4. Pack both packages from the tag with `./build.ps1 -Full`, which verifies them as consumers install them, and publish them.
 
 After a release, the next change a host can notice opens the changelog's next entry, and the next change to either contract the language history's.
 

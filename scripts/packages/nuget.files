@@ -1,0 +1,16 @@
+# The files the NuGet package formaui-net.Nexo holds, by their path in the package; build.ps1 -Full checks the package holds exactly these.
+LICENSE
+NOTICE
+README.md
+[Content_Types].xml
+_rels/.rels
+build/Microsoft.AspNetCore.StaticWebAssets.targets
+build/formaui-net.Nexo.PackageAssets.json
+build/formaui-net.Nexo.targets
+buildMultiTargeting/formaui-net.Nexo.targets
+buildTransitive/formaui-net.Nexo.targets
+formaui-net.Nexo.nuspec
+lib/net11.0/Forma.Nexo.dll
+package/services/metadata/core-properties/nuget.psmdcp
+staticwebassets/nexo.d.ts
+staticwebassets/nexo.js

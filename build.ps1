@@ -1,16 +1,23 @@
 <#
 .SYNOPSIS
-Runs the tests, bundles Nexo, builds the package project, and checks its formatting.
+Runs the gate: the tests, the bundle, the package project's build with no warnings, and the format check; with -Full, packs both packages and verifies them as consumers receive them.
 
 .PARAMETER Clean
 Removes every build output first, so the build starts from nothing.
 
+.PARAMETER Full
+Runs the full gate: the gate, then both packages packed into artifacts/ as a release ships them, each checked against the files its list names and installed into a consumer outside the repository, by scripts/Test-Packages.ps1.
+
 .EXAMPLE
 ./build.ps1 -Clean
+
+.EXAMPLE
+./build.ps1 -Full
 #>
 [CmdletBinding()]
 param(
-    [switch] $Clean
+    [switch] $Clean,
+    [switch] $Full
 )
 
 Set-StrictMode -Version Latest
@@ -72,3 +79,33 @@ try {
 finally {
     Pop-Location
 }
+
+if (-not $Full) {
+    return
+}
+
+# The packages a release publishes: packed afresh, the NuGet package by a build that records its source as a release's does.
+if (Test-Path $artifacts) {
+    Remove-Item $artifacts -Recurse -Force
+}
+
+Push-Location $nuget
+try {
+    Write-Host 'Packing the NuGet package'
+    dotnet pack Forma.Nexo.csproj -c Release -nologo -o $artifacts -p:ContinuousIntegrationBuild=true
+    if ($LASTEXITCODE -ne 0) {
+        throw 'dotnet pack failed.'
+    }
+}
+finally {
+    Pop-Location
+}
+
+Write-Host 'Packing the npm package'
+npm pack $root --pack-destination $artifacts --loglevel=error
+if ($LASTEXITCODE -ne 0) {
+    throw 'npm pack failed.'
+}
+
+$version = [regex]::Match((Get-Content (Join-Path $root 'src' 'language' 'Versions.mjs') -Raw), "implementation = '([^']+)'").Groups[1].Value
+& (Join-Path $root 'scripts' 'Test-Packages.ps1') -Directory $artifacts -Version $version

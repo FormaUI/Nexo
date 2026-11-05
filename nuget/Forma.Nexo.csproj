@@ -46,10 +46,10 @@
         <PackageReleaseNotes>What Nexo $(Version) changed: https://github.com/FormaUI/Nexo/blob/v$(Version)/CHANGELOG.md#v$(Version.Replace('.', '-'))</PackageReleaseNotes>
     </PropertyGroup>
 
-    <!-- A package without the bundle would ship nothing, and one whose bundle answers another version would misreport itself, so packing stops until publish.ps1 has made the bundle of this version. -->
+    <!-- A package without the bundle would ship nothing, and one whose bundle answers another version would misreport itself, so packing stops until build.ps1 has made the bundle of this version. -->
     <Target Name="EnsureBundle" BeforeTargets="Pack">
-        <Error Condition="!Exists('$(MSBuildProjectDirectory)\wwwroot\nexo.js')" Text="wwwroot/nexo.js is missing; run ./publish.ps1, which bundles Nexo and packs it." />
-        <Error Condition="!$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\wwwroot\nexo.js').Contains('&quot;$(Version)&quot;'))" Text="wwwroot/nexo.js answers another version than $(Version); run ./publish.ps1, which bundles Nexo of this version and packs it." />
+        <Error Condition="!Exists('$(MSBuildProjectDirectory)\wwwroot\nexo.js')" Text="wwwroot/nexo.js is missing; run ./build.ps1 -Full, which bundles Nexo and packs it." />
+        <Error Condition="!$([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)\wwwroot\nexo.js').Contains('&quot;$(Version)&quot;'))" Text="wwwroot/nexo.js answers another version than $(Version); run ./build.ps1 -Full, which bundles Nexo of this version and packs it." />
     </Target>
 
 </Project>

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "dgSpecHash": "x/un2+9k1y8=",
+  "success": false,
+  "projectFilePath": "c:\\Users\\eyal\\Development\\Projects\\formaui-net.Nexo\\scripts\\packages\\nuget-consumer\\Consumer.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1105",
+      "level": "Error",
+      "message": "Unable to read project information for 'Consumer': '[]' is not a valid version string.",
+      "projectPath": "c:\\Users\\eyal\\Development\\Projects\\formaui-net.Nexo\\scripts\\packages\\nuget-consumer\\Consumer.csproj",
+      "filePath": "c:\\Users\\eyal\\Development\\Projects\\formaui-net.Nexo\\scripts\\packages\\nuget-consumer\\Consumer.csproj",
+      "targetGraphs": []
+    }
+  ]
+}

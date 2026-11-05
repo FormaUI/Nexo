@@ -9,7 +9,7 @@ This guide shows how a host uses Nexo, by example: read text, declare a domain a
 | npm, `@formaui-net/nexo` | `import { nexo, NexoError } from '@formaui-net/nexo';` |
 | NuGet, `formaui-net.Nexo` | The bundle is served at `_content/nexo/nexo.js` |
 
-Nexo is one ES module with its type declarations. Neither package is published yet; `./publish.ps1` packs both into `artifacts/`.
+Nexo is one ES module with its type declarations. Neither package is published yet; `./build.ps1 -Full` packs both into `artifacts/`.
 
 ## Read and write text
 

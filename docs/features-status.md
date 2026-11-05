@@ -135,7 +135,7 @@ References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design
 | npm: `@formaui-net/nexo` | The ES module sources and their type declarations, `src/nexo.d.ts` |
 | NuGet: `formaui-net.Nexo` | `nexo.js` and `nexo.d.ts` served at `_content/nexo/` |
 
-Publish both from the tag, and test them as consumers install them: NuGet in a published application, and npm installed, bundled, and loaded in Chromium.
+The full gate, `./build.ps1 -Full`, packs both and verifies them as consumers install them: each holds exactly the files its list names, the npm package is imported and type-checked in a Node project, and the NuGet package is served by a published application, whose `nexo.js` evaluates a script.
 
 The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare. Cutting a release dates its entry in the [changelog](../CHANGELOG.md) and tags its commit, as [contributing](../CONTRIBUTING.md#cut-a-release) sets out, and its packages are published from that tag.
 
