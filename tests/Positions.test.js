@@ -67,9 +67,9 @@ describe('positions', () => {
         });
 
         it('writes them as canonical text, each without spaces, grouping an operator expression and a negative offset, which reads back as the same definition', () => {
-            for (const [text, canonical] of [['xs[ 1 .. 4 ]', 'xs[1..4]'], ['xs[ .. ]', 'xs[..]'], ['xs[..^ 1]', 'xs[..^1]'], ['xs[(n + 1)..(n * 2)]', 'xs[(n + 1)..(n * 2)]'], ['xs[^(n + 1)]', 'xs[^(n + 1)]'], ['xs[^(-1)]', 'xs[^(-1)]'], ['let m = (1..2)\nreturn m', 'let m = 1..2\nreturn m']]) {
+            for (const [text, canonical, compact = canonical] of [['xs[ 1 .. 4 ]', 'xs[1..4]'], ['xs[ .. ]', 'xs[..]'], ['xs[..^ 1]', 'xs[..^1]'], ['xs[(n + 1)..(n * 2)]', 'xs[(n + 1)..(n * 2)]'], ['xs[^(n + 1)]', 'xs[^(n + 1)]'], ['xs[^(-1)]', 'xs[^(-1)]'], ['let m = (1..2)\nreturn m', 'let m = 1..2\n\nreturn m', 'let m = 1..2\nreturn m']]) {
                 expect(nexo.format(text)).toBe(canonical);
-                expect(nexo.quote(text)).toBe(canonical);
+                expect(nexo.quote(text)).toBe(compact);
                 expect(nexo.parse(canonical)).toEqual(nexo.parse(text));
             }
         });

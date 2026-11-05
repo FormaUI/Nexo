@@ -183,7 +183,7 @@ describe('host calls', () => {
         const definition = nexo.parse('let target = 21\nreturn thermostat:hold({ target = target })');
 
         expect(nexo.validate(definition)).toEqual(definition);
-        expect(nexo.format(definition)).toBe('let target = 21\nreturn thermostat:hold({ target = target })');
+        expect(nexo.format(definition)).toBe('let target = 21\n\nreturn thermostat:hold({ target = target })');
     });
 });
 

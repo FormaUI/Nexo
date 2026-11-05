@@ -397,11 +397,21 @@ export class DefinitionWriter {
         return `${header}\n${INDENTATION.repeat(level + 1)}${DefinitionWriter.#bodyText(body, level + 1)}\n${INDENTATION.repeat(level)}end`;
     }
 
-    /** A body's locals and the `return` that gives its result, each on a line of the level's indentation, as each starts a line of its own. */
+    /**
+     * A body's locals and the `return` that gives its result, each on a line of the level's indentation, as each starts a line of its own, and, laid out on lines, an empty line between the locals and the `return`, so
+     * the result stands apart from what it is computed from.
+     */
     static #bodyText(node, level) {
-        const entries = [...node.locals.map(local => `let ${local.name} = ${DefinitionWriter.#write(local.value, level)}`), `return ${DefinitionWriter.#write(node.result, level)}`];
+        const lineBreak = `\n${INDENTATION.repeat(level)}`;
+        const locals = node.locals.map(local => `let ${local.name} = ${DefinitionWriter.#write(local.value, level)}`);
+        const result = `return ${DefinitionWriter.#write(node.result, level)}`;
 
-        return entries.join(`\n${INDENTATION.repeat(level)}`);
+        if (locals.length === 0) {
+            return result;
+        }
+
+        // The empty line holds no indentation, so a line of canonical text never ends in a space.
+        return `${locals.join(lineBreak)}${DefinitionWriter.#isCompact ? '' : '\n'}${lineBreak}${result}`;
     }
 
     /**

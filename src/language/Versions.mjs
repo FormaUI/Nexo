@@ -4,10 +4,10 @@
 
 export class Versions {
     /** The implementation's release version, which the packages and the bundle carry. */
-    static implementation = '1.0.0-beta.2';
+    static implementation = '1.0.0-beta.3';
 
     /** The language specification version the implementation follows. */
-    static language = '1.0.0-beta.41';
+    static language = '1.0.0-beta.42';
 
     /** The definition format version the implementation supports. */
     static definition = 38;

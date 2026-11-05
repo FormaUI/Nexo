@@ -203,6 +203,7 @@ Strings come in two families: a **string**, written in double quotes, whose back
 
 ```nexo
 let path = 'C:\Users\Eyal\'
+
 return {
     path = path,
     pattern = '\d{3}-\d{2}',
@@ -379,6 +380,7 @@ The gaps around a binary operator, arithmetic, a comparison, an equality, `and`,
 ```nexo
 let count = room.devices
     .count + 1
+
 return count
 ```
 
@@ -435,10 +437,12 @@ Each of these starts on a line of its own, with no earlier code on that line:
 let fallback = 0
 let level = if metered then
     let reading = sensor.temperature
+
     return reading ?? fallback
 else
     return fallback
 end
+
 return level
 ```
 

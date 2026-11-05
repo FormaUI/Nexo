@@ -61,10 +61,10 @@ describe('nexo', () => {
 
     it('reads a lexical reference before any identifier, the local or the field of its name, and writes one only where the identifier alone means something else', () => {
         expect(createImportingRegistry().resolve('let total = 2\nreturn @total + total', {}).createEvaluator({}).evaluate().value).toBe(4);
-        expect(nexo.format('let total = 2\nreturn @total')).toBe('let total = 2\nreturn total');
-        expect(nexo.format('let home = 2\nreturn @home')).toBe('let home = 2\nreturn home');
-        expect(nexo.format('import home\nlet home = 2\nreturn @home')).toBe('import home\n\nlet home = 2\nreturn @home');
-        expect(nexo.format('let home = 2\nreturn @home', { imports: ['home'] })).toBe('let home = 2\nreturn @home');
+        expect(nexo.format('let total = 2\nreturn @total')).toBe('let total = 2\n\nreturn total');
+        expect(nexo.format('let home = 2\nreturn @home')).toBe('let home = 2\n\nreturn home');
+        expect(nexo.format('import home\nlet home = 2\nreturn @home')).toBe('import home\n\nlet home = 2\n\nreturn @home');
+        expect(nexo.format('let home = 2\nreturn @home', { imports: ['home'] })).toBe('let home = 2\n\nreturn @home');
         expect(errorThrownBy(() => nexo.parse('@room'))).toMatchObject({ kind: 'structure', message: expect.stringContaining("No local, object field, conditional binding or function parameter named 'room' is in scope. Use '~room' to read the script parameter") });
         expect(errorThrownBy(() => nexo.parse('@ room'))).toMatchObject({ kind: 'syntax', message: expect.stringContaining("An identifier follows '@' directly") });
     });

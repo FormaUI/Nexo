@@ -7,8 +7,10 @@ A **function** names a calculation a script repeats. A script declares its own i
 ```nexo
 let shortfall = function(place, wanted)
     let warmth = place.climate?.temperature ?? 0
+
     return wanted - warmth
 end
+
 return {
     living = shortfall(living, 21),
     bedroom = shortfall(bedroom, 18)
@@ -41,6 +43,7 @@ let answer = () => 42
 let isActive = device => device.active
 let isLit = (light) => light.brightness > 0
 let byPower = (left, right) => left.power - right.power
+
 return answer()
 ```
 
@@ -75,6 +78,7 @@ let shown = isActive
 let apply = function(test, device) test(device) end
 let getTest = () => shown
 let test = getTest()
+
 return apply(test, lamp)
 ```
 
@@ -93,6 +97,7 @@ Reading a module's function through the module's [namespace](modules.md#namespac
 
 ```nexo
 let find = Home.device
+
 return {
     lit = room.anyDevice(Home.ping),
     answering = room.devices.where(Home.ping).count,

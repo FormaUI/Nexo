@@ -756,8 +756,10 @@ Simple expressions include values, references, arithmetic, comparisons, logical 
 let calculate = function(degrees, offset) degrees - offset end
 let adjusted = do
     let doubled = (sensor.temperature ?? 0) * 2
+
     return doubled + 1
 end
+
 return calculate(adjusted, if metered then 10 else 20 end)
 ```
 

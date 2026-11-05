@@ -1207,3 +1207,19 @@ Forty decisions were taken while implementing the declarations, member selection
   - An evaluation that waits for the samples, asynchronous, which would mix states read at different moments in one result, decide too late for a host acting in an event's dispatch, and answer only the first sample of a value that keeps changing. A host's own promise waits on top of `isPending`, as DOMQL's watch does.
   - An empty `pending` on every result, which would make a record for each result rather than share it.
   - A `cancel()`: nothing runs once `evaluate` returns, and what a pending read waits for is its host's observation, which its host stops.
+
+<a id="d83"></a>
+
+## D83 — Canonical text sets a body's result apart from its locals
+
+*November 5, 2026*
+
+- **Kind:** Runtime contract, approved.
+- **Decision:** Canonical text writes an empty line between a body's last local and its `return`, at every level: a script's body, a `do` block's, a function's and a conditional branch's. A body with no locals writes its `return` alone, and the empty line holds no indentation. Compact text, `quote`'s, writes none, as it writes none after the imports. The language advances to `1.0.0-beta.42`.
+- **Why:**
+  - The owner's call: a body's result is what it gives, and its locals are how it gets there, so a reader looking for the result finds it at a glance, as the README's billing script shows.
+  - Canonical text already sets the imports apart from the body with an empty line, so the result is set apart from the locals the same way.
+  - An empty line with no indentation keeps every line of canonical text free of trailing spaces.
+- **Declined:**
+  - Keeping the empty lines a source writes between its locals: canonical text keeps no layout a source was written in, so one definition has one text. `nexo.tooling.format` keeps a source's layout.
+  - The empty line in compact text, which quotes a script in a diagnostic on as few lines as its syntax allows.

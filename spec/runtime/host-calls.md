@@ -49,6 +49,7 @@ A projection reads what the call was prepared with, and evaluates the rest anew:
 ```nexo
 let room = sensor.room
 let occupied = room.occupied
+
 return sensor.on("motion") { at = it.at, isOccupied = room.occupied, wasOccupied = occupied }
 ```
 

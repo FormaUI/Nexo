@@ -78,7 +78,7 @@ describe('the README', () => {
         expect(refusalOf(script.replace('owed > customer.creditLimit', 'customer.name > customer.creditLimit'))).toMatchObject({
             kind: 'validation',
             code: 'NEXO3078',
-            location: { line: 9, column: 17 },
+            location: { line: 10, column: 17 },
         });
     });
 

@@ -69,20 +69,21 @@ describe('canonical text', () => {
         }
     });
 
-    it('writes a body that uses return on lines of its own, a block holding one in block form, laid out and compact alike', () => {
-        const body = 'let a = 1\nreturn a';
-        const block = 'do\n    let a = 1\n    return a\nend';
-        const local = 'let f = function(x)\n    let y = x\n    return y\nend\nreturn f(1)';
+    it('writes a body that uses return on lines of its own, a block holding one in block form, laid out with a blank line before its return and compact without', () => {
+        const body = 'let a = 1\n\nreturn a';
+        const block = 'do\n    let a = 1\n\n    return a\nend';
+        const local = 'let f = function(x)\n    let y = x\n\n    return y\nend\n\nreturn f(1)';
 
-        expect([nexo.format(body), nexo.quote(body)]).toEqual([body, body]);
-        expect([nexo.format('do\nlet a = 1\nreturn a\nend'), nexo.quote('do\nlet a = 1\nreturn a\nend')]).toEqual([block, block]);
-        expect([nexo.format(local), nexo.quote(local)]).toEqual([local, local]);
+        expect([nexo.format(body), nexo.quote(body)]).toEqual([body, 'let a = 1\nreturn a']);
+        expect([nexo.format('do\nlet a = 1\nreturn a\nend'), nexo.quote('do\nlet a = 1\nreturn a\nend')]).toEqual([block, 'do\n    let a = 1\n    return a\nend']);
+        expect([nexo.format(local), nexo.quote(local)]).toEqual([local, 'let f = function(x)\n    let y = x\n    return y\nend\nreturn f(1)']);
+        expect(nexo.format('do 1 end')).toBe('do 1 end');
     });
 
     it('writes a function expression or a do block whose one expression spans lines in block form, and one whose expression does not on one line', () => {
-        const spanning = 'let f = function(x)\n    if x then\n        let y = 1\n        return y\n    else\n        return 0\n    end\nend\nreturn f(true)';
+        const spanning = 'let f = function(x)\n    if x then\n        let y = 1\n\n        return y\n    else\n        return 0\n    end\nend\n\nreturn f(true)';
 
-        expect([nexo.format(spanning), nexo.quote(spanning)]).toEqual([spanning, spanning]);
+        expect([nexo.format(spanning), nexo.quote(spanning)]).toEqual([spanning, 'let f = function(x)\n    if x then\n        let y = 1\n        return y\n    else\n        return 0\n    end\nend\nreturn f(true)']);
         expect(nexo.quote('let f = function(x) x end\nreturn do f(1) end')).toBe('let f = function(x) x end\nreturn do f(1) end');
     });
 
@@ -94,16 +95,17 @@ describe('canonical text', () => {
     });
 
     it('propagates block form outward from a body nested in an object, a call and a conditional, continuing after the end on its own line', () => {
-        const inner = 'do\n    let x = 1\n    return x\nend';
-        const object = '{\n    a = do\n        let x = 1\n        return x\n    end,\n    b = 2\n}';
+        const inner = 'do\n    let x = 1\n\n    return x\nend';
+        const object = '{\n    a = do\n        let x = 1\n\n        return x\n    end,\n    b = 2\n}';
         const call = 'f(\n    if c then\n        {\n            a = 1,\n            b = 2\n        }\n    else\n        null\n    end,\n    2\n)';
-        const conditional = 'if c then\n    do\n        let x = 1\n        return x\n    end\nelse\n    0\nend';
+        const conditional = 'if c then\n    do\n        let x = 1\n\n        return x\n    end\nelse\n    0\nend';
         const grouped = `(${inner}\n) + 2`;
+        const compact = text => text.replaceAll('\n\n', '\n');
 
-        expect([nexo.format(object), nexo.quote(object)]).toEqual([object, object]);
+        expect([nexo.format(object), nexo.quote(object)]).toEqual([object, compact(object)]);
         expect([nexo.format(call), nexo.quote(call)]).toEqual([call, 'f(if c then { a = 1, b = 2 } else null end, 2)']);
-        expect([nexo.format(conditional), nexo.quote(conditional)]).toEqual([conditional, conditional]);
-        expect([nexo.format(grouped), nexo.quote(grouped)]).toEqual([grouped, grouped]);
+        expect([nexo.format(conditional), nexo.quote(conditional)]).toEqual([conditional, compact(conditional)]);
+        expect([nexo.format(grouped), nexo.quote(grouped)]).toEqual([grouped, compact(grouped)]);
         expect(nexo.quote('{\n    a = 1,\n    b = 2\n}')).toBe('{ a = 1, b = 2 }');
     });
 

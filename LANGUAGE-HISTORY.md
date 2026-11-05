@@ -13,6 +13,24 @@ Each entry says what its version breaks:
 - **From `1.0.0-beta.1` until the first release candidate,** a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and DOMQL and Forma move with it. A version that breaks what the one before it allowed says, beside each break, how a host or a script migrates.
 - **From `1.0.0-rc.1` on,** nothing breaks before 2.0, as [D75](docs/decisions.md#d75) records.
 
+<a id="v1-0-0-beta-42"></a>
+
+## `1.0.0-beta.42`
+
+*Unreleased · definition format 38*
+
+```js
+nexo.format('let owed = 3\nreturn owed * 2');        // 'let owed = 3\n\nreturn owed * 2'; 'let owed = 3\nreturn owed * 2' before
+nexo.format('do\n    let x = 1\n    return x\nend'); // 'do\n    let x = 1\n\n    return x\nend'; the text it was given before
+nexo.quote('let owed = 3\nreturn owed * 2');         // 'let owed = 3\nreturn owed * 2', as before
+```
+
+**Runtime**
+
+- [Canonical text](spec/runtime/definition.md#bodies-definition-and-canonical-text) writes an empty line between a body's last local and its `return`, at every level, so a body's result stands apart from what it is computed from, where `return` followed the last local, as [D83](docs/decisions.md#d83) records. Compact text, `quote`'s, writes none, as it writes none after the imports.
+
+**Breaking:** nothing a script relies on. The canonical text of a body with locals changes, and reads back as the same definition. A host that keeps canonical text to compare formats it again.
+
 <a id="v1-0-0-beta-41"></a>
 
 ## `1.0.0-beta.41`

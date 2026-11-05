@@ -10,6 +10,7 @@ export const ACCOUNT_SUMMARY = `import Billing
 let outstanding = customer.invoices.where(not it.paid)
 let lateFee = invoice => if invoice.daysOverdue > 30 then invoice.amount * 0.05 else 0 end
 let owed = outstanding.sum(it.amount + lateFee(it))
+
 return {
     account = customer.name,
     amountDue = owed,
@@ -31,6 +32,7 @@ let accounts = customers {
     owed = it.invoices.where(not it.paid).sum(it.amount + lateFee(it)),
     limit = it.creditLimit
 }
+
 return {
     accountCount = accounts.count,
     totalOwed = accounts.sum(it.owed),

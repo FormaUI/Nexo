@@ -2,11 +2,11 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.41` and definition version 38, the forty-first beta.** What remains is publishing [the release](#release), `1.0.0-beta.2`, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-beta.42` and definition version 38, the forty-second beta.** What remains is publishing [the release](#release), `1.0.0-beta.2`, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
-| Language | `1.0.0-beta.41` | `1.0.0-beta.41` |
+| Language | `1.0.0-beta.42` | `1.0.0-beta.42` |
 | Definition format | 38 | 38 |
 
 The bundle and type declarations are built. npm and NuGet packages are packed locally but unpublished. Every example the specification gives resolves against [the examples' vocabulary](../spec/language/examples-vocabulary.md) and evaluates in the gate, a host call's preparation and projection among them, and each example the specification gives as an error is refused. The README's example runs as it is written, against the vocabulary its own JavaScript declares, as [decisions](decisions.md#d24) records, and the [embedding guide](embedding-guide.md)'s run in order as a host writes them, each value they state checked, as [decisions](decisions.md#d68) records. Every link a document gives reaches its document and anchor, as [decisions](decisions.md#d69) records.
@@ -87,7 +87,7 @@ Each feature, the contract that states it, its state in the implementation, and 
 | Extensions a module declares | [Extensions](../spec/runtime/extensions.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | Observation types and targets | [Observations](../spec/runtime/observations.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | Type selectors' keys as mappings | [Type selectors](../spec/runtime/type-selectors.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
-| The definition, its structural validation and canonical text | [Definition](../spec/runtime/definition.md) | Implemented | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
+| The definition, its structural validation and canonical text | [Definition](../spec/runtime/definition.md) | Implemented, a body's `return` set apart from its locals by an empty line, as [D83](decisions.md#d83) records | [before `alpha.33`](../LANGUAGE-HISTORY.md#before-v1-0-0-alpha-33) |
 | The error object, its factories and locations | [Errors](../spec/runtime/errors.md) | Implemented | [`alpha.34`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-34) |
 | The host API named for Nexo | [Hosting Nexo](../spec/runtime/hosting.md) | Implemented | [`alpha.39`](../LANGUAGE-HISTORY.md#v1-0-0-alpha-39) |
 | A tolerant reading that collects diagnostics without throwing | [Tooling](#tooling) | Follows 1.0, and waits for its design | — |

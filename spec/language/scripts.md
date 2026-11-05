@@ -8,6 +8,7 @@ Here a host binds the living room as the script parameter `room`, and the script
 
 ```nexo
 let devices = room.devices
+
 return {
     name = room.name,
     active = devices.where(it.active).count,
@@ -147,10 +148,12 @@ A script is a body. So is a `do … end` block, a conditional branch, and a loca
 ```nexo
 let warmth = sensor.temperature ?? 0
 let margin = 1.5
+
 return {
     cold = warmth + margin < 19,
     doubled = do
         let half = warmth / 2
+
         return half * 4
     end
 }
