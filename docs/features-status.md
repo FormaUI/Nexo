@@ -2,7 +2,7 @@
 
 ## Current state
 
-**The language and its runtime are implemented as the specification describes them, language `1.0.0-preview.1` and definition version 38, the first preview.** What remains is [releasing](#release) `1.0.0-preview.1`, the first release published, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
+**The language and its runtime are implemented as the specification describes them, language `1.0.0-preview.1` and definition version 38, the first preview.** What remains is publishing [the release](#release), `1.0.0-preview.1`, and [what 1.0 requires](#what-1-0-requires), which no new feature comes before, and [no decision is open](#open-decisions); DOMQL, Nexo's first host, has [migrated](#domqls-migration) to them. [Tooling](#tooling) follows 1.0.
 
 | Version | Implementation | Specification |
 | --- | --- | --- |
@@ -20,7 +20,7 @@ The [specification](../spec/README.md) defines the contract; the [design](nexo-d
 | Work | State |
 | --- | --- |
 | [DOMQL's migration](#domqls-migration) | Done: DOMQL migrated at `1.0.0-beta.3` |
-| [Release](#release) | `1.0.0-preview.1` is next, the first release published; `1.0.0-beta.1` and `1.0.0-beta.2` were released unpublished |
+| [Release](#release) | `1.0.0-preview.1` is released; publishing it waits for npm's placeholder and the feeds' trusted-publishing policies |
 | [What 1.0 requires](#what-1-0-requires) | Five requirements, one met in part |
 | [Tooling](#tooling) | Follows 1.0, and waits for its design |
 
@@ -130,13 +130,13 @@ References: [Syntax tree](nexo-design.md#the-syntax-tree), [tooling](nexo-design
 
 **Packages.** Both carry the implementation version `src/language/Versions.mjs` declares, and [contributing](../CONTRIBUTING.md#versions-and-releases) lists them, with what each holds and how the full gate verifies it. The gate holds the packages, the README and `nexo.info.versions` to the versions the sources declare.
 
-**Releases.** Nexo releases as [cutting a release](../CONTRIBUTING.md#cut-a-release) sets out, by FormaUI Versioning's path, as [D85](decisions.md#d85) records. `1.0.0-beta.1` and `1.0.0-beta.2` were released before then, tagged `v1.0.0-beta.1` and `v1.0.0-beta.2`, and their packages stay unpublished. `1.0.0-preview.1` is the first release `release.yml` publishes.
+**Releases.** Nexo releases as [cutting a release](../CONTRIBUTING.md#cut-a-release) sets out, by FormaUI Versioning's path, as [D85](decisions.md#d85) records. `1.0.0-beta.1` and `1.0.0-beta.2` were released before then, tagged `v1.0.0-beta.1` and `v1.0.0-beta.2`, and their packages stay unpublished. `1.0.0-preview.1` is released, tagged `v1.0.0-preview.1`, and is the first release `release.yml` publishes.
 
 **Remaining:**
 
 1. Publish a placeholder, `@formaui-net/nexo@0.0.0`, deprecated in favour of `@formaui-net/nexo@preview`, since npm takes a trusted publisher only for a package it holds, as [D85](decisions.md#d85) records.
 2. Create the trusted-publishing policies for `release.yml` in the `release` environment: npm's for `@formaui-net/nexo`, and nuget.org's for the account `NUGET_USER` names.
-3. Release `1.0.0-preview.1`.
+3. Run `release.yml` again for `v1.0.0-preview.1`, which publishes both packages.
 
 Both policies, and the placeholder, need the owner's accounts.
 
@@ -155,7 +155,7 @@ Both policies, and the placeholder, need the owner's accounts.
 | --- | --- | --- |
 | **Contracts settled.** No decision is open, no gap stands between the specification and the code, and each [deferred](#deferred) item is shown to land without a break. | What may still change after 1.0 must be able to change compatibly. | Holds: no decision is open, no gap stands, and each [deferred](#deferred) item lands as an addition, rounding to digits as an optional argument of `round()` and wrapping canonical text as an option. |
 | **Robust against any text.** A fuzzing test in the gate reads, resolves and evaluates generated scripts, and meets no failure but a `NexoError`: no hang, no stack overflow, no escaped `TypeError`. | The maintenance sweep, `1.0.0-beta.21` to `1.0.0-beta.40`, found such faults by reading the code. | Not started. |
-| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-preview.1` is the first release to be published. |
+| **Published.** A release is on npm and NuGet, tested as consumers install it. | A host pins a release it can install. | `1.0.0-preview.1` is released; publishing it waits for the feeds' trusted-publishing policies. |
 | **Used for real.** DOMQL runs on a published release, and Forma's own scripts run as DOMQL queries on it. | A contract is settled by the hosts that rely on it. | DOMQL builds against the release `1.0.0-beta.2`, from its tag, and replacing Forma's scripts is planned. |
 | **A release candidate that breaks nothing.** `1.0.0-rc.1` is released once the rest hold, and DOMQL and Forma take it with no change but its version. `1.0.0` is its contract, unchanged. | It is the last check that nothing still needs to break. | Waits for the rest. |
 

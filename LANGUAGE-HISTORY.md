@@ -17,7 +17,7 @@ Each entry says what its version breaks:
 
 ## `1.0.0-preview.1`
 
-*Unreleased · definition format 38*
+*November 5, 2026 · definition format 38*
 
 ```js
 nexo.format('let owed = 3\nreturn owed * 2');        // 'let owed = 3\n\nreturn owed * 2'; 'let owed = 3\nreturn owed * 2' before

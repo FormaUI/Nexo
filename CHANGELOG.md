@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-preview.1`
 
-*Unreleased · language `1.0.0-preview.1` · definition format 38*
+*November 5, 2026 · language `1.0.0-preview.1` · definition format 38*
 
 - The first preview, which leaves the beta with the same promise, as [FormaUI Versioning's stages](https://github.com/FormaUI/Versioning/blob/v1.0.0-preview.1/docs/versions.md#stages) name it: the packages and the language take `1.0.0-preview.1`, newer than every beta.
 - Runs language `1.0.0-preview.1`, as the [language history](LANGUAGE-HISTORY.md#v1-0-0-preview-1) sets out: `nexo.format` writes an empty line before a body's `return` where locals come before it.
