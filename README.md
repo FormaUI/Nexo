@@ -52,7 +52,16 @@ What the example shows:
 - **One readable place.** Filtering, the total, the credit check and the shape of the result are in one script, rather than spread through application code.
 - **Plain data out.** The result has the shape the script writes, ready to send, store or compare.
 
-## Why embed Nexo
+## Why Nexo
+
+Applications often need to let people express calculations, rules and structured results in the application's own terms. Nexo makes that a contract between the application and its scripts:
+
+- the application declares the vocabulary, and Nexo checks each script against it before anything runs;
+- evaluation computes and shapes data, and produces it immutable;
+- a change a script asks for is a request the application carries out, never a side effect of reading;
+- the application sees what scripts use, from their declarations before they run and from hooks as they evaluate.
+
+The billing example shows each part:
 
 | Strength | Why it matters |
 | --- | --- |
@@ -63,6 +72,10 @@ What the example shows:
 | An explicit host boundary | The script reads only the `customer` the application binds, as a frozen copy, through members `Billing` and Nexo declare. `daysOverdue` runs the application's code, and nothing the script does changes the application's data. |
 | Definitions as data, with canonical text | `nexo.parse` gives the script as a JSON definition to store or inspect, and `nexo.format` gives the text above back from it, so a definition a tool generates reads as a script written by hand. |
 | Reads reported as it evaluates | Hooks the application gives an evaluation are told of each member it invokes, `daysOverdue` among them, so the application knows what the summary read. Each member also declares how it changes: `daysOverdue` is `unobserved`, since nothing signals that a day has passed, so when to evaluate again is the application's choice. |
+
+**Why a language of its own.** An application could embed a general-purpose scripting language instead. It would then have to build the restrictions, the checking and the integration itself. Nexo is designed so they hold together, in the language and in its runtime. That is a deliberate choice, and maintaining a language is its cost.
+
+**When plain code is simpler.** If the application's own developers write the logic, and nothing has to be checked against a vocabulary, kept as data or supervised, code in the application needs no language.
 
 ## Run it
 
