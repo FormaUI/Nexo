@@ -73,7 +73,9 @@ The billing example shows each part:
 | Definitions as data, with canonical text | `nexo.parse` gives the script as a JSON definition to store or inspect, and `nexo.format` gives the text above back from it, so a definition a tool generates reads as a script written by hand. |
 | Reads reported as it evaluates | Hooks the application gives an evaluation are told of each member it invokes, `daysOverdue` among them, so the application knows what the summary read. Each member also declares how it changes: `daysOverdue` is `unobserved`, since nothing signals that a day has passed, so when to evaluate again is the application's choice. |
 
-**Why a language of its own.** An application could embed a general-purpose scripting language instead. It would then have to build the restrictions, the checking and the integration itself. Nexo is designed so they hold together, in the language and in its runtime. That is a deliberate choice, and maintaining a language is its cost.
+**Why a language of its own.** Nexo began as [DOMQL](https://github.com/FormaUI/DOMQL)'s query language. As it grew, it became a project of its own, so it could take its own direction and evolve on its own. DOMQL now declares the DOM to it as a module, as any application declares its vocabulary.
+
+An application could embed a general-purpose scripting language instead. It would then have to build the restrictions, the checking and the integration itself. Nexo is designed so they hold together, in the language and in its runtime. That is a deliberate choice, and maintaining a language is its cost.
 
 **When plain code is simpler.** If the application's own developers write the logic, and nothing has to be checked against a vocabulary, kept as data or supervised, code in the application needs no language.
 
