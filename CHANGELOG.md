@@ -5,6 +5,14 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 - **An entry is dated when its release is cut,** and reads *Unreleased* until then. [Cutting a release](CONTRIBUTING.md#cut-a-release) tags its commit, and its packages are published from that tag.
 - **A change a host can notice** is listed in the newest entry while it is unreleased. Once it is released, the change opens the next version's entry, and the sources declare that version in the same commit.
 
+<a id="v1-0-0-preview-2"></a>
+
+## `1.0.0-preview.2`
+
+*Unreleased · language `1.0.0-preview.1` · definition format 38*
+
+- The README, which both packages carry, says how to install Nexo, why it exists and where it comes from, and no longer says the packages are unpublished. Nothing else changes but the version the packages and `nexo.info.versions.implementation` report.
+
 <a id="v1-0-0-preview-1"></a>
 
 ## `1.0.0-preview.1`

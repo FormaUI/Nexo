@@ -79,6 +79,22 @@ An application could embed a general-purpose scripting language instead. It woul
 
 **When plain code is simpler.** If the application's own developers write the logic, and nothing has to be checked against a vocabulary, kept as data or supervised, code in the application needs no language.
 
+## Install
+
+From npm, as ES modules with their TypeScript declarations, which a module imports as `import { nexo } from '@formaui-net/nexo'`:
+
+```sh
+npm install @formaui-net/nexo@preview
+```
+
+From NuGet, as one bundle, which a .NET web application serves at `_content/nexo/nexo.js`:
+
+```sh
+dotnet add package formaui-net.Nexo --prerelease
+```
+
+Until 1.0, npm's `latest` tag holds a deprecated placeholder, so install `@preview`, as above.
+
 ## Run it
 
 The application declares its vocabulary as a module, binds its data and evaluates the script. `script` holds the script's text above:
@@ -141,7 +157,7 @@ const summary = resolution.createEvaluator(bindings, { today: Date.parse('2026-1
 
 ## Availability
 
-> **Preview.** Until the first release candidate, a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and a version that breaks what the one before it allowed says how to migrate; from `1.0.0-rc.1` on, nothing breaks before 2.0. Neither package is published yet: build them locally, as [Build](#build) shows, to try Nexo. The implementation, `1.0.0-preview.1`, implements language version `1.0.0-preview.1`. [The status overview](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) says what is implemented, what remains, and [what 1.0 requires](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md#what-1-0-requires).
+> **Preview.** Until the first release candidate, a decision may be replaced where a host's experience, correctness or a measured cost justifies it, and a version that breaks what the one before it allowed says how to migrate; from `1.0.0-rc.1` on, nothing breaks before 2.0. Both packages are published as previews, as [Install](#install) shows. The implementation, `1.0.0-preview.2`, implements language version `1.0.0-preview.1`. [The status overview](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md) says what is implemented, what remains, and [what 1.0 requires](https://github.com/FormaUI/Nexo/blob/main/docs/features-status.md#what-1-0-requires).
 
 ## Documents
 

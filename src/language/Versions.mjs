@@ -4,7 +4,7 @@
 
 export class Versions {
     /** The implementation's release version, which the packages and the bundle carry. */
-    static implementation = '1.0.0-preview.1';
+    static implementation = '1.0.0-preview.2';
 
     /** The language specification version the implementation follows. */
     static language = '1.0.0-preview.1';
