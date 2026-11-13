@@ -9,7 +9,7 @@ Each release of Nexo's packages, newest first. The npm package `@formaui-net/nex
 
 ## `1.0.0-preview.2`
 
-*Unreleased · language `1.0.0-preview.1` · definition format 38*
+*November 13, 2026 · language `1.0.0-preview.1` · definition format 38*
 
 - The README, which both packages carry, says how to install Nexo, why it exists and where it comes from, and no longer says the packages are unpublished. Nothing else changes but the version the packages and `nexo.info.versions.implementation` report.
 
